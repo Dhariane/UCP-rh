@@ -1,0 +1,30 @@
+cd rh-back-end
+# Créer un environnement virtuel
+python -m venv venv
+
+# Activer l'environnement virtuel
+# Windows :
+venv\Scripts\activate
+# Linux / Mac :
+source venv/bin/activate
+
+# Créer un projet Django
+django-admin startproject config .
+
+# creer une application api
+python manage.py startapp api
+
+#Pour creer une migration
+python manage.py migrate
+
+#Pour migreer
+python manage.py makemigrations
+
+#Pour installer postgres
+pip install psycopg2-binary
+
+#Pour installer Jwt
+pip install PyJWT
+
+#Pour installer Pytz
+pip install pytz

@@ -1,0 +1,49 @@
+-gestion d'authentification avec role
+    -fonction
+        -validate token
+        -validate role
+-fiche de renseignement personnel
+    -insertFicheRenseignement
+        -affichage
+            -insertFicheRenseignement()
+        -entite
+            -EtatCivils(idEtatCivil,nom)
+            -Propos(idPropo,nifStat,numerosCnaps,idEtatCivil,tel,email,nombreEnfant)
+            -Cins(idCin,numeroCin,dateCin,lieuCin)
+            -Sexes(idSexe,nom)
+            -Agences(idAgence,nom)
+            -Banques(idBanque,nom)
+            -CoordonneesBancaires(idCoordonnees,idBanque,idAgence,rib)
+            -Personnelles(idPersonnelle,nom,prenom,dateNaissance,lieuNaissance,idSexe)
+            -Relations(idRelation,nom,grade)
+            -ContacteUrgences(idContacteUrgence,idPersonnelle,nom,idRelation,telephone,adresse)
+            -Poste(idNom,nom,grade)
+            -Service(idService,nom) ---domaine
+            -Fonction(idFonction,dateDebut,dateFin,idPersonnelle,idSuperieur,idPoste,idService)
+        -fonction
+            -getAllAgences()
+            -getAllEtatCivils()
+            -getAllBanques()
+            -getAllSexes()
+            -getAllRelations()
+            -getAllPostes()
+            -getAllServices()
+            -getAllFonctions()
+            -insertFicheRenseignement()
+                ----transactionnel
+                    -insertPropos()
+                    -insertCin()
+                    -insertPersonnelle()
+                    -insertContactUrgence()
+                    -insertCoordonneesBancaires()
+                    -insertPersonnelle()
+                    -insertFonction()
+                ----transactionnel
+                    
+
+
+
+
+
+
+
