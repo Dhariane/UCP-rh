@@ -27,7 +27,7 @@ class EtatCivilController(APIView):
                 response = {
                     "status": "error",
                     "message": f"EtatCivil non trouvé pour l'id = {id}",
-                    # "error": f"EtatCivil non trouvé pour l'id = {id}"
+                    # "error": f"EtatCivil non \trouvé pour l'id = {id}"
                 }
 
                 return Response(response,
