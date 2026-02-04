@@ -12,18 +12,18 @@
                 -Banques(idBanque,nom)
                 -CoordonneesBancaires(idCoordonnees,idBanque,idAgence,rib)
             ---propos
-                -EtatCivils(idEtatCivil,nom)
+                -EtatCivils(idEtatCivil,nom) --- Naly --1 
                 -Propos(idPropo,nifStat,numerosCnaps,idEtatCivil,tel,email,nombreEnfant)
-                -Cins(idCin,numeroCin,dateCin,lieuCin)
-                -Sexes(idSexe,nom)
+                -Cins(idCin,numeroCin,dateCin,lieuCin) --Naly -- 1
+                -Sexes(idSexe,nom) --Naly -- 1
                 -Personnelles(idPersonnelle,nom,prenom,dateNaissance,lieuNaissance,idSexe)
                 -Photos(idPhoto,idPersonnelle,nom,type,data)
             ---contact
-                -Relations(idRelation,nom,grade)
+                -Relations(idRelation,nom,grade) --Naly -- 1
                 -ContacteUrgences(idContacteUrgence,idPersonnelle,nom,idRelation,telephone,adresse)
             ---fonction
-                -Poste(idNom,nom,grade)
-                -Service(idService,nom) ---domaine
+                -Poste(idNom,nom,grade) --Naly -- 2
+                -Service(idService,nom) ---Naly -- 1
                 -Fonction(idFonction,dateDebut,dateFin,idPersonnelle,idSuperieur,idPoste,idService)
         -fonction
             -getAllAgences()
@@ -39,6 +39,7 @@
                     -insertPropos()
                     -insertCin()
                     -insertPersonnelle()
+
                     -insertContactUrgence()
                     -insertCoordonneesBancaires()
                     -insertPersonnelle()
