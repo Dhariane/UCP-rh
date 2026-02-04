@@ -12,10 +12,10 @@
                 -Banques(idBanque,nom)
                 -CoordonneesBancaires(idCoordonnees,idBanque,idAgence,rib)
             ---propos
-                -EtatCivils(idEtatCivil,nom)
+                -EtatCivils(idEtatCivil,nom) --OK
                 -Propos(idPropo,nifStat,numerosCnaps,idEtatCivil,tel,email,nombreEnfant)
                 -Cins(idCin,numeroCin,dateCin,lieuCin)
-                -Sexes(idSexe,nom)
+                -Sexes(idSexe,nom) 
                 -Personnelles(idPersonnelle,nom,prenom,dateNaissance,lieuNaissance,idSexe)
                 -Photos(idPhoto,idPersonnelle,nom,type,data)
             ---contact

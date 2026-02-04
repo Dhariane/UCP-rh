@@ -64,7 +64,9 @@ class EtatCivilController(APIView):
         etat = EtatCivilService.create(valiny.validated_data["nom"])
         response = {
                 "status": "success",
-                "message": "Insertion reussis avec succes",
+                "message": "I"
+                ""
+                "nsertion reussis avec succes",
                 "data": EtatCivilDTO(etat).data
             }
         return Response(response, status=status.HTTP_201_CREATED)
