@@ -1,4 +1,4 @@
-creer entite Sexes
+creer entite Sexes 
 creer dto Sexes --sexeDto
 creer service Sexes --sexeSevice
 creer controller Sexes --sexeController
