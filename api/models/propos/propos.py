@@ -6,41 +6,27 @@ class Propos(models.Model):
 
     nifStat = models.CharField(
         max_length=50,
-        db_column="nifStat",
-        null=True,
-        blank=True
     )
 
     numeroCnaps = models.CharField(
         max_length=50,
-        db_column="numeroCnaps",
-        null=True,
-        blank=True
     )
 
     tel = models.CharField(
         max_length=50,
-        null=True,
-        blank=True
     )
 
     email = models.EmailField(
-        max_length=50,
-        null=True,
-        blank=True
+        max_length=100,
     )
 
     nombreEnfant = models.IntegerField(
-        db_column="nombreEnfant",
-        null=True,
-        blank=True
     )
 
-    # 🔑 Clé étrangère
-    etatCivile = models.ForeignKey(
-        EtatCivile,
+
+    etatCivil = models.ForeignKey(
+        EtatCivil,
         on_delete=models.PROTECT,
-        db_column="id_1",
         related_name="propos"
     )
 
