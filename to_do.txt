@@ -12,19 +12,19 @@
                 -Banques(idBanque,nom)
                 -CoordonneesBancaires(idCoordonnees,idBanque,idAgence,rib)
             ---propos
-                -EtatCivils(idEtatCivil,nom) --- Naly --1 
+                -EtatCivils(idEtatCivil,nom) --- Naly --1 --Ok
                 -Propos(idPropo,nifStat,numerosCnaps,idEtatCivil,tel,email,nombreEnfant) --Dode
-                -Cins(idCin,numeroCin,dateCin,lieuCin) --Naly -- 1
-                -Sexes(idSexe,nom) --Naly -- 1
-                -Personnelles(idPersonnelle,nom,prenom,dateNaissance,lieuNaissance,idSexe) --Nala --3
+                -Cins(idCin,numeroCin,dateCin,lieuCin) --Naly -- 1 --Ok
+                -Sexes(idSexe,nom) --Naly -- 1 --Ok
+                -Personnelles(idPersonnelle,nom,prenom,dateNaissance,lieuNaissance,idSexe) --Nala --3 
                 -Photos(idPhoto,idPersonnelle,nom,type,data)
             ---contact
-                -Relations(idRelation,nom,grade) --Naly -- 1
-                -ContacteUrgences(idContacteUrgence,idPersonnelle,nom,idRelation,telephone,adresse) --Nala --3
+                -Relations(idRelation,nom,grade) --Naly -- 1 --Ok
+                -ContacteUrgences(idContacteUrgence,idPersonnelle,nom,idRelation,telephone,adresse) --Nala --3 
             ---fonction
                 -Poste(idNom,nom,grade) --Naly -- 2
                 -Service(idService,nom) ---Naly -- 1
-                -Fonction(idFonction,dateDebut,dateFin,idPersonnelle,idSuperieur,idPoste,idService) --Nala --3
+                -Fonction(idFonction,dateDebut,dateFin,idPersonnelle,idSuperieur,idPoste,idService) --Nala 
         -fonction
             -getAllAgences()
             -getAllEtatCivils()

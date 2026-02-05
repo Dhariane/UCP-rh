@@ -28,3 +28,9 @@ pip install PyJWT
 
 #Pour installer Pytz
 pip install pytz
+
+#Pour installer django
+pip install django
+
+#Pour installer djangoRest
+pip install djangorestframework
