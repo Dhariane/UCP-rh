@@ -1,0 +1,42 @@
+from api.models.fonction.fonctions import Fonctions
+from api.dto.personnelles.fonction.fonctionDto import FonctionDto
+
+class FonctionService:  
+    @staticmethod
+    def create(dateDebut, dateFin, personnelle, service, poste) -> Fonctions:
+        return Fonctions.objects.create(
+            dateDebut=dateDebut,
+            dateFin=dateFin,
+            personnelle=personnelle,
+            service=service,
+            poste=poste
+        )
+
+    @staticmethod
+    def getAll():
+        return Fonctions.objects.all().order_by("id")
+    
+    @staticmethod
+    def getById(id: int) -> Fonctions:
+        return Fonctions.objects.get(id=id)
+    
+    @staticmethod
+    def update(id: int, dateDebut, dateFin, personnelle, service, poste) -> Fonctions:   
+        fonction = Fonctions.objects.get(id=id)
+        fonction.dateDebut = dateDebut
+        fonction.dateFin = dateFin
+        fonction.personnelle = personnelle
+        fonction.service = service
+        fonction.poste = poste
+        fonction.save()
+        return fonction
+    
+    @staticmethod
+    def getByIdDto(id: int) -> FonctionDto:  
+        fonction = FonctionService.getById(id)
+        return FonctionDto(fonction)  
+    
+    @staticmethod
+    def getAllDto():        
+        fonctions = FonctionService.getAll()
+        return FonctionDto(fonctions, many=True)

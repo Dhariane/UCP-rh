@@ -1,7 +1,7 @@
 from django.db import models
 
 class BaseCins(models.Model):
-    numeroCin = models.PositiveIntegerField(max_length=50, unique=True)
+    numeroCin = models.PositiveIntegerField(unique=True)
     dateCin = models.DateField()
     lieuCin = models.CharField(max_length=100)
 

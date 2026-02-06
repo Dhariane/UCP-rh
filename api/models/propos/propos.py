@@ -6,21 +6,31 @@ class Propos(models.Model):
 
     nifStat = models.CharField(
         max_length=50,
+        null=True,
+        blank=True
     )
 
     numeroCnaps = models.CharField(
         max_length=50,
+        null=True,
+        blank=True
     )
 
     tel = models.CharField(
         max_length=50,
+        null=True,
+        blank=True
     )
 
     email = models.EmailField(
         max_length=100,
+        null=True,
+        blank=True
     )
 
     nombreEnfant = models.IntegerField(
+        null=True,
+        blank=True
     )
 
 

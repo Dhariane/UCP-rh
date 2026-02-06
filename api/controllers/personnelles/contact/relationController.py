@@ -53,7 +53,7 @@ class RelationController(APIView):
             }
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
-        relation = RelationService.createFromDto(valiny)
+        relation = RelationService.create(valiny.validated_data["nom"], valiny.validated_data["grade"])
         response = {
             "status": "success",
             "message": "Relation créée avec succès",
