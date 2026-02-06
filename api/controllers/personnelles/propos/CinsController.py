@@ -37,34 +37,23 @@ class CinsController(APIView):
                 "data": data
             }
             return Response(response, status=status.HTTP_200_OK)
-        
     def post(self, request):
-        valiny = CinsDTO(data=request.data)
-        if not valiny.is_valid():
-            errors_list = []
-            for field, field_errors in valiny.errors.items():
-                for error in field_errors:
-                    errors_list.append(f"{field}: {error}")
+        serializer = CinsDTO(data=request.data)
 
-            errors_str = "; ".join(errors_list)
+        if serializer.is_valid():
+            cins = serializer.save()
 
-            response = {
-                "status": "error",
-                "message": errors_str,
-                "errors": valiny.errors
-            }
-            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                "status": "success",
+                "message": "Cins créées avec succès",
+                "data": CinsDTO(cins).data
+            }, status=status.HTTP_201_CREATED)
 
-        cins = CinsService.create(valiny.validated_data['numeroCin'],
-                                  valiny.validated_data['dateCin'],
-                                  valiny.validated_data['lieuCin'])
-        response = {
-            "status": "success",
-            "message": "Cins créée avec succès",
-            "data": CinsService(cins).data
-        }
-        return Response(response, status=status.HTTP_201_CREATED)
-    
+        return Response({
+            "status": "error",
+            "errors": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
     def put(self, request, id):
         valiny = CinsDTO(data=request.data)
         if not valiny.is_valid():

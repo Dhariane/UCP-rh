@@ -14,6 +14,7 @@ from api.controllers.personnelles.banque.banqueController import BanqueControlle
 from api.controllers.personnelles.banque.agenceController import AgenceController
 from api.controllers import PersonnelleController,LoginController,EtatCivilController,SexeController
 from api.controllers.personnelles.banque.coordonneesBancaireController import CoordonneesBancaireController
+from api.controllers.personnelles.propos.photosController import PhotosController
 urlpatterns = [
     path('login', LoginController.as_view(), name='login'),
     path('personnelle', PersonnelleController.as_view(), name='personnelle'),
@@ -43,4 +44,6 @@ urlpatterns = [
     path("agences/<int:id>/", AgenceController.as_view(), name="agence-detail"),
     path("coordonnees-bancaires", CoordonneesBancaireController.as_view(), name="coordonnees-bancaires"),
     path("coordonnees-bancaires/<int:id>/", CoordonneesBancaireController.as_view(), name="coordonnee-bancaire-detail"),
+    path("photos", PhotosController.as_view(), name="photos"),
+    path("photos/<int:id>/", PhotosController.as_view(), name="photo-detail"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
