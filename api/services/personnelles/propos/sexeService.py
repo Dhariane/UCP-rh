@@ -3,13 +3,15 @@ from api.dto.personnelles.propos.sexeDto import SexeDTO
 
 class SexeService:
     @staticmethod
-    def create(nom: str) -> Sexes:
-        return Sexes.objects.create(nom=nom)
+    def create(data) -> Sexes:
+        return Sexes.objects.create(nom=data['nom'])
     
     @staticmethod
     def getAll():
         return Sexes.objects.all().order_by("id")    
-    
+    @staticmethod
+    def get(id):
+        return Sexes.objects.get(id=id)
     @staticmethod
     def getById(id: int) -> Sexes:
         return Sexes.objects.get(id=id)

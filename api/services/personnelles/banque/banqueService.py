@@ -3,13 +3,16 @@ from api.dto.personnelles.banque.banqueDto import BanqueDto
 
 class BanqueService:  
     @staticmethod
-    def create(nom) -> Banques:
-        return Banques.objects.create(nom=nom)
+    def create(data) -> Banques:
+        return Banques.objects.create(nom=data['nom'])
 
     @staticmethod
     def getAll():
         return Banques.objects.all().order_by("id")
     
+    @staticmethod
+    def get(id):
+        return Banques.objects.get(id=id)
     @staticmethod
     def getById(id: int) -> Banques:
         return Banques.objects.get(id=id)

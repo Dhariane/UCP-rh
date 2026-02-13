@@ -3,13 +3,24 @@ from api.dto import ProposDTO
 class ProposService:
 
     @staticmethod
-    def create(nom: str) -> Propos:
-        return Propos.objects.create(nom=nom)
+    def create(data) -> Propos:
+        return Propos.objects.create(
+            nifStat=data["nifStat"],
+            numeroCnaps=data["numeroCnaps"],
+            tel=data["tel"],
+            email=data["email"],              
+            nombreEnfant=data["nombreEnfant"],
+            etatCivil=data["etatCivil"]
+        )
+
 
     @staticmethod
     def getAll():
         return Propos.objects.all().order_by("id")
 
+    @staticmethod
+    def get(id):
+        return Propos.objects.get(id=id)
     @staticmethod
     def getById(id: int) -> Propos:
         return Propos.objects.get(id=id)

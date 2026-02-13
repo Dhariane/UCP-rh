@@ -3,19 +3,21 @@ from api.dto.personnelles.fonction.fonctionDto import FonctionDto
 
 class FonctionService:  
     @staticmethod
-    def create(dateDebut, dateFin, personnelle, service, poste) -> Fonctions:
+    def create(data) -> Fonctions:
         return Fonctions.objects.create(
-            dateDebut=dateDebut,
-            dateFin=dateFin,
-            personnelle=personnelle,
-            service=service,
-            poste=poste
+            dateDebut=data['dateDebut'],
+            dateFin=data['dateFin'],
+            personnelle=data['personnelle'],
+            service=data['service'],
+            poste=data['poste']
         )
 
     @staticmethod
     def getAll():
         return Fonctions.objects.all().order_by("id")
-    
+    @staticmethod
+    def get(id):
+        return Fonctions.objects.get(id=id)
     @staticmethod
     def getById(id: int) -> Fonctions:
         return Fonctions.objects.get(id=id)

@@ -17,11 +17,12 @@
                 -Cins(idCin,numeroCin,dateCin,lieuCin) --Naly -- 1 --Ok
                 -Sexes(idSexe,nom) --Naly -- 1 --Ok
                 -Personnelles(idPersonnelle,nom,prenom,dateNaissance,lieuNaissance,idSexe) --Naly --3 --ok
-                -Photos(idPhoto,idPersonnelle,nom,type,data)-- Naly --OK
+                -Photos(idPhoto,idPersonnelle,nom,data)-- Naly --OK
             ---contact
                 -Relations(idRelation,nom,grade) --Naly -- 1 --Ok
                 -ContacteUrgences(idContacteUrgence,idPersonnelle,nom,idRelation,telephone,adresse) --Naly --3  OK
             ---fonction
+                -Superieur(idSuperieur,nom)
                 -Poste(idNom,nom,grade) --Naly -- 2 Ok
                 -Service(idService,nom) ---Naly -- 1 Ok
                 -Fonction(idFonction,dateDebut,dateFin,idPersonnelle,idSuperieur,idPoste,idService) --Naly --OK

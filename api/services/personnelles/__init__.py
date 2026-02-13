@@ -1,0 +1,4 @@
+from .banque import CoordonneesBancaireServices,AgenceService,BanqueService
+from .contact import RelationService,ContactUrgencesService
+from .fonction import FonctionService,PosteService,SuperieurService,ServiceService
+from .propos import CinsService,EtatCivilService,PersonnellesService,PhotosService,ProposService,SexeService

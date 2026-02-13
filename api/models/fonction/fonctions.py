@@ -2,6 +2,7 @@ from django.db import models
 from api.models.propos.personnelles import Personnelles
 from api.models.fonction.poste import Postes
 from api.models.fonction.service import Services
+from api.models.fonction.superieurs import Superieur
 
 
 class Fonctions(models.Model):
@@ -24,6 +25,11 @@ class Fonctions(models.Model):
         Services,
         on_delete=models.PROTECT,
         related_name="fonctions"
+    )
+    superieur = models.ForeignKey(
+        Superieur,
+        on_delete=models.PROTECT,null=True,
+        related_name="superieur"
     )
 
     def __str__(self):

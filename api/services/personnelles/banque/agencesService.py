@@ -4,13 +4,20 @@ from api.models.banque.agences import Agences
 
 class AgenceService:
     @staticmethod
-    def create(nom) -> Agences:
-        return Agences.objects.create(nom=nom)
+    def create(data) -> Agences:
+        if isinstance(data, str):
+            data = {"nom": data}
+
+        return Agences.objects.create(nom=data["nom"])
+
 
     @staticmethod
     def getAll():
         return Agences.objects.all().order_by("id")
     
+    @staticmethod
+    def get(id):
+        return AgenceService.objects.get(id=id)
     @staticmethod
     def getById(id: int) -> Agences:
         return Agences.objects.get(id=id)

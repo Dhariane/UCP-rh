@@ -2,14 +2,22 @@ from api.models.contact.contactUrgences import ContactUrgences
 from api.dto.personnelles.contact.ContactUrgentsDto import ContactUrgentsDto
 
 class ContactUrgencesService:    
-    @staticmethod
-    def create(telephone: str, adresse: str, personnelle: int, relation: int) -> ContactUrgences:
-        return ContactUrgences.objects.create(telephone=telephone, adresse=adresse, personnelle=personnelle, relation=relation)
-    
+    def create(data):
+        return ContactUrgences.objects.create(
+            nom= data['nom'],
+            telephone=data["telephone"],
+            adresse=data["adresse"],
+            personnelle=data["personnelle"],
+            relation=data["relation"]
+            
+        )
     @staticmethod
     def getAll():
         return ContactUrgences.objects.all().order_by("id")
     
+    @staticmethod
+    def get(id):
+        return ContactUrgences.objects.get(id=id)
     @staticmethod
     def getById(id: int) -> ContactUrgences:
         return ContactUrgences.objects.get(id=id)

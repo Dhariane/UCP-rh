@@ -4,11 +4,11 @@ from api.dto.personnelles.propos.CinsDto import CinsDTO
 class CinsService:
 
     @staticmethod
-    def create(numeroCin: int, dateCin, lieuCin: str) -> Cins:
+    def create(data):
         return Cins.objects.create(
-            numeroCin=numeroCin,
-            dateCin=dateCin,
-            lieuCin=lieuCin
+            numeroCin=data["numeroCin"],
+            dateCin=data["dateCin"],
+            lieuCin=data["lieuCin"]
         )
     @staticmethod
     def getAll():

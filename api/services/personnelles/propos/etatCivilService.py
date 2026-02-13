@@ -11,6 +11,9 @@ class EtatCivilService:
         return EtatCivil.objects.all().order_by("id")
 
     @staticmethod
+    def get(id):
+        return EtatCivil.objects.get(id=id)
+    @staticmethod
     def getById(id: int) -> EtatCivil:
         return EtatCivil.objects.get(id=id)
     

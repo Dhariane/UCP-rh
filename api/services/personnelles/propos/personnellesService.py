@@ -5,18 +5,20 @@ from api.models.propos.sexe import  Sexes
 class PersonnellesService:
 
     @staticmethod
-    def create(personnelle_dto) -> Personnelles:
-        sexe_instance = Sexes.objects.get(pk=personnelle_dto.data["sexe"])
-
+    def create(data) -> Personnelles:
         return Personnelles.objects.create(
-            nom=personnelle_dto.data["nom"],
-            prenom=personnelle_dto.data["prenom"],
-            dateNaissance=personnelle_dto.data["dateNaissance"],
-            lieuNaissance=personnelle_dto.data["lieuNaissance"],
-            sexe=sexe_instance
+            nom=data['nom'],
+            prenom=data["prenom"],
+            dateNaissance=data["dateNaissance"],
+            lieuNaissance=data["lieuNaissance"],
+            sexe=data["sexe"],
+            propos=data["propos"],
+            cin=data["cin"]
         )
     
-
+    @staticmethod
+    def get(id):
+        return Personnelles.objects.get(id=id)
     @staticmethod
     def getAll():
         return Personnelles.objects.all().order_by("id")

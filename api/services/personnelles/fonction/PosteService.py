@@ -3,13 +3,18 @@ from api.dto.personnelles.fonction.PosteDto import PosteDTO
 
 class PosteService:
     @staticmethod
-    def create(nom: str, grade: str) -> Postes:
-        return Postes.objects.create(nom=nom, grade=grade)
+    def create(data) -> Postes:
+        return Postes.objects.create(
+            nom=data['nom'], 
+            grade=data['grade'])
 
     @staticmethod
     def getAll():
         return Postes.objects.all().order_by("id")
     
+    @staticmethod
+    def get(id):
+        return Postes.objects.get(id=id)
     @staticmethod
     def getById(id: int) -> Postes:
         return Postes.objects.get(id=id)

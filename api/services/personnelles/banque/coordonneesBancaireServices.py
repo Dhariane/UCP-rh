@@ -6,16 +6,19 @@ from api.models.banque.banques import Banques
 
 class CoordonneesBancaireServices:
     @staticmethod
-    def create( agence,banque,rib):
-        coordonnees_bancaires = CoordonneesBancaires.objects.create(
-            agence=agence,
-            banque=banque,
-            rib=rib
+    def create(data) -> CoordonneesBancaires:
+        return CoordonneesBancaires.objects.create(
+            agence=data['agence'],
+            banque=data['banque'],
+            rib=data['rib']
         )
-        return CoordonneesBancaires(coordonnees_bancaires)
+
     @staticmethod
     def getAll():
         return CoordonneesBancaires.objects.all().order_by("id")
+    @staticmethod
+    def get(id):
+        return CoordonneesBancaires.objects.get(id=id)
     @staticmethod
     def getById(id: int) -> CoordonneesBancaires:
         return CoordonneesBancaires.objects.get(id=id)

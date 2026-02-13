@@ -4,13 +4,16 @@ from api.dto.personnelles.contact.RelationDto import RelationDto
 class RelationService:
 
     @staticmethod
-    def create(nom: str, grade: str) -> Relations:
-        return Relations.objects.create(nom=nom, grade=grade)
+    def create(data) -> Relations:
+        return Relations.objects.create(nom=data['nom'], grade=data['grade'])
 
     @staticmethod
     def getAll():
         return Relations.objects.all().order_by("id")
 
+    @staticmethod
+    def get(id):
+        return Relations.objects.get(id=id)
     @staticmethod
     def getById(id: int) -> Relations:
         return Relations.objects.get(id=id)

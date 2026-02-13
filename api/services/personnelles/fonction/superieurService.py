@@ -3,13 +3,15 @@ from api.dto.personnelles.fonction.superieurDto import SuperieurDto
 
 class SuperieurService:
     @staticmethod
-    def create(nom: str)-> Superieur:
-        return Superieur.objects.create(nom=nom)
+    def create(data)-> Superieur:
+        return Superieur.objects.create(nom=data['nom'])
 
     @staticmethod
     def getAll()-> list[Superieur]:
         return Superieur.objects.all().order_by("id")
-
+    @staticmethod
+    def get(id):
+        return Superieur.objects.get(id=id)
     @staticmethod
     def getById(id: int)-> Superieur:
         return Superieur.objects.get(id=id)

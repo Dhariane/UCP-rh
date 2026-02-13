@@ -3,13 +3,16 @@ from api.dto.personnelles.fonction.ServiceDto import ServiceDto
 
 class ServiceService:   
     @staticmethod
-    def create(nom: str) -> Services:
-        return Services.objects.create(nom=nom)
+    def create(data) -> Services:
+        return Services.objects.create(nom=data['nom'])
 
     @staticmethod
     def getAll():
         return Services.objects.all().order_by("id")
     
+    @staticmethod
+    def get(id):
+        return Services.objects.get(id=id)
     @staticmethod
     def getById(id: int) -> Services:
         return Services.objects.get(id=id)

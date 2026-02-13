@@ -2,20 +2,7 @@ from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 
-from api.controllers import PersonnelleController,LoginController,EtatCivilController,ProposController
-from api.controllers.personnelles.fonction.ServiceController import ServiceController
-from api.controllers.personnelles.fonction.PosteController import PosteController
-from api.controllers.personnelles.contact.relationController import RelationController
-from api.controllers.personnelles.propos.personnelleController import PersonnelleController
-from api.controllers.personnelles.contact.contactUrgentController import ContactUrgentController
-from api.controllers.personnelles.propos.CinsController import CinsController
-from api.controllers.personnelles.fonction.fonctionController import FonctionController
-from api.controllers.personnelles.banque.banqueController import BanqueController
-from api.controllers.personnelles.banque.agenceController import AgenceController
-from api.controllers import PersonnelleController,LoginController,EtatCivilController,SexeController
-from api.controllers.personnelles.banque.coordonneesBancaireController import CoordonneesBancaireController
-from api.controllers.personnelles.propos.photosController import PhotosController
-from api.controllers.personnelles.fonction.superieurController import SuperieurController
+from api.controllers import *
 urlpatterns = [
     path('login', LoginController.as_view(), name='login'),
     path('personnelle', PersonnelleController.as_view(), name='personnelle'),
@@ -47,5 +34,7 @@ urlpatterns = [
     path("coordonnees-bancaires/<int:id>/", CoordonneesBancaireController.as_view(), name="coordonnee-bancaire-detail"),
     path("photos", PhotosController.as_view(), name="photos"),
     path("photos/<int:id>/", PhotosController.as_view(), name="photo-detail"),
-    path("superieurs",SuperieurController.as_view(), name="superieures")
+    path("superieurs",SuperieurController.as_view(), name="superieures"),
+    path("fullpersonnelles",PersonnelFullController.as_view(),name='fullpersonnelles'),
+     path('api/fullpersonnelles/<int:id>/', PersonnelFullController.as_view(), name='full-personnel-detail'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
