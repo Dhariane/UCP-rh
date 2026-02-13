@@ -3,18 +3,13 @@ from api.models.propos.personnelles import Personnelles
 from api.models.propos.sexe import Sexes
 
 class PersonnellesDTO(serializers.ModelSerializer):
-    sexe = serializers.PrimaryKeyRelatedField(
-        queryset=Sexes.objects.all(),
-        required=True   
-    )
-    propos = serializers.PrimaryKeyRelatedField(
-        queryset=Sexes.objects.all(),
-        required=True   
-    )
-    cin = serializers.PrimaryKeyRelatedField(
-        queryset=Sexes.objects.all(),
-        required=True   
-    )
+    nom = serializers.CharField(),
+    prenom = serializers.CharField()
+    dateNaissance = serializers.DateField()  
+    lieuNaissance = serializers.CharField()
+    cin = serializers.IntegerField()
+    propos = serializers.IntegerField()
+    sexe = serializers.IntegerField()
 
     
     class Meta:

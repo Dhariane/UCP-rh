@@ -39,7 +39,6 @@ class PersonnelleController(APIView):
     def post(self, request):
         valiny = PersonnellesDTO(data=request.data)
         if not valiny.is_valid():
-
             errors_list = []
             for field, field_errors in valiny.errors.items():
                 for error in field_errors:
@@ -55,16 +54,14 @@ class PersonnelleController(APIView):
             
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
         
-
-        personnelle = PersonnellesService.create(valiny)
+        # Utilisez les données validées (valiny.validated_data)
+        personnelle = PersonnellesService.create(valiny.validated_data)
         response = {
             "status": "success",
             "message": "Personnelle créée avec succès",
             "data": valiny.data
-            # "data": PersonnellesService.getByIdDto(personnelle.id).data
         }
         return Response(response, status=status.HTTP_201_CREATED)
-    
     def put(self, request, id):
         valiny = PersonnellesDTO(data=request.data)
         if not valiny.is_valid():

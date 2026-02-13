@@ -9,13 +9,12 @@ class PersonnellesService:
         return Personnelles.objects.create(
             nom=data['nom'],
             prenom=data["prenom"],
-            dateNaissance=data["dateNaissance"],
+            dateNaissance=data["dateNaissance"],  # Utilisez directement la valeur
             lieuNaissance=data["lieuNaissance"],
             sexe_id=data["sexe"],
             propos_id=data["propos"],
             cin_id=data["cin"]
         )
-    
     @staticmethod
     def get(id):
         return Personnelles.objects.get(id=id)
