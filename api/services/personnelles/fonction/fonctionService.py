@@ -5,6 +5,7 @@ class FonctionService:
     @staticmethod
     def create(data) -> Fonctions:
         return Fonctions.objects.create(
+            nom=data['nom'],
             dateDebut=data['dateDebut'],
             dateFin=data['dateFin'],
             personnelle=data['personnelle'],

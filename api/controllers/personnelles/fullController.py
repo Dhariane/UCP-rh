@@ -69,9 +69,9 @@ class PersonnelFullController(APIView):
                     "prenom": data.get("prenom"),
                     "dateNaissance": data.get("dateNaissance"),
                     "lieuNaissance": data.get("lieuNaissance"),
-                    "sexe": sexe,
-                    "propos": propos,
-                    "cin": cin
+                    "sexe": sexe.id,
+                    "propos": propos.id,
+                    "cin": cin.id
                 })
 
                 # ----- Photo -----
@@ -104,6 +104,7 @@ class PersonnelFullController(APIView):
 
                 # ----- Fonction -----
                 fonction = FonctionService.create({
+                    "nom":data.get("fonction"),
                     "dateDebut": data.get("dateDebut"),
                     "dateFin": data.get("dateFin"),
                     "personnelle": personnelles,

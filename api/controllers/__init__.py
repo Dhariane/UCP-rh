@@ -15,3 +15,23 @@ from .personnelles.fonction.PosteController import PosteController
 from .personnelles.fonction.ServiceController import ServiceController
 from .personnelles.fonction.superieurController import SuperieurController
 from .personnelles.fullController import PersonnelFullController
+
+__all__ = [
+    "EtatCivilController",
+    "ProposController",
+    "BanqueController",
+    "AgenceController",
+    "CoordonneesBancaireController",
+    "ContactUrgentController",
+    "RelationController",
+    "FonctionController",
+    "PosteController",
+    "ServiceController",
+    "SuperieurController",
+    "CinsController",
+    "PersonnelleController",
+    "PhotosController",
+    "SexeController",
+    "PersonnelFullController",
+    "LoginController"
+]

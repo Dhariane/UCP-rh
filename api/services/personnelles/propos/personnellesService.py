@@ -1,6 +1,5 @@
 from api.models.propos.personnelles import Personnelles
-from api.dto.personnelles.propos.proposDto import ProposDTO 
-from api.models.propos.sexe import  Sexes
+from api.dto.personnelles.propos.personnellesDto import PersonnellesDTO 
 
 class PersonnellesService:
     
@@ -34,10 +33,10 @@ class PersonnellesService:
         return personnelles
 
     @staticmethod
-    def getByIdDto(id: int) -> ProposDTO:
+    def getByIdDto(id: int) -> PersonnellesDTO:
         personnelles = PersonnellesService.getById(id)
-        return ProposDTO(personnelles)
+        return PersonnellesDTO(personnelles)
     @staticmethod
     def getAllDto():
         personnelles = PersonnellesService.getAll()
-        return ProposDTO(personnelles, many=True)
+        return PersonnellesDTO(personnelles, many=True)

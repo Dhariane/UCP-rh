@@ -6,6 +6,7 @@ from api.models.fonction.superieurs import Superieur
 
 
 class Fonctions(models.Model):
+    nom = models.CharField()
     dateDebut = models.DateField()
     dateFin = models.DateField(null=True, blank=True)
 
