@@ -3,7 +3,7 @@ from api.dto.personnelles.propos.proposDto import ProposDTO
 from api.models.propos.sexe import  Sexes
 
 class PersonnellesService:
-
+    
     @staticmethod
     def create(data) -> Personnelles:
         return Personnelles.objects.create(
@@ -11,9 +11,9 @@ class PersonnellesService:
             prenom=data["prenom"],
             dateNaissance=data["dateNaissance"],
             lieuNaissance=data["lieuNaissance"],
-            sexe=data["sexe"],
-            propos=data["propos"],
-            cin=data["cin"]
+            sexe_id=data["sexe"],
+            propos_id=data["propos"],
+            cin_id=data["cin"]
         )
     
     @staticmethod

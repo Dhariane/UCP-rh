@@ -7,6 +7,16 @@ class PersonnellesDTO(serializers.ModelSerializer):
         queryset=Sexes.objects.all(),
         required=True   
     )
+    propos = serializers.PrimaryKeyRelatedField(
+        queryset=Sexes.objects.all(),
+        required=True   
+    )
+    cin = serializers.PrimaryKeyRelatedField(
+        queryset=Sexes.objects.all(),
+        required=True   
+    )
+
+    
     class Meta:
         model = Personnelles
         fields = [
@@ -16,4 +26,6 @@ class PersonnellesDTO(serializers.ModelSerializer):
             "dateNaissance",
             "lieuNaissance",
             "sexe",
+            "propos",
+            "cin"
         ]
