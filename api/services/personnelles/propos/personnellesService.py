@@ -8,11 +8,11 @@ class PersonnellesService:
         return Personnelles.objects.create(
             nom=data['nom'],
             prenom=data["prenom"],
-            dateNaissance=data["dateNaissance"],  # Utilisez directement la valeur
+            dateNaissance=data["dateNaissance"],  
             lieuNaissance=data["lieuNaissance"],
-            sexe_id=data["sexe"],
-            propos_id=data["propos"],
-            cin_id=data["cin"]
+            sexe=data["sexe"],
+            propos=data["propos"],
+            cin=data["cin"]
         )
     @staticmethod
     def get(id):

@@ -1,12 +1,11 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import transaction
-import json
 from rest_framework.renderers import JSONRenderer
 from rest_framework import status
 
 from api.models import *
-from api.dto import *
+from api.dto import PersonnellesDTO
 from api.services.personnelles.propos import (
     CinsService, PersonnellesService, EtatCivilService,
     PhotosService, ProposService, SexeService)
@@ -17,8 +16,8 @@ from api.services.personnelles.banque import CoordonneesBancaireServices, Agence
 
 class PersonnelFullController(APIView):
     renderer_classes = [JSONRenderer]
+
     def post(self, request):
-        # --- Force parsing JSON si request.data vide
         data = request.data
         print("DATA POSTMAN :", data)
 
@@ -37,7 +36,7 @@ class PersonnelFullController(APIView):
 
                 agence = AgenceService.create({
                     "nom": agence_nom
-                }) 
+                })
 
                 # ----- Coordonnées bancaires -----
                 coord = CoordonneesBancaireServices.create({
@@ -69,20 +68,21 @@ class PersonnelFullController(APIView):
                     "prenom": data.get("prenom"),
                     "dateNaissance": data.get("dateNaissance"),
                     "lieuNaissance": data.get("lieuNaissance"),
-                    "sexe": sexe.id,
-                    "propos": propos.id,
-                    "cin": cin.id
+                    "sexe": sexe,      # ID de l'objet Sexes
+                    "propos": propos,  # ID de l'objet Propos
+                    "cin": cin         # ID de l'objet Cins
                 })
+                
 
                 # ----- Photo -----
-                photo=PhotosService.create({
+                photo = PhotosService.create({
                     "nom": data.get("photoNom"),
                     "data": data.get("photo"),
-                    "personnelle": personnelles
+                    "personnelle_id": personnelles.id
                 })
 
                 # ----- Contact d'urgence -----
-                contactU=ContactUrgencesService.create({
+                contactU = ContactUrgencesService.create({
                     "nom": data.get("contactNom"),
                     "telephone": data.get("telephone"),
                     "adresse": data.get("adresse"),
@@ -104,7 +104,7 @@ class PersonnelFullController(APIView):
 
                 # ----- Fonction -----
                 fonction = FonctionService.create({
-                    "nom":data.get("fonction"),
+                    "nom": data.get("fonction"),
                     "dateDebut": data.get("dateDebut"),
                     "dateFin": data.get("dateFin"),
                     "personnelle": personnelles,
@@ -117,12 +117,13 @@ class PersonnelFullController(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=400)
+
     def get(self, request, id=None):
         if id:
             try:
                 # Récupérer les informations du personnel
                 personnelle = Personnelles.objects.get(id=id)
-                
+
                 # Récupérer les informations associées au personnel
                 propos = Propos.objects.get(personnelle=personnelle)
                 cin = Cins.objects.get(personnelle=personnelle)
@@ -152,7 +153,7 @@ class PersonnelFullController(APIView):
                 return Response({"error": "Personnel non trouvé"}, status=status.HTTP_404_NOT_FOUND)
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         else:
             # Récupérer tous les personnels
             personnels = Personnelles.objects.all()
