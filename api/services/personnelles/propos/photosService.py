@@ -7,7 +7,7 @@ class PhotosService:
         return Photos.objects.create(
             nom = data["nom"],
             data = data["data"],
-            personnelle=data["personnelle"]
+            personnelle_id=data["personnelle"]
         )
 
     @staticmethod
