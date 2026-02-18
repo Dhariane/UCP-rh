@@ -16,12 +16,9 @@ class Photos(BaseNom):
             format, imgstr = self.data.split(';base64,')
             ext = format.split('/')[-1]
             
-            # Utilisation de getattr pour être sûr de récupérer l'ID numérique
-            p_id = self.personnelle.id if hasattr(self.personnelle, 'id') else self.personnelle
-            
             data = ContentFile(
                 base64.b64decode(imgstr),
-                name=f"photo_{p_id}.{ext}" # On utilise la variable sécurisée p_id
+                name=f"photo_{self.personnelle_id}.{ext}"
             )
             self.data = data
         super().save(*args, **kwargs)
