@@ -4,16 +4,15 @@ from django.db import transaction
 from rest_framework.renderers import JSONRenderer
 from rest_framework import status
 
-from api.models import *
 from api.dto import PersonnellesDTO
 from api.services.personnelles.propos import (
     CinsService, PersonnellesService, EtatCivilService,
-    PhotosService, ProposService, SexeService)
+    PhotosService, ProposService,SexeService)
 from api.services.personnelles.fonction import FonctionService, PosteService, ServiceService, SuperieurService
 from api.services.personnelles.contact import ContactUrgencesService, RelationService
 from api.services.personnelles.banque import CoordonneesBancaireServices, AgenceService, BanqueService
 
-
+from api.models import EtatCivil,Sexes,Relations,Banques
 class PersonnelFullController(APIView):
     renderer_classes = [JSONRenderer]
 

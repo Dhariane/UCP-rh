@@ -2,7 +2,7 @@ from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 
-from api.controllers import *
+from api.controllers import LoginController,AgenceController,BanqueController,ContactUrgentController,CoordonneesBancaireController,CinsController,EtatCivilController,FonctionController,PersonnelFullController,PersonnelleController,PhotosController,PosteController,ProposController,RelationController,ServiceController,SexeController,SuperieurController
 urlpatterns = [
     path('login', LoginController.as_view(), name='login'),
     path('personnelle', PersonnelleController.as_view(), name='personnelle'),
