@@ -4,16 +4,15 @@ from django.db import transaction
 from rest_framework.renderers import JSONRenderer
 from rest_framework import status
 
-from api.models import *
 from api.dto import PersonnellesDTO
 from api.services.personnelles.propos import (
     CinsService, PersonnellesService, EtatCivilService,
-    PhotosService, ProposService, SexeService)
+    PhotosService, ProposService,SexeService)
 from api.services.personnelles.fonction import FonctionService, PosteService, ServiceService, SuperieurService
 from api.services.personnelles.contact import ContactUrgencesService, RelationService
 from api.services.personnelles.banque import CoordonneesBancaireServices, AgenceService, BanqueService
 
-
+from api.models import EtatCivil,Sexes,Relations,Banques,Postes
 class PersonnelFullController(APIView):
     renderer_classes = [JSONRenderer]
 
@@ -28,6 +27,7 @@ class PersonnelFullController(APIView):
                 etatcivil = EtatCivil.objects.get(id=data.get("etatCivil"))
                 relation = Relations.objects.get(id=data.get("relation"))
                 banque = Banques.objects.get(id=data.get("banque"))
+                poste = Postes.objects.get(id=data.get("poste"))
 
                 # ----- Créer Agence -----
                 agence_nom = data.get("agence")
@@ -76,10 +76,14 @@ class PersonnelFullController(APIView):
 
                 # ----- Photo -----
                 photo = PhotosService.create({
-                    "nom": data.get("photoNom"),
-                    "data": data.get("photo"),
+                    
+                    "nom": data.get("nomFichierReal"),
+                    "data": data.get("photoNom"),
                     "personnelle": personnelles.id
+                    
                 })
+                # Dans ton traitement du POST
+
 
                 # ----- Contact d'urgence -----
                 contactU = ContactUrgencesService.create({
@@ -90,11 +94,6 @@ class PersonnelFullController(APIView):
                     "relation": relation
                 })
 
-                # ----- Poste / Service / Supérieur -----
-                poste = PosteService.create({
-                    "nom": data.get("poste"),
-                    "grade": data.get("grade")
-                })
                 service = ServiceService.create({
                     "nom": data.get("service")
                 })
