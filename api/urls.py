@@ -10,7 +10,6 @@ urlpatterns = [
     path("etat-civils/<int:id>/", EtatCivilController.as_view(), name="etatcivil-detail"),
     path('propos', ProposController.as_view(), name='propos'),
     path("propos/<int:id>/", ProposController.as_view(), name="propos-detail"),
-
     path("sexes", SexeController.as_view(), name="sexes"),
     path("sexes/<int:id>/", SexeController.as_view(), name="sexe-detail"),
     path("services", ServiceController.as_view(), name="services"),
@@ -37,5 +36,7 @@ urlpatterns = [
     path("photos/<int:id>/", PhotosController.as_view(), name="photo-detail"),
     path("superieurs",SuperieurController.as_view(), name="superieures"),
     path("fullpersonnelles",PersonnelFullController.as_view(),name='fullpersonnelles'),
+    path("familles",FamilleController.as_view(),name="familles"),
+    path("familles/<int:id>/",FamilleController.as_view,name="famille-detail"),
      path('api/fullpersonnelles/<int:id>/', PersonnelFullController.as_view(), name='full-personnel-detail'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

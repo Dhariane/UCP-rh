@@ -15,6 +15,7 @@ from .personnelles.fonction.PosteController import PosteController
 from .personnelles.fonction.ServiceController import ServiceController
 from .personnelles.fonction.superieurController import SuperieurController
 from .personnelles.fullController import PersonnelFullController
+from .personnelles.propos.familleController import FamilleController
 
 __all__ = [
     "EtatCivilController",
@@ -33,5 +34,6 @@ __all__ = [
     "PhotosController",
     "SexeController",
     "PersonnelFullController",
-    "LoginController"
+    "LoginController",
+    "FamilleController"
 ]

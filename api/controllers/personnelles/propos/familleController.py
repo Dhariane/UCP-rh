@@ -2,42 +2,41 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from api.models import Personnelles
-from api.services.personnelles.propos.personnellesService import PersonnellesService
-from api.dto.personnelles.propos.personnellesDto import PersonnellesDTO
+from api.models import Famille
+from api.services.personnelles.propos.FamilleService import FamilleService
+from api.dto.personnelles.propos.familleDto import FamilleDto
 
-class PersonnelleController(APIView):
+class FamilleController(APIView):
 
-    def get(self, request,id=None):
+    def get(self,request,id=None):
         if id:
             try:
-                data = PersonnellesService.getByIdDto(id).data
+                data = FamilleService.getByIdDto(id).data
                 response = {
                     "status": "success",
-                    "message": "Liste personnelles success",
+                    "message": "Liste de la famille success",
                     "data": data
                 }
                 return Response(response, status=status.HTTP_200_OK)
-            except Personnelles.DoesNotExist:
+            except Famille.DoesNotExist:
                 response = {
                     "status": "error",
-                    "message": f"Personnelle non trouvé pour l'id = {id}",
+                    "message": f" non trouvé pour l'id = {id}",
                 }
-
                 return Response(response,
                     status=status.HTTP_404_NOT_FOUND
                 )
         else:
-            data = PersonnellesService.getAllDto().data
+            data = FamilleService.getAllDto().data
             response = {
                 "status": "success",
-                "message": "Liste personnelles success",
+                "message": "Liste famille success",
                 "data": data
             }
             return Response(response, status=status.HTTP_200_OK)
         
     def post(self, request):
-        valiny = PersonnellesDTO(data=request.data)
+        valiny = FamilleDto(data=request.data)
         if not valiny.is_valid():
             errors_list = []
             for field, field_errors in valiny.errors.items():
@@ -55,15 +54,15 @@ class PersonnelleController(APIView):
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
         
         # Utilisez les données validées (valiny.validated_data)
-        personnelle = PersonnellesService.create(valiny.validated_data)
+        familles = FamilleService.create(valiny.validated_data)
         response = {
             "status": "success",
-            "message": "Personnelle créée avec succès",
+            "message": "Famille ajouter avec succès",
             "data": valiny.data
         }
         return Response(response, status=status.HTTP_201_CREATED)
     def put(self, request, id):
-        valiny = PersonnellesDTO(data=request.data)
+        valiny = FamilleDto(data=request.data)
         if not valiny.is_valid():
             errors_list = []
             for field, field_errors in valiny.errors.items():

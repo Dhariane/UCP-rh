@@ -48,9 +48,13 @@
                     -insertPhotos()
                 ----transactionnel
                     
-
-
-
+table 
+famille ("id","nomPere","prenomPere","nomMere","prenomMere","nomConjoint","prenomConjoint","nombreEnfant","personnelle") --Ok
+diplome(idDiplome,nom,photo,dpersonnelle,etablissement,dateObtention)
+formation(idpersonnelle,titre,organisme,date_debut, date_fin,attestation(photo ou fichier))
+Experiences(idpersonnelle,entreprise,poste,datedebut, datefin,description)
+HistoriquePoste(idpersonnelle,poste,entite / société,datedebut,datefin,description)
+Enfant(idEnfant,nom,prenom,dateNaissance)
 
 
 

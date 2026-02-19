@@ -26,7 +26,6 @@ class PersonnelFullController(APIView):
                 sexe = Sexes.objects.get(id=data.get("sexe"))
                 etatcivil = EtatCivil.objects.get(id=data.get("etatCivil"))
                 relation = Relations.objects.get(id=data.get("relation"))
-                banque = Banques.objects.get(id=data.get("banque"))
                 poste = Postes.objects.get(id=data.get("poste"))
 
                 # ----- Créer Agence -----
@@ -36,6 +35,9 @@ class PersonnelFullController(APIView):
 
                 agence = AgenceService.create({
                     "nom": agence_nom
+                })
+                banque = BanqueService.create({
+                    "nom": data.get("banque")
                 })
 
                 # ----- Coordonnées bancaires -----
@@ -54,7 +56,8 @@ class PersonnelFullController(APIView):
 
                 # ----- Propos -----
                 propos = ProposService.create({
-                    "nifStat": data.get("nifStat"),
+                    "nif": data.get("nif"),
+                    "stat": data.get("stat"),
                     "numeroCnaps": data.get("numeroCnaps"),
                     "tel": data.get("tel"),
                     "email": data.get("email"),
