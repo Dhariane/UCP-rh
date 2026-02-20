@@ -8,6 +8,7 @@ class FonctionService:
             nom=data['nom'],
             dateDebut=data['dateDebut'],
             dateFin=data['dateFin'],
+            financement=data['financement'],
             personnelle=data['personnelle'],
             service=data['service'],
             poste=data['poste']

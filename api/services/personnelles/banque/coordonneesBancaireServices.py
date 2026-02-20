@@ -1,41 +1,43 @@
-
 from api.models.banque.coordonneesBancaires import CoordonneesBancaires
-from api.dto.personnelles.banque.coordonneBancaireDto import CoordonneesBancairesDto
-from api.models.banque.agences import Agences
-from api.models.banque.banques import Banques
-
+import base64
+from django.core.files.base import ContentFile
 class CoordonneesBancaireServices:
-    @staticmethod
-    def create(data) -> CoordonneesBancaires:
-        return CoordonneesBancaires.objects.create(
-            agence=data['agence'],
-            banque=data['banque'],
-            rib=data['rib']
-        )
 
     @staticmethod
     def getAll():
         return CoordonneesBancaires.objects.all().order_by("id")
-    @staticmethod
-    def get(id):
-        return CoordonneesBancaires.objects.get(id=id)
+
     @staticmethod
     def getById(id: int) -> CoordonneesBancaires:
         return CoordonneesBancaires.objects.get(id=id)
+
     @staticmethod
-    def update(id: int, rib, banque, agence) -> CoordonneesBancaires:
-        coordonnees_bancaires = CoordonneesBancaires.objects.get(id=id)
-        coordonnees_bancaires.banque = banque
-        coordonnees_bancaires.agence = agence
-        coordonnees_bancaires.rib = rib
-        coordonnees_bancaires.save()
-        return CoordonneesBancairesDto(coordonnees_bancaires)
+    def create(data) -> CoordonneesBancaires:
+        # Gestion du Base64 pour photo_rib
+        rib_photo_data = data.get("photo_rib")
+        file_rib = None
+        
+        if rib_photo_data and isinstance(rib_photo_data, str) and ";base64," in rib_photo_data:
+            format, imgstr = rib_photo_data.split(';base64,')
+            ext = format.split('/')[-1]
+            file_name = f"rib_{data.get('rib')[:10]}.{ext}" # On utilise les 10 premiers car. du RIB
+            file_rib = ContentFile(base64.b64decode(imgstr), name=file_name)
+        elif rib_photo_data:
+            file_rib = rib_photo_data
+
+        return CoordonneesBancaires.objects.create(
+            rib=data.get('rib'),
+            banque=data.get('banque'),
+            agence=data.get('agence'),
+            photoRib=file_rib
+        )
     @staticmethod
-    def getByIdDto(id: int) -> CoordonneesBancairesDto:
-        coordonnees_bancaires = CoordonneesBancaireServices.getById(id)    
-        return CoordonneesBancairesDto(coordonnees_bancaires)
-    @staticmethod
-    def getAllDto():    
-        coordonnees_bancaires = CoordonneesBancaireServices.getAll()
-        return CoordonneesBancairesDto(coordonnees_bancaires, many=True)
-    
+    def update(id: int, data) -> CoordonneesBancaires:
+        instance = CoordonneesBancaires.objects.get(id=id)
+        
+        # Mise à jour dynamique des champs fournis
+        for field, value in data.items():
+            setattr(instance, field, value)
+            
+        instance.save()
+        return instance

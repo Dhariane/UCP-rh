@@ -13,7 +13,8 @@ class ProposDTO(serializers.ModelSerializer):
         model = Propos
         fields = [
             "id",
-            "nifStat",
+            "nif",
+            "stat",
             "numeroCnaps",
             "tel",
             "email",

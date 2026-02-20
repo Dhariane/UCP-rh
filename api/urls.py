@@ -10,7 +10,6 @@ urlpatterns = [
     path("etat-civils/<int:id>/", EtatCivilController.as_view(), name="etatcivil-detail"),
     path('propos', ProposController.as_view(), name='propos'),
     path("propos/<int:id>/", ProposController.as_view(), name="propos-detail"),
-
     path("sexes", SexeController.as_view(), name="sexes"),
     path("sexes/<int:id>/", SexeController.as_view(), name="sexe-detail"),
     path("services", ServiceController.as_view(), name="services"),
@@ -37,5 +36,18 @@ urlpatterns = [
     path("photos/<int:id>/", PhotosController.as_view(), name="photo-detail"),
     path("superieurs",SuperieurController.as_view(), name="superieures"),
     path("fullpersonnelles",PersonnelFullController.as_view(),name='fullpersonnelles'),
-     path('api/fullpersonnelles/<int:id>/', PersonnelFullController.as_view(), name='full-personnel-detail'),
+    path("familles",FamilleController.as_view(),name="familles"),
+    path("familles/<int:id>/",FamilleController.as_view,name="famille-detail"),
+    path('api/fullpersonnelles/<int:id>/', PersonnelFullController.as_view(), name='full-personnel-detail'),
+    path('experiences', ExperienceController.as_view(), name='experience'),
+    path('experiences/<int:id>/', ExperienceController.as_view(), name='experience-detail'),
+    path('diplomes', DiplomeController.as_view(), name='diplome'),
+    path('diplomes/<int:id>/', DiplomeController.as_view(), name='diplome-detail'),
+    path('formations', FormationController.as_view(), name='formation'),
+    path('formations/<int:id>/', FormationController.as_view(), name='formation-detail'),
+    path('historiques-postes', HistoriqueDuPosteController.as_view(), name='historique'),
+    path('historiques-postes/<int:id>/', HistoriqueDuPosteController.as_view(), name='historique-detail'),
+    path('enfants', EnfantController.as_view(), name='enfant'),
+    path('enfants/<int:id>/', EnfantController.as_view(), name='enfant-detail'),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

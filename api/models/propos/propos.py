@@ -4,7 +4,12 @@ from django.db import models
 
 class Propos(models.Model):
 
-    nifStat = models.CharField(
+    nif = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True
+    )
+    stat = models.CharField(
         max_length=50,
         null=True,
         blank=True

@@ -1,7 +1,8 @@
 from .banque import CoordonneesBancaireServices,AgenceService,BanqueService
 from .contact import RelationService,ContactUrgencesService
 from .fonction import FonctionService,PosteService,SuperieurService,ServiceService
-from .propos import CinsService,EtatCivilService,PersonnellesService,PhotosService,ProposService,SexeService
+from .propos import CinsService,EtatCivilService,PhotosService,ProposService,SexeService
+from .propos.personnellesService import PersonnelleServices
 
 __all__ = [
     "EtatCivilService",
@@ -17,7 +18,7 @@ __all__ = [
     "ServiceService",
     "CinsController",
     "CinsService",
-    "PersonnellesService",
+    "PersonnelleServices",
     "PhotosService",
     "ProposService",
     "SexeService"

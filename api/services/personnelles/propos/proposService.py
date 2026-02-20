@@ -5,14 +5,14 @@ class ProposService:
     @staticmethod
     def create(data) -> Propos:
         return Propos.objects.create(
-            nifStat=data["nifStat"],
+            nif=data["nif"],
+            stat=data["stat"],
             numeroCnaps=data["numeroCnaps"],
             tel=data["tel"],
             email=data["email"],              
             nombreEnfant=data["nombreEnfant"],
             etatCivil=data["etatCivil"]
         )
-
 
     @staticmethod
     def getAll():

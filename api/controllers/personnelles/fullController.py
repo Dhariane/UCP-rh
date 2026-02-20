@@ -6,13 +6,17 @@ from rest_framework import status
 
 from api.dto import PersonnellesDTO
 from api.services.personnelles.propos import (
-    CinsService, PersonnellesService, EtatCivilService,
-    PhotosService, ProposService,SexeService)
+    CinsService, PersonnelleServices, EtatCivilService,
+    PhotosService, ProposService,SexeService,EnfantService,FamilleService)
 from api.services.personnelles.fonction import FonctionService, PosteService, ServiceService, SuperieurService
 from api.services.personnelles.contact import ContactUrgencesService, RelationService
 from api.services.personnelles.banque import CoordonneesBancaireServices, AgenceService, BanqueService
+from api.services.personnelles.diplome.diplomeService import DiplomeService
+from api.services.personnelles.diplome.experienceService import ExperienceService
+from api.services.personnelles.diplome.formationService import FormationService
+from api.services.personnelles.diplome.historiqueDuPosteService import HistoriqueDuPosteService
 
-from api.models import EtatCivil,Sexes,Relations,Banques,Postes
+from api.models import EtatCivil,Sexes,Relations,Postes
 class PersonnelFullController(APIView):
     renderer_classes = [JSONRenderer]
 
@@ -26,7 +30,6 @@ class PersonnelFullController(APIView):
                 sexe = Sexes.objects.get(id=data.get("sexe"))
                 etatcivil = EtatCivil.objects.get(id=data.get("etatCivil"))
                 relation = Relations.objects.get(id=data.get("relation"))
-                banque = Banques.objects.get(id=data.get("banque"))
                 poste = Postes.objects.get(id=data.get("poste"))
 
                 # ----- Créer Agence -----
@@ -37,12 +40,16 @@ class PersonnelFullController(APIView):
                 agence = AgenceService.create({
                     "nom": agence_nom
                 })
+                banque = BanqueService.create({
+                    "nom": data.get("banque")
+                })
 
                 # ----- Coordonnées bancaires -----
                 coord = CoordonneesBancaireServices.create({
                     "rib": data.get("rib"),
                     "banque": banque,
-                    "agence": agence
+                    "agence": agence,
+                    "photoRib":data.get("photoRib")
                 })
 
                 # ----- CIN -----
@@ -54,7 +61,8 @@ class PersonnelFullController(APIView):
 
                 # ----- Propos -----
                 propos = ProposService.create({
-                    "nifStat": data.get("nifStat"),
+                    "nif": data.get("nif"),
+                    "stat": data.get("stat"),
                     "numeroCnaps": data.get("numeroCnaps"),
                     "tel": data.get("tel"),
                     "email": data.get("email"),
@@ -63,14 +71,18 @@ class PersonnelFullController(APIView):
                 })
 
                 # ----- Personnelles -----
-                personnelles = PersonnellesService.create({
+                personnelles = PersonnelleServices.create({
                     "nom": data.get("nom"),
                     "prenom": data.get("prenom"),
                     "dateNaissance": data.get("dateNaissance"),
                     "lieuNaissance": data.get("lieuNaissance"),
-                    "sexe": sexe,      # ID de l'objet Sexes
-                    "propos": propos,  # ID de l'objet Propos
-                    "cin": cin         # ID de l'objet Cins
+                    "adresse":data.get("adressePerso"),
+                    "emailPerso":data.get('emailPerso'),
+                    "telPerso":data.get("telPerso"),
+                    "photoResidence":data.get("photoResidence"),
+                    "sexe": sexe,      
+                    "propos": propos,  
+                    "cin": cin         
                 })
                 
 
@@ -111,7 +123,69 @@ class PersonnelFullController(APIView):
                     "poste": poste,
                     "service": service
                 })
+                for exp in data.get("experiences", []):
+                    ExperienceService.create({
+                        "entreprise": exp.get("entreprise"),
+                        "poste": exp.get("posteExp"),
+                        "datedebut": exp.get("datedebut"),
+                        "datefin": exp.get("datefin"),
+                        "description": exp.get("description"),
+                        "personnelle": personnelles.id
+                    })
 
+                # Diplômes
+                for dip in data.get("diplomes", []):
+                    DiplomeService.create({
+                        "nom": dip.get("Diplome"),
+                        "etablissement": dip.get("etablissement"),
+                        "dateObtention": dip.get("dateObtention"),
+                        "photo": dip.get("photo"),
+                        "personnelle": personnelles.id
+                    })
+
+                # Formations
+                for form in data.get("formations", []):
+                    FormationService.create({
+                        "titre": form.get("titreFormation"),
+                        "organisme": form.get("organisme"),
+                        "datedebut": form.get("datedebutFor"),
+                        "datefin": form.get("datefinFor"),
+                        "attestation": form.get("attestation"),
+                        "personnelle": personnelles.id
+                    })
+
+                # Historique du Poste
+                for hist in data.get("historiques", []):
+                    HistoriqueDuPosteService.create({
+                        "poste": hist.get("posteHis"),
+                        "société": hist.get("société"),
+                        "datedebut": hist.get("datedebutHis"),
+                        "datefin": hist.get("datefinHis"),
+                        "description": hist.get("description"),
+                        "personnelle": personnelles.id
+                    })
+
+                # Enfants
+                for enf in data.get("enfants", []):
+                    EnfantService.create({
+                        "nom": enf.get("nomEnfant"),
+                        "prenom": enf.get("prenomEnfant"),
+                        "dateNaissance": enf.get("dateNaissanceEnfant"),
+                        "lieuNaissance": enf.get("lieuNaissanceEnfant"),
+                        "personnelle": personnelles.id
+                    })
+                for fam in data.get("familles", []):
+                    FamilleService.create({
+                        "nomPere": fam.get("nomPere"),
+                        "prenomPere": fam.get("prenomPere"),
+                        "nomMere": fam.get("nomMere"),
+                        "prenomMere": fam.get("prenomMere"),
+                        "nomConjoint": fam.get("nomConjoint"),
+                        "nombreEnfant": fam.get("nombreEnfantper"),
+                        "prenomConjoint": fam.get("prenomConjoint"),
+                        "personnelle": personnelles
+                    })
+                
                 return Response({"status": "success"}, status=201)
 
         except Exception as e:
