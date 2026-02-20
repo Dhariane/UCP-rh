@@ -77,10 +77,12 @@ class PersonnelFullController(APIView):
                     "dateNaissance": data.get("dateNaissance"),
                     "lieuNaissance": data.get("lieuNaissance"),
                     "adresse":data.get("adressePerso"),
+                    "emailPerso":data.get('emailPerso'),
+                    "telPerso":data.get("telPerso"),
                     "photoResidence":data.get("photoResidence"),
-                    "sexe": sexe,      # ID de l'objet Sexes
-                    "propos": propos,  # ID de l'objet Propos
-                    "cin": cin         # ID de l'objet Cins
+                    "sexe": sexe,      
+                    "propos": propos,  
+                    "cin": cin         
                 })
                 
 
@@ -124,7 +126,7 @@ class PersonnelFullController(APIView):
                 for exp in data.get("experiences", []):
                     ExperienceService.create({
                         "entreprise": exp.get("entreprise"),
-                        "poste": exp.get("poste"),
+                        "poste": exp.get("posteExp"),
                         "datedebut": exp.get("datedebut"),
                         "datefin": exp.get("datefin"),
                         "description": exp.get("description"),
@@ -155,7 +157,7 @@ class PersonnelFullController(APIView):
                 # Historique du Poste
                 for hist in data.get("historiques", []):
                     HistoriqueDuPosteService.create({
-                        "poste": hist.get("poste"),
+                        "poste": hist.get("posteHis"),
                         "société": hist.get("société"),
                         "datedebut": hist.get("datedebutHis"),
                         "datefin": hist.get("datefinHis"),

@@ -14,6 +14,16 @@ class Personnelles(BaseNom):
     cin = models.ForeignKey(Cins, on_delete=models.SET_NULL, null=True, blank=True, related_name="personnelles")
     adresse = models.CharField(max_length=255, null=True, blank=True)
     photoResidence = models.ImageField(upload_to='residences/', null=True, blank=True)
+    telPerso = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True
+    )
+    emailPerso = models.EmailField(
+        max_length=100,
+        null=True,
+        blank=True
+    )
 
     def __str__(self):
         return f"{self.prenom} {self.nom}"

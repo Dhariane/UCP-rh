@@ -31,10 +31,12 @@ class PersonnelleServices:
             prenom=data.get('prenom'),
             dateNaissance=data.get('dateNaissance'),
             lieuNaissance=data.get('lieuNaissance'),
+            emailPerso=data.get('emailPerso'),
+            telPerso=data.get("telPerso"),
             sexe=data.get('sexe'),
             propos=data.get('propos'),
             cin=data.get('cin'),
-            adresse=data.get('adresse'), # Champ adresse que vous avez ajouté
+            adresse=data.get('adresse'), 
             photoResidence=file_photo
         )
 
