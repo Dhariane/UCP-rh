@@ -16,7 +16,11 @@ from .personnelles.fonction.ServiceController import ServiceController
 from .personnelles.fonction.superieurController import SuperieurController
 from .personnelles.fullController import PersonnelFullController
 from .personnelles.propos.familleController import FamilleController
-
+from .personnelles.diplome.experienceController import ExperienceController
+from .personnelles.diplome.diplomeController import DiplomeController
+from .personnelles.diplome.formationController import FormationController
+from .personnelles.diplome.historiqueDuPosteController import HistoriqueDuPosteController
+from .personnelles.propos.enfantController import EnfantController
 __all__ = [
     "EtatCivilController",
     "ProposController",
@@ -35,5 +39,10 @@ __all__ = [
     "SexeController",
     "PersonnelFullController",
     "LoginController",
-    "FamilleController"
+    "FamilleController",
+    "ExperienceController",
+    "DiplomeController",
+    "FormationController",
+    "HistoriqueDuPosteController",
+    "EnfantController"
 ]

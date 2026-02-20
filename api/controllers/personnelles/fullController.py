@@ -7,12 +7,16 @@ from rest_framework import status
 from api.dto import PersonnellesDTO
 from api.services.personnelles.propos import (
     CinsService, PersonnellesService, EtatCivilService,
-    PhotosService, ProposService,SexeService)
+    PhotosService, ProposService,SexeService,EnfantService,FamilleService)
 from api.services.personnelles.fonction import FonctionService, PosteService, ServiceService, SuperieurService
 from api.services.personnelles.contact import ContactUrgencesService, RelationService
 from api.services.personnelles.banque import CoordonneesBancaireServices, AgenceService, BanqueService
+from api.services.personnelles.diplome.diplomeService import DiplomeService
+from api.services.personnelles.diplome.experienceService import ExperienceService
+from api.services.personnelles.diplome.formationService import FormationService
+from api.services.personnelles.diplome.historiqueDuPosteService import HistoriqueDuPosteService
 
-from api.models import EtatCivil,Sexes,Relations,Banques,Postes
+from api.models import EtatCivil,Sexes,Relations,Postes
 class PersonnelFullController(APIView):
     renderer_classes = [JSONRenderer]
 
@@ -114,7 +118,69 @@ class PersonnelFullController(APIView):
                     "poste": poste,
                     "service": service
                 })
+                for exp in data.get("experiences", []):
+                    ExperienceService.create({
+                        "entreprise": exp.get("entreprise"),
+                        "poste": exp.get("poste"),
+                        "datedebut": exp.get("datedebut"),
+                        "datefin": exp.get("datefin"),
+                        "description": exp.get("description"),
+                        "personnelle": personnelles.id
+                    })
 
+                # Diplômes
+                for dip in data.get("diplomes", []):
+                    DiplomeService.create({
+                        "nom": dip.get("Diplome"),
+                        "etablissement": dip.get("etablissement"),
+                        "dateObtention": dip.get("dateObtention"),
+                        "photo": dip.get("photo"),
+                        "personnelle": personnelles.id
+                    })
+
+                # Formations
+                for form in data.get("formations", []):
+                    FormationService.create({
+                        "titre": form.get("titreFormation"),
+                        "organisme": form.get("organisme"),
+                        "datedebut": form.get("datedebutFor"),
+                        "datefin": form.get("datefinFor"),
+                        "attestation": form.get("attestation"),
+                        "personnelle": personnelles.id
+                    })
+
+                # Historique du Poste
+                for hist in data.get("historiques", []):
+                    HistoriqueDuPosteService.create({
+                        "poste": hist.get("poste"),
+                        "société": hist.get("société"),
+                        "datedebut": hist.get("datedebutHis"),
+                        "datefin": hist.get("datefinHis"),
+                        "description": hist.get("description"),
+                        "personnelle": personnelles.id
+                    })
+
+                # Enfants
+                for enf in data.get("enfants", []):
+                    EnfantService.create({
+                        "nom": enf.get("nomEnfant"),
+                        "prenom": enf.get("prenomEnfant"),
+                        "dateNaissance": enf.get("dateNaissanceEnfant"),
+                        "lieuNaissance": enf.get("lieuNaissanceEnfant"),
+                        "personnelle": personnelles.id
+                    })
+                for fam in data.get("familles", []):
+                    FamilleService.create({
+                        "nomPere": fam.get("nomPere"),
+                        "prenomPere": fam.get("prenomPere"),
+                        "nomMere": fam.get("nomMere"),
+                        "prenomMere": fam.get("prenomMere"),
+                        "nomConjoint": fam.get("nomConjoint"),
+                        "nombreEnfant": fam.get("nombreEnfantper"),
+                        "prenomConjoint": fam.get("prenomConjoint"),
+                        "personnelle": personnelles
+                    })
+                
                 return Response({"status": "success"}, status=201)
 
         except Exception as e:

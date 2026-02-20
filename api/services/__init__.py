@@ -13,7 +13,11 @@ from .personnelles.propos import personnellesService
 from .personnelles.propos import photosService
 from .personnelles.propos import proposService
 from .personnelles.propos import sexeService
-
+from .personnelles.diplome import experienceService
+from .personnelles.diplome import diplomeService
+from .personnelles.diplome import formationService
+from .personnelles.diplome import historiqueDuPosteService
+from .personnelles.propos import enfantService
 __all__ = [
     "personnellesService",
     "sexeService",
@@ -29,6 +33,11 @@ __all__ = [
     "proposService",
     "etatCivilService",
     "ServiceService",
-    "coordonneesBancaireServices"
+    "coordonneesBancaireServices",
+    "experienceService",
+    "diplomeService",
+    "formationService",
+    "historiqueDuPosteService",
+    "enfantService"
     
 ]

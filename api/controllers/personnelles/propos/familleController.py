@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from api.models import Famille
-from api.services.personnelles.propos.FamilleService import FamilleService
+from api.services.personnelles.propos.familleService import FamilleService
 from api.dto.personnelles.propos.familleDto import FamilleDto
 
 class FamilleController(APIView):

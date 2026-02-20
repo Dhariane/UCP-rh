@@ -13,10 +13,10 @@
                 -CoordonneesBancaires(idCoordonnees,idBanque,idAgence,rib)--Naly --OK
             ---propos
                 -EtatCivils(idEtatCivil,nom) --- Naly --1 --Ok
-                -Propos(idPropo,nifStat,numerosCnaps,idEtatCivil,tel,email,nombreEnfant) --Dode
+                -Propos(idPropo,nifStat,numerosCnaps,idEtatCivil,tel,email,nombreEnfant,adresse,photoResidence) --Dode
                 -Cins(idCin,numeroCin,dateCin,lieuCin) --Naly -- 1 --Ok
                 -Sexes(idSexe,nom) --Naly -- 1 --Ok
-                -Personnelles(idPersonnelle,nom,prenom,dateNaissance,lieuNaissance,idSexe) --Naly --3 --ok
+                -Personnelles(idPersonnelle,nom,prenom,dateNaissance,lieuNaissance,idSexe,adresse,photoResidence) --Naly --3 --ok
                 -Photos(idPhoto,idPersonnelle,nom,data)-- Naly --OK
             ---contact
                 -Relations(idRelation,nom,grade) --Naly -- 1 --Ok
@@ -50,12 +50,10 @@
                     
 table 
 famille ("id","nomPere","prenomPere","nomMere","prenomMere","nomConjoint","prenomConjoint","nombreEnfant","personnelle") --Ok
-diplome(idDiplome,nom,photo,dpersonnelle,etablissement,dateObtention)
-formation(idpersonnelle,titre,organisme,date_debut, date_fin,attestation(photo ou fichier))
-Experiences(idpersonnelle,entreprise,poste,datedebut, datefin,description)
-HistoriquePoste(idpersonnelle,poste,entite / société,datedebut,datefin,description)
-Enfant(idEnfant,nom,prenom,dateNaissance)
-
-
+diplome(idDiplome,nom,photo,dpersonnelle,etablissement,dateObtention)----ok
+formation(idpersonnelle,titre,organisme,datedebut, datefin,attestation)---ok
+Experiences(idpersonnelle,entreprise,poste,datedebut, datefin,description) ------ok
+HistoriquePoste(idpersonnelle,poste,entite / société,datedebut,datefin,description)------- ok
+Enfant(idEnfant,nom,prenom,dateNaissance) ----- OK
 
 
