@@ -12,6 +12,8 @@ class Personnelles(BaseNom):
     sexe = models.ForeignKey(Sexes, on_delete=models.PROTECT, related_name="personnelles")
     propos = models.ForeignKey(Propos, on_delete=models.SET_NULL, null=True, blank=True, related_name="personnelles")
     cin = models.ForeignKey(Cins, on_delete=models.SET_NULL, null=True, blank=True, related_name="personnelles")
+    adresse = models.CharField(max_length=255, null=True, blank=True)
+    photoResidence = models.ImageField(upload_to='residences/', null=True, blank=True)
 
     def __str__(self):
         return f"{self.prenom} {self.nom}"

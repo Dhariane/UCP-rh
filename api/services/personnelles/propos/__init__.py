@@ -1,6 +1,6 @@
 from .CinsService import CinsService
 from .etatCivilService import EtatCivilService
-from .personnellesService import PersonnellesService
+from .personnellesService import PersonnelleServices
 from .photosService import PhotosService
 from .proposService import ProposService
 from .sexeService import SexeService

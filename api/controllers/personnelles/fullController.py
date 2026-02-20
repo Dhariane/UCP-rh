@@ -6,7 +6,7 @@ from rest_framework import status
 
 from api.dto import PersonnellesDTO
 from api.services.personnelles.propos import (
-    CinsService, PersonnellesService, EtatCivilService,
+    CinsService, PersonnelleServices, EtatCivilService,
     PhotosService, ProposService,SexeService,EnfantService,FamilleService)
 from api.services.personnelles.fonction import FonctionService, PosteService, ServiceService, SuperieurService
 from api.services.personnelles.contact import ContactUrgencesService, RelationService
@@ -48,7 +48,8 @@ class PersonnelFullController(APIView):
                 coord = CoordonneesBancaireServices.create({
                     "rib": data.get("rib"),
                     "banque": banque,
-                    "agence": agence
+                    "agence": agence,
+                    "photoRib":data.get("photoRib")
                 })
 
                 # ----- CIN -----
@@ -70,11 +71,13 @@ class PersonnelFullController(APIView):
                 })
 
                 # ----- Personnelles -----
-                personnelles = PersonnellesService.create({
+                personnelles = PersonnelleServices.create({
                     "nom": data.get("nom"),
                     "prenom": data.get("prenom"),
                     "dateNaissance": data.get("dateNaissance"),
                     "lieuNaissance": data.get("lieuNaissance"),
+                    "adresse":data.get("adressePerso"),
+                    "photoResidence":data.get("photoResidence"),
                     "sexe": sexe,      # ID de l'objet Sexes
                     "propos": propos,  # ID de l'objet Propos
                     "cin": cin         # ID de l'objet Cins

@@ -26,5 +26,6 @@ class PersonnellesDTO(serializers.ModelSerializer):
             "lieuNaissance",
             "sexe",
             "propos",
-            "cin"
+            "cin",
+            "photoResidence"
         ]
