@@ -2,6 +2,7 @@ from django.db import models
 from api.models.propos.personnelles import Personnelles
 
 class Experience(models.Model):
+    nombreExperience=models.IntegerField()
     entreprise= models.CharField(
         max_length=100,
         null=False,
