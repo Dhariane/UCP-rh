@@ -8,7 +8,10 @@ from api.models.fonction.superieurs import Superieur
 class Fonctions(models.Model):
     nom = models.CharField()
     dateDebut = models.DateField()
-    dateFin = models.DateField(null=True, blank=True)
+    dateFin = models.DateField(
+        null=True,
+        blank=True
+    )
     financement = models.CharField()
 
     personnelle = models.ForeignKey(

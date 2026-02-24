@@ -4,4 +4,9 @@ from api.models.propos.photos import Photos
 class PhotosDto(serializers.ModelSerializer):
     class Meta:
         model = Photos
-        fields = ["id", "nom", "data", "personnelle"]
+        fields = [
+            "id",
+            "nom",
+            "data",
+            "personnelle"
+        ]

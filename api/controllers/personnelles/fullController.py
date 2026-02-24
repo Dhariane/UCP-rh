@@ -99,13 +99,14 @@ class PersonnelFullController(APIView):
 
 
                 # ----- Contact d'urgence -----
-                contactU = ContactUrgencesService.create({
-                    "nom": data.get("contactNom"),
-                    "telephone": data.get("telephone"),
-                    "adresse": data.get("adresse"),
-                    "personnelle": personnelles,
-                    "relation": relation
-                })
+                for contact in data.get("contactsUrgence", []):
+                    ContactUrgencesService.create({
+                        "nom": contact.get("contactNom"),
+                        "telephone": contact.get("telephone"),
+                        "adresse": contact.get("adresse"),
+                        "personnelle": personnelles,
+                        "relation": relation
+                    })
 
                 service = ServiceService.create({
                     "nom": data.get("service")

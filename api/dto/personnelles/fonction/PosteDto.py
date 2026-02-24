@@ -4,4 +4,8 @@ from api.models.fonction.poste import Postes
 class PosteDTO(serializers.ModelSerializer):
     class Meta:
         model = Postes
-        fields = ["id", "nom", "grade"]
+        fields = [
+            "id",
+            "nom",
+            "grade"
+        ]
