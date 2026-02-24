@@ -34,3 +34,7 @@ pip install django
 
 #Pour installer djangoRest
 pip install djangorestframework
+
+pip install django-cors-headers
+
+pip install Pillow
