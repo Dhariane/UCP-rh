@@ -20,183 +20,159 @@ from api.models import EtatCivil,Sexes,Relations,Postes,Personnelles
 
 class PersonnelFullController(APIView):
     renderer_classes = [JSONRenderer]
-
     def post(self, request):
         data = request.data
-        print("DATA POSTMAN :", data)
+        # Debug pour voir ce qui arrive réellement
+        print("DATA REÇUE :", data)
 
         try:
             with transaction.atomic():
-                # ----- ForeignKeys existantes -----
+                # 1. Récupération des objets liés (vérification existence)
                 sexe = Sexes.objects.get(id=data.get("sexe"))
                 etatcivil = EtatCivil.objects.get(id=data.get("etatCivil"))
-                relation = Relations.objects.get(id=data.get("relation"))
                 poste = Postes.objects.get(id=data.get("poste"))
 
-                # ----- Créer Agence -----
-                agence_nom = data.get("agence")
-                if not agence_nom:
-                    return Response({"error": "Clé 'agence' manquante dans le JSON"}, status=400)
-
+                # 2. Banque et Agence
+                banque = BanqueService.create({"nom": data.get("banque")})
                 agence = AgenceService.create({
-                    "nom": agence_nom
-                })
-                banque = BanqueService.create({
-                    "nom": data.get("banque")
+                    "nom": data.get("agence"),
+                    "ville": data.get("villeAgence")
                 })
 
-                # ----- Coordonnées bancaires -----
+                # 3. Coordonnées bancaires
                 coord = CoordonneesBancaireServices.create({
                     "rib": data.get("rib"),
                     "banque": banque,
                     "agence": agence,
-                    "photoRib":data.get("photoRib")
+                    "photoRib": data.get("photoRib")
                 })
 
-                # ----- CIN -----
+                # 4. CIN
                 cin = CinsService.create({
-                    "numeroCin": data.get("numeroCin"),
-                    "dateCin": data.get("dateCin"),
-                    "lieuCin": data.get("lieuCin")
+                    "numeroCin": data.get("cin"),
+                    "dateCin": data.get("dateDelivranceCin"),
+                    "lieuCin": data.get("lieuDelivranceCin")
                 })
 
-                # ----- Propos -----
+                # 5. Propos
                 propos = ProposService.create({
                     "nif": data.get("nif"),
                     "stat": data.get("stat"),
-                    "numeroCnaps": data.get("numeroCnaps"),
-                    "tel": data.get("tel"),
-                    "email": data.get("email"),
-                    "nombreEnfant": data.get("nombreEnfant"),
+                    "numeroCnaps": data.get("cnaps"),
+                    "tel": data.get("contactPersonnel"),
+                    "email": data.get("emailProfessionnel"),
+                    "nombreEnfant": data.get("nombreEnfants") or 0,
                     "etatCivil": etatcivil
                 })
 
-                # ----- Personnelles -----
+                # 6. Personnelles
                 personnelles = PersonnelleServices.create({
                     "nom": data.get("nom"),
-                    "prenom": data.get("prenom"),
+                    "prenom": data.get("prenoms"),
                     "dateNaissance": data.get("dateNaissance"),
                     "lieuNaissance": data.get("lieuNaissance"),
-                    "adresse":data.get("adressePerso"),
-                    "emailPerso":data.get('emailPerso'),
-                    "telPerso":data.get("telPerso"),
-                    "photoResidence":data.get("photoResidence"),
-                    "sexe": sexe,      
-                    "propos": propos,  
-                    "cin": cin         
+                    "adresse": data.get("adresse"),
+                    "emailPerso": data.get('emailPersonnel'),
+                    "telPerso": data.get("contactPersonnel"),
+                    "sexe": sexe,
+                    "propos": propos,
+                    "cin": cin
                 })
-                
 
-                # ----- Photo -----
-                photo = PhotosService.create({
-                    
-                    "nom": data.get("nomFichierReal"),
-                    "data": data.get("photoNom"),
-                    "personnelle": personnelles.id
-                    
-                })
-                # Dans ton traitement du POST
-
-
-                # ----- Contact d'urgence -----
-                for contact in data.get("contactsUrgence", []):
+                # 7. Contacts d'urgence (Traitement individuel car le JSON est plat)
+                # Contact 1
+                if data.get("personne1"):
+                    rel1 = Relations.objects.get(id=data.get("relation1"))
                     ContactUrgencesService.create({
-                        "nom": contact.get("contactNom"),
-                        "telephone": contact.get("telephone"),
-                        "adresse": contact.get("adresse"),
+                        "nom": data.get("personne1"),
+                        "telephone": data.get("telephone1"),
+                        "adresse": data.get("adresse1"),
                         "personnelle": personnelles,
-                        "relation": relation
+                        "relation": rel1
+                    })
+                
+                # Contact 2
+                if data.get("personne2"):
+                    rel2 = Relations.objects.get(id=data.get("relation2"))
+                    ContactUrgencesService.create({
+                        "nom": data.get("personne2"),
+                        "telephone": data.get("telephone2"),
+                        "adresse": data.get("adresse2"),
+                        "personnelle": personnelles,
+                        "relation": rel2
                     })
 
-                service = ServiceService.create({
-                    "nom": data.get("service")
-                })
-                
+                # 8. Fonction
+                service = ServiceService.create({"nom": data.get("service")})
                 superieur = None
                 if data.get("superieur"):
-                    superieur = SuperieurService.create({
-                        "nom": data.get("superieur")
-                    })
+                    superieur = SuperieurService.create({"nom": data.get("superieur")})
 
-                # ----- Fonction -----
-                fonction = FonctionService.create({
+                FonctionService.create({
                     "nom": data.get("fonction"),
-                    "dateDebut": data.get("dateDebut"),
-                    "dateFin": data.get("dateFin"),
+                    "dateDebut": data.get("dateEmbauche"),
+                    "dateFin": data.get("dateSortie") if data.get("dateSortie") else None,
                     "financement":data.get("financement"),
                     "personnelle": personnelles,
                     "superieur": superieur,
                     "poste": poste,
                     "service": service,
-                    
                 })
-                for exp in data.get("experiences", []):
-                    ExperienceService.create({
-                        "nombreExperience":exp.get("nbrExp"),
-                        "entreprise": exp.get("entreprise"),
-                        "poste": exp.get("posteExp"),
-                        "datedebut": exp.get("datedebut"),
-                        "datefin": exp.get("datefin"),
-                        "description": exp.get("description"),
-                        "personnelle": personnelles.id
-                    })
 
-                # Diplômes
-                for dip in data.get("diplomes", []):
-                    DiplomeService.create({
-                        "nom": dip.get("Diplome"),
-                        "etablissement": dip.get("etablissement"),
-                        "dateObtention": dip.get("dateObtention"),
-                        "photo": dip.get("photo"),
-                        "personnelle": personnelles.id
-                    })
-
-                # Formations
-                for form in data.get("formations", []):
-                    FormationService.create({
-                        "titre": form.get("titreFormation"),
-                        "organisme": form.get("organisme"),
-                        "datedebut": form.get("datedebutFor"),
-                        "datefin": form.get("datefinFor"),
-                        "attestation": form.get("attestation"),
-                        "personnelle": personnelles.id
-                    })
-
-                # Historique du Poste
-                for hist in data.get("historiques", []):
-                    HistoriqueDuPosteService.create({
-                        "poste": hist.get("posteHis"),
-                        "société": hist.get("société"),
-                        "datedebut": hist.get("datedebutHis"),
-                        "datefin": hist.get("datefinHis"),
-                        "description": hist.get("description"),
-                        "personnelle": personnelles.id
-                    })
-
-                # Enfants
-                for enf in data.get("enfants", []):
-                    EnfantService.create({
-                        "nom": enf.get("nomEnfant"),
-                        "prenom": enf.get("prenomEnfant"),
-                        "dateNaissance": enf.get("dateNaissanceEnfant"),
-                        "lieuNaissance": enf.get("lieuNaissanceEnfant"),
-                        "personnelle": personnelles.id
-                    })
-                for fam in data.get("familles", []):
+                # 9. Famille (Données à plat dans le view)
+                if data.get("nomPere") or data.get("nomMere"):
                     FamilleService.create({
-                        "nomPere": fam.get("nomPere"),
-                        "prenomPere": fam.get("prenomPere"),
-                        "nomMere": fam.get("nomMere"),
-                        "prenomMere": fam.get("prenomMere"),
-                        "nomConjoint": fam.get("nomConjoint"),
-                        "prenomConjoint": fam.get("prenomConjoint"),
-                        "nombreEnfant": fam.get("nombreEnfantper"),
+                        "nomPere": data.get("nomPere"),
+                        "prenomPere": data.get("prenomPere"),
+                        "nomMere": data.get("nomMere"),
+                        "prenomMere": data.get("prenomMere"),
+                        "nomConjoint": data.get("nomConjoint"),
+                        "prenomConjoint": data.get("prenomConjoint"),
+                        "nombreEnfant": data.get("nombreEnfants") or 0,
                         "personnelle": personnelles
                     })
+
+                # ----- Expériences -----
+                                # ----- Expériences -----
+                for exp in data.get("experiences", []):
+                    if isinstance(exp, dict): # On vérifie que c'est un dictionnaire
+                        ExperienceService.create({
+                            "nombreExperience": exp.get("nbrExp"),
+                            "entreprise": exp.get("entreprise"),
+                            "poste": exp.get("posteExp"),
+                            "datedebut": exp.get("datedebut"),
+                            "datefin": exp.get("datefin"),
+                            "description": exp.get("description"),
+                            "personnelle": personnelles.id
+                        })
+
+                    # ----- Diplômes -----
+                    for dip in data.get("diplomes", []):
+                        if isinstance(dip, dict):
+                            DiplomeService.create({
+                                "nom": dip.get("Diplome"),
+                                "etablissement": dip.get("etablissement"),
+                                "dateObtention": dip.get("dateObtention"),
+                                "photo": dip.get("photo"),
+                                "personnelle": personnelles.id
+                            })
+
+                # ----- Formations -----
+                for form in data.get("formations", []):
+                    if isinstance(form, dict):
+                        FormationService.create({
+                            "titre": form.get("titreFormation"),
+                            "organisme": form.get("organisme"),
+                            "datedebut": form.get("datedebutFor"),
+                            "datefin": form.get("datefinFor"),
+                            "attestation": form.get("attestation"),
+                            "personnelle": personnelles.id
+                })
                 
                 return Response({"status": "success"}, status=201)
 
         except Exception as e:
+            print("ERREUR SERVEUR :", str(e))
             return Response({"error": str(e)}, status=400)
 
     def get(self, request):
