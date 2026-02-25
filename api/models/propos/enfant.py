@@ -4,13 +4,19 @@ from api.models.propos.personnelles import Personnelles
 
 class Enfant(BaseNom):
     # Define fields for the Personnelles model here
-    prenom = models.CharField(max_length=200)
+    prenom = models.CharField(
+        max_length=200
+    )
     dateNaissance = models.DateField()
-    lieuNaissance = models.CharField(max_length=200)
+
+    lieuNaissance = models.CharField(
+        max_length=200
+    )
     personnelle = models.ForeignKey(
         Personnelles, 
         on_delete=models.PROTECT, 
-        related_name="Enfant")
+        related_name="Enfant"
+    )
 
     def __str__(self):
         return f"{self.prenom} {self.nom}"

@@ -7,7 +7,15 @@ class EnfantDTO(serializers.ModelSerializer):
 
     class Meta:
         model = Enfant
-        fields = ['id', 'nom', 'prenom', 'dateNaissance', 'lieuNaissance', 'personnelle', 'age']
+        fields = [
+            'id',
+            'nom',
+            'prenom',
+            'dateNaissance',
+            'lieuNaissance',
+            'personnelle',
+            'age'
+        ]
 
     def get_age(self, obj):
         # On récupère la date de naissance

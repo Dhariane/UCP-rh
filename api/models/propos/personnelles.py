@@ -6,14 +6,43 @@ from api.models.propos.propos import Propos
 
 class Personnelles(BaseNom):
     # Define fields for the Personnelles model here
-    prenom = models.CharField(max_length=200)
+    prenom = models.CharField(
+        max_length=200
+    )
+    
     dateNaissance = models.DateField()
-    lieuNaissance = models.CharField(max_length=200)
-    sexe = models.ForeignKey(Sexes, on_delete=models.PROTECT, related_name="personnelles")
-    propos = models.ForeignKey(Propos, on_delete=models.SET_NULL, null=True, blank=True, related_name="personnelles")
-    cin = models.ForeignKey(Cins, on_delete=models.SET_NULL, null=True, blank=True, related_name="personnelles")
-    adresse = models.CharField(max_length=255, null=True, blank=True)
-    photoResidence = models.ImageField(upload_to='residences/', null=True, blank=True)
+
+    lieuNaissance = models.CharField(
+        max_length=200
+    )
+    sexe = models.ForeignKey(
+        Sexes, 
+        on_delete=models.PROTECT,
+        related_name="personnelles"
+    )
+    propos = models.ForeignKey(
+        Propos,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True, 
+        related_name="personnelles"
+    )
+    cin = models.ForeignKey(
+        Cins,on_delete=models.SET_NULL,
+        null=True, 
+        blank=True,
+        related_name="personnelles"
+    )
+    adresse = models.CharField(
+        max_length=255, 
+        null=True, 
+        blank=True
+    )
+    photoResidence = models.ImageField(
+        upload_to='residences/',
+        null=True,
+        blank=True
+    )
     telPerso = models.CharField(
         max_length=50,
         null=True,
