@@ -13,23 +13,12 @@ class CoordonneesBancaireServices:
 
     @staticmethod
     def create(data) -> CoordonneesBancaires:
-        # Gestion du Base64 pour photo_rib
-        rib_photo_data = data.get("photo_rib")
-        file_rib = None
-        
-        if rib_photo_data and isinstance(rib_photo_data, str) and ";base64," in rib_photo_data:
-            format, imgstr = rib_photo_data.split(';base64,')
-            ext = format.split('/')[-1]
-            file_name = f"rib_{data.get('rib')[:10]}.{ext}" # On utilise les 10 premiers car. du RIB
-            file_rib = ContentFile(base64.b64decode(imgstr), name=file_name)
-        elif rib_photo_data:
-            file_rib = rib_photo_data
-
+        # On donne directement le fichier au champ photoRib du modèle
         return CoordonneesBancaires.objects.create(
             rib=data.get('rib'),
             banque=data.get('banque'),
             agence=data.get('agence'),
-            photoRib=file_rib
+            photoRib=data.get('photo_rib') # L'objet fichier direct
         )
     @staticmethod
     def update(id: int, data) -> CoordonneesBancaires:
