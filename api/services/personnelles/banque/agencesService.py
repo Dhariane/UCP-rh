@@ -6,9 +6,10 @@ class AgenceService:
     @staticmethod
     def create(data) -> Agences:
         if isinstance(data, str):
-            data = {"nom": data}
-
-        return Agences.objects.create(nom=data["nom"])
+            data = {"nom": data, "ville": ""}
+        nom = data.get("nom", "")
+        ville = data.get("ville", "")
+        return Agences.objects.create(nom=nom, ville=ville)
 
 
     @staticmethod

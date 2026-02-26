@@ -6,6 +6,7 @@ class ExperienceService:
     @staticmethod
     def create(data) -> Experience:
         return Experience.objects.create(
+            nombreExperience=data['nombreExperience'],
             entreprise=data['entreprise'],
             poste=data['poste'],
             datedebut=data['datedebut'],

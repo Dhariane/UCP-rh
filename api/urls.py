@@ -49,5 +49,6 @@ urlpatterns = [
     path('historiques-postes/<int:id>/', HistoriqueDuPosteController.as_view(), name='historique-detail'),
     path('enfants', EnfantController.as_view(), name='enfant'),
     path('enfants/<int:id>/', EnfantController.as_view(), name='enfant-detail'),
+    
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

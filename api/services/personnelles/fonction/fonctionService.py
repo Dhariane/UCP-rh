@@ -11,7 +11,8 @@ class FonctionService:
             financement=data['financement'],
             personnelle=data['personnelle'],
             service=data['service'],
-            poste=data['poste']
+            poste=data['poste'],
+            superieur=data['superieur']
         )
 
     @staticmethod

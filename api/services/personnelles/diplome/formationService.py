@@ -5,22 +5,12 @@ class FormationService:
     
     @staticmethod
     def create(data) -> Formation:
-        attestation_data = data.get("attestation")
-        file_attestation = None
-        
-        if attestation_data and isinstance(attestation_data, str) and "," in attestation_data:
-            format, imgstr = attestation_data.split(';base64,')
-            ext = format.split('/')[-1]
-            file_attestation = ContentFile(base64.b64decode(imgstr), name=f"attestation_{data.get('titre')}.{ext}")
-        elif attestation_data:
-            file_attestation = attestation_data
-
         return Formation.objects.create(
             titre=data.get("titre"),
             organisme=data.get("organisme"),
             datedebut=data.get("datedebut"),
             datefin=data.get("datefin"),
-            attestation=file_attestation,
+            attestation=data.get("attestation"), # C'est l'objet fichier direct
             personnelle_id=data.get("personnelle")
         )
 

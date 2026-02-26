@@ -3,7 +3,8 @@ from rest_framework.response import Response
 from django.db import transaction
 from rest_framework.renderers import JSONRenderer
 from rest_framework import status
-
+from rest_framework.parsers import MultiPartParser, FormParser
+import json
 from api.dto import PersonnellesDTO
 from api.services.personnelles.propos import (
     CinsService, PersonnelleServices, EtatCivilService,
@@ -16,115 +17,165 @@ from api.services.personnelles.diplome.experienceService import ExperienceServic
 from api.services.personnelles.diplome.formationService import FormationService
 from api.services.personnelles.diplome.historiqueDuPosteService import HistoriqueDuPosteService
 
-from api.models import EtatCivil,Sexes,Relations,Postes
+from api.models import EtatCivil,Sexes,Relations,Postes,Personnelles
+
 class PersonnelFullController(APIView):
     renderer_classes = [JSONRenderer]
-
+    parser_classes = (MultiPartParser, FormParser)
     def post(self, request):
         data = request.data
-        print("DATA POSTMAN :", data)
+        files = request.FILES #
+        try:
+            experiences = json.loads(data.get("experiences", "[]"))
+            diplomes = json.loads(data.get("diplomes", "[]"))
+            formations = json.loads(data.get("formations", "[]"))
+            enfants = json.loads(data.get("enfants", "[]"))
+            historiques = json.loads(data.get("historiqueDuPoste", "[]"))
+        except Exception as e:
+            return Response({"error": "Format JSON invalide"}, status=400)
+        # Debug pour voir ce qui arrive réellement
+        print("DATA REÇUE :", data)
 
         try:
             with transaction.atomic():
-                # ----- ForeignKeys existantes -----
-                sexe = Sexes.objects.get(id=data.get("sexe"))
-                etatcivil = EtatCivil.objects.get(id=data.get("etatCivil"))
-                relation = Relations.objects.get(id=data.get("relation"))
-                poste = Postes.objects.get(id=data.get("poste"))
+                # 1. Récupération des objets liés (vérification existence)
+                sexe_id = data.get("sexe")
+                etat_civil_id = data.get("etatCivil")
+                poste_id = data.get("poste")
 
-                # ----- Créer Agence -----
-                agence_nom = data.get("agence")
-                if not agence_nom:
-                    return Response({"error": "Clé 'agence' manquante dans le JSON"}, status=400)
+                if not sexe_id or not etat_civil_id or not poste_id:
+                    return Response({"error": "Sexe, Etat Civil et Poste sont obligatoires"}, status=400)
 
+                # 1. Récupération des objets liés
+                sexe = Sexes.objects.get(id=sexe_id)
+                etatcivil = EtatCivil.objects.get(id=etat_civil_id)
+                poste = Postes.objects.get(id=poste_id)
+
+                # 2. Banque et Agence
+                banque = BanqueService.create({"nom": data.get("banque")})
                 agence = AgenceService.create({
-                    "nom": agence_nom
-                })
-                banque = BanqueService.create({
-                    "nom": data.get("banque")
+                    "nom": data.get("agence"),
+                    "ville": data.get("villeAgence")
                 })
 
-                # ----- Coordonnées bancaires -----
+                # 3. Coordonnées bancaires
+                image_rib = request.FILES.get('photoRib')
+                print(f"DEBUG RIB: Fichier reçu = {image_rib}") # <--- Ajoute ça pour être sûr !
+
                 coord = CoordonneesBancaireServices.create({
                     "rib": data.get("rib"),
                     "banque": banque,
                     "agence": agence,
-                    "photoRib":data.get("photoRib")
+                    "photo_rib": image_rib # On envoie le fichier au service
                 })
 
-                # ----- CIN -----
+                # 4. CIN
                 cin = CinsService.create({
-                    "numeroCin": data.get("numeroCin"),
-                    "dateCin": data.get("dateCin"),
-                    "lieuCin": data.get("lieuCin")
+                    "numeroCin": data.get("cin"),
+                    "dateCin": data.get("dateDelivranceCin"),
+                    "lieuCin": data.get("lieuDelivranceCin")
                 })
 
-                # ----- Propos -----
+                # 5. Propos
                 propos = ProposService.create({
                     "nif": data.get("nif"),
                     "stat": data.get("stat"),
-                    "numeroCnaps": data.get("numeroCnaps"),
-                    "tel": data.get("tel"),
-                    "email": data.get("email"),
-                    "nombreEnfant": data.get("nombreEnfant"),
+                    "numeroCnaps": data.get("cnaps"),
+                    "tel": data.get("contactPersonnel"),
+                    "email": data.get("emailProfessionnel"),
+                    "nombreEnfant": data.get("nombreEnfants") or 0,
                     "etatCivil": etatcivil
                 })
 
-                # ----- Personnelles -----
+                # 6. Personnelles
+                # --- Dans ton Controller Django ---
+                image_residence = request.FILES.get('photoResidence') 
                 personnelles = PersonnelleServices.create({
                     "nom": data.get("nom"),
-                    "prenom": data.get("prenom"),
+                    "prenom": data.get("prenoms"),
                     "dateNaissance": data.get("dateNaissance"),
                     "lieuNaissance": data.get("lieuNaissance"),
-                    "adresse":data.get("adressePerso"),
-                    "emailPerso":data.get('emailPerso'),
-                    "telPerso":data.get("telPerso"),
-                    "photoResidence":data.get("photoResidence"),
-                    "sexe": sexe,      
-                    "propos": propos,  
-                    "cin": cin         
+                    "adresse": data.get("adresse"),
+                    "emailPerso": data.get('emailPersonnel'),
+                    "telPerso": data.get("contactPersonnel"),
+                    "sexe": sexe,
+                    "propos": propos,
+                    "cin": cin,
+                    "photoResidence": image_residence, # On passe le fichier ici
+                    # ...
+                })
+                # 7. Contacts d'urgence (Traitement individuel car le JSON est plat)
+                # Contact 1
+                if data.get("personne1"):
+                    rel1 = Relations.objects.get(id=data.get("relation1"))
+                    ContactUrgencesService.create({
+                # Ajout de la photo principale si présente
+                        "nom": data.get("personne1"),
+                        "telephone": data.get("telephone1"),
+                        "adresse": data.get("adresse1"),
+                        "personnelle": personnelles,
+                        "relation": rel1
+                    })
+                #photos
+                photo_file = request.FILES.get('photo')
+            print(f"--- DEBUG AVANT SERVICE ---")
+            print(f"Fichier trouvé : {photo_file}")
+            print(f"Taille du fichier : {photo_file.size if photo_file else '0'} octets")
+
+            if photo_file:
+                # On force l'appel avec des clés explicites
+                PhotosService.create({
+                    "nom": data.get("nom") + "_photo",
+                    "data": photo_file,  # On passe l'objet InMemoryUploadedFile
+                    "personnelle": personnelles.id
                 })
                 
+                # Contact 2
+                if data.get("personne2"):
+                    rel2 = Relations.objects.get(id=data.get("relation2"))
+                    ContactUrgencesService.create({
+                        "nom": data.get("personne2"),
+                        "telephone": data.get("telephone2"),
+                        "adresse": data.get("adresse2"),
+                        "personnelle": personnelles,
+                        "relation": rel2
+                    })
 
-                # ----- Photo -----
-                photo = PhotosService.create({
-                    
-                    "nom": data.get("nomFichierReal"),
-                    "data": data.get("photoNom"),
-                    "personnelle": personnelles.id
-                    
-                })
-                # Dans ton traitement du POST
+                # 8. Fonction
+                service = ServiceService.create({"nom": data.get("service")})
+                superieur = None
+                if data.get("superieur"):
+                    superieur = SuperieurService.create({"nom": data.get("superieur")})
 
-
-                # ----- Contact d'urgence -----
-                contactU = ContactUrgencesService.create({
-                    "nom": data.get("contactNom"),
-                    "telephone": data.get("telephone"),
-                    "adresse": data.get("adresse"),
-                    "personnelle": personnelles,
-                    "relation": relation
-                })
-
-                service = ServiceService.create({
-                    "nom": data.get("service")
-                })
-                superieur = SuperieurService.create({
-                    "nom": data.get("superieur")
-                })
-
-                # ----- Fonction -----
-                fonction = FonctionService.create({
+                FonctionService.create({
                     "nom": data.get("fonction"),
-                    "dateDebut": data.get("dateDebut"),
-                    "dateFin": data.get("dateFin"),
+                    "dateDebut": data.get("dateEmbauche"),
+                    "dateFin": data.get("dateSortie") if data.get("dateSortie") else None,
+                    "financement":data.get("financement"),
                     "personnelle": personnelles,
                     "superieur": superieur,
                     "poste": poste,
-                    "service": service
+                    "service": service,
                 })
-                for exp in data.get("experiences", []):
+
+                # 9. Famille (Données à plat dans le view)
+                if data.get("nomPere") or data.get("nomMere"):
+                    FamilleService.create({
+                        "nomPere": data.get("nomPere"),
+                        "prenomPere": data.get("prenomPere"),
+                        "nomMere": data.get("nomMere"),
+                        "prenomMere": data.get("prenomMere"),
+                        "nomConjoint": data.get("nomConjoint"),
+                        "prenomConjoint": data.get("prenomConjoint"),
+                        "nombreEnfant": data.get("nombreEnfants") or 0,
+                        "personnelle": personnelles
+                    })
+
+                # ----- Expériences -----
+                
+                for exp in experiences:
                     ExperienceService.create({
+                        "nombreExperience": exp.get("nbrExp"),
                         "entreprise": exp.get("entreprise"),
                         "poste": exp.get("posteExp"),
                         "datedebut": exp.get("datedebut"),
@@ -133,187 +184,227 @@ class PersonnelFullController(APIView):
                         "personnelle": personnelles.id
                     })
 
-                # Diplômes
-                for dip in data.get("diplomes", []):
+                # 3. ----- Diplômes -----
+                # On utilise la liste 'diplomes' qu'on vient de parser
+                for dip in diplomes:
                     DiplomeService.create({
                         "nom": dip.get("Diplome"),
                         "etablissement": dip.get("etablissement"),
                         "dateObtention": dip.get("dateObtention"),
-                        "photo": dip.get("photo"),
+                        "photo": request.FILES.get("photo"), # Le fichier est bien là d'après tes logs
                         "personnelle": personnelles.id
                     })
 
-                # Formations
-                for form in data.get("formations", []):
+                # 4. ----- Formations -----
+                
+                for form in formations:
                     FormationService.create({
-                        "titre": form.get("titreFormation"),
+                        "titre": form.get("titre"),
                         "organisme": form.get("organisme"),
-                        "datedebut": form.get("datedebutFor"),
-                        "datefin": form.get("datefinFor"),
-                        "attestation": form.get("attestation"),
+                        "datedebut": form.get("datedebut"),
+                        "datefin": form.get("datefin"),
+                        "attestation": request.FILES.get("attestation"),
+                        "personnelle": personnelles.id
+                    })
+                
+                # ----- Enfants -----
+                for enf in enfants:
+                    EnfantService.create({
+                        "nom": enf.get("nom"),
+                        "prenom": enf.get("prenom"),
+                        "dateNaissance": enf.get("dateNaissance"),
+                        "lieuNaissance": enf.get("lieuNaissance"),
                         "personnelle": personnelles.id
                     })
 
-                # Historique du Poste
-                for hist in data.get("historiques", []):
+                # ----- Historique du poste -----
+                for hist in historiques:
                     HistoriqueDuPosteService.create({
-                        "poste": hist.get("posteHis"),
-                        "société": hist.get("société"),
-                        "datedebut": hist.get("datedebutHis"),
-                        "datefin": hist.get("datefinHis"),
+                        "poste": hist.get("poste"),
+                        "dateDebut": hist.get("datedebut") or hist.get("dateDebut"),
+                        "dateFin": hist.get("datefin") or hist.get("dateFin"),
                         "description": hist.get("description"),
                         "personnelle": personnelles.id
                     })
 
-                # Enfants
-                for enf in data.get("enfants", []):
-                    EnfantService.create({
-                        "nom": enf.get("nomEnfant"),
-                        "prenom": enf.get("prenomEnfant"),
-                        "dateNaissance": enf.get("dateNaissanceEnfant"),
-                        "lieuNaissance": enf.get("lieuNaissanceEnfant"),
-                        "personnelle": personnelles.id
-                    })
-                for fam in data.get("familles", []):
-                    FamilleService.create({
-                        "nomPere": fam.get("nomPere"),
-                        "prenomPere": fam.get("prenomPere"),
-                        "nomMere": fam.get("nomMere"),
-                        "prenomMere": fam.get("prenomMere"),
-                        "nomConjoint": fam.get("nomConjoint"),
-                        "nombreEnfant": fam.get("nombreEnfantper"),
-                        "prenomConjoint": fam.get("prenomConjoint"),
-                        "personnelle": personnelles
-                    })
-                
                 return Response({"status": "success"}, status=201)
 
         except Exception as e:
+            print("ERREUR SERVEUR :", str(e))
+            print("Champs texte reçus :", data.keys())
+            print("Fichiers reçus :", request.FILES.keys())
             return Response({"error": str(e)}, status=400)
 
-    # def get(self, request, id=None):
-    #     if id:
-    #         try:
-    #             # Récupérer les informations du personnel
-    #             personnelle = Personnelles.objects.get(id=id)
+    def get(self, request):
+        try:
+            # Récupère toutes les personnelles
+            personnelles_list = Personnelles.objects.all().prefetch_related(
+                'sexe',
+                'photos',
+                'Diplome',
+                'Experience',
+                'Famille',
+                'Enfant',
+                'fonctions__service',
+                'fonctions__poste',
+                'fonctions__superieur',
+                'propos__etatCivil',
+                'cin',
+                'contactUrgence__relation'
+            )
+            
+            result = []
+            for personnelle in personnelles_list:
+                # Récupère la fonction actuelle (la plus récente)
+                fonction = personnelle.fonctions.filter(
+                    dateFin__isnull=True
+                ).first() or personnelle.fonctions.first()
+                
+                # Récupère le contact urgence
+                contact = personnelle.contactUrgence.first() if personnelle.contactUrgence.exists() else None
+                
+                # Construit l'objet de réponse
+                personnelle_data = {
+                    "id": personnelle.id,
+                    "nom": personnelle.nom,
+                    "prenom": personnelle.prenom,
+                    "dateNaissance": personnelle.dateNaissance,
+                    "lieuNaissance": personnelle.lieuNaissance,
+                    "adresse": personnelle.adresse,
+                    "emailPerso": personnelle.emailPerso,
+                    "telPerso": personnelle.telPerso,
+                    "photoResidence": str(personnelle.photoResidence) if personnelle.photoResidence else None,
+                    
+                    # Sexe
+                    "sexe": {
+                        "id": personnelle.sexe.id,
+                        "nom": personnelle.sexe.nom
+                    } if personnelle.sexe else None,
+                    
+                    # CIN
+                    "cin": {
+                        "id": personnelle.cin.id,
+                        "numeroCin": personnelle.cin.numeroCin,
+                        "dateCin": personnelle.cin.dateCin,
+                        "lieuCin": personnelle.cin.lieuCin
+                    } if personnelle.cin else None,
+                    
+                    # Propos
+                    "propos": {
+                        "id": personnelle.propos.id,
+                        "nif": personnelle.propos.nif,
+                        "stat": personnelle.propos.stat,
+                        "numeroCnaps": personnelle.propos.numeroCnaps,
+                        "tel": personnelle.propos.tel,
+                        "email": personnelle.propos.email,
+                        "nombreEnfant": personnelle.propos.nombreEnfant,
+                        "etatCivil": {
+                            "id": personnelle.propos.etatCivil.id,
+                            "nom": personnelle.propos.etatCivil.nom
+                        } if personnelle.propos.etatCivil else None
+                    } if personnelle.propos else None,
+                    
+                    # Fonction complète
+                    "fonction": {
+                        "id": fonction.id,
+                        "nom": fonction.nom,
+                        "dateDebut": fonction.dateDebut,
+                        "dateFin": fonction.dateFin,
+                        "financement": fonction.financement,
+                        "service": {
+                            "id": fonction.service.id,
+                            "nom": fonction.service.nom
+                        } if fonction.service else None,
+                        "poste": {
+                            "id": fonction.poste.id,
+                            "nom": fonction.poste.nom
+                        } if fonction.poste else None,
+                        "superieur": {
+                            "id": fonction.superieur.id,
+                            "nom": fonction.superieur.nom
+                        } if fonction.superieur and fonction.superieur.id else None
+                    } if fonction else None,
+                    
+                    
+                    # Contact Urgence
+                    "contactUrgence": {
+                        "id": contact.id,
+                        "nom": contact.nom,
+                        "telephone": contact.telephone,
+                        "adresse": contact.adresse,
+                        "relation": {
+                            "id": contact.relation.id,
+                            "nom": contact.relation.nom
+                        }
+                    } if contact else None,
+                    
+                    # Diplômes
+                    "diplomes": [
+                        {
+                            "id": dip.id,
+                            "nom": dip.nom,
+                            "etablissement": dip.etablissement,
+                            "dateObtention": dip.dateObtention,
+                            "photo": str(dip.photo) if dip.photo else None
+                        }
+                        for dip in personnelle.Diplome.all()
+                    ],
+                    
+                    # Expériences
+                    "experiences": [
+                        {
+                            "id": exp.id,
+                            "nombreExperience":exp.nombreExperience,
+                            "entreprise": exp.entreprise,
+                            "poste": exp.poste,
+                            "datedebut": exp.datedebut,
+                            "datefin": exp.datefin,
+                            "description": exp.description
+                        }
+                        for exp in personnelle.Experience.all()
+                    ],
+                    
+                    # Photos
+                    "photos": [
+                        {
+                            "id": photo.id,
+                            "nom": photo.nom,
+                            "data": str(photo.data) if photo.data else None
+                        }
+                        for photo in personnelle.photos.all()
+                    ],
+                    
+                    # Famille
+                    "famille": [
+                        {
+                            "id": fam.id,
+                            "nomPere": fam.nomPere,
+                            "prenomPere": fam.prenomPere,
+                            "nomMere": fam.nomMere,
+                            "prenomMere": fam.prenomMere,
+                            "nomConjoint": fam.nomConjoint,
+                            "prenomConjoint": fam.prenomConjoint,
+                            "nombreEnfant": fam.nombreEnfant
+                        }
+                        for fam in personnelle.Famille.all()
+                    ],
+                    
+                    # Enfants
+                    "enfants": [
+                        {
+                            "id": enf.id,
+                            "nom": enf.nom,
+                            "prenom": enf.prenom,
+                            "dateNaissance": enf.dateNaissance,
+                            "lieuNaissance": enf.lieuNaissance
+                        }
+                        for enf in personnelle.Enfant.all()
+                    ]
+                }
+                result.append(personnelle_data)
+            
+            return Response(result, status=200)
+        
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
 
-    #             # Récupérer les informations associées au personnel
-    #             propos = Propos.objects.get(personnelle=personnelle)
-    #             cin = Cins.objects.get(personnelle=personnelle)
-    #             photo = Photos.objects.get(personnelle=personnelle)
-    #             contact_urgence = ContactUrgences.objects.get(personnelle=personnelle)
-    #             fonction = Fonctions.objects.get(personnelle=personnelle)
-    #             poste = Postes.objects.get(fonction=fonction)
-    #             service = Services.objects.get(fonction=fonction)
-    #             superieur = Superieur.objects.get(fonction=fonction)
-    #             coord_bancaire = CoordonneesBancaires.objects.get(personnelle=personnelle)
-    #             agence = Agences.objects.get(coordonneesbancaire=coord_bancaire)
-    #             banque = Banques.objects.get(coordonneesbancaire=coord_bancaire)
-    #             sexe = Sexes.objects.get(personnelle=personnelle)
-    #             etatcivil = EtatCivil.objects.get(propos=propos)
-    #             relation = Relations.objects.get(contacturgences=contact_urgence)
-
-    #             # Construire la réponse JSON
-    #             response_data = self._build_personnelle_response(
-    #                 personnelle, propos, cin, photo, contact_urgence, fonction,
-    #                 poste, service, superieur, coord_bancaire, agence, banque,
-    #                 sexe, etatcivil, relation
-    #             )
-
-    #             return Response(response_data, status=status.HTTP_200_OK)
-
-    #         except Personnelles.DoesNotExist:
-    #             return Response({"error": "Personnel non trouvé"}, status=status.HTTP_404_NOT_FOUND)
-    #         except Exception as e:
-    #             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    #     else:
-    #         # Récupérer tous les personnels
-    #         personnels = Personnelles.objects.all()
-    #         serializer = PersonnellesDTO(personnels, many=True)
-    #         response = {
-    #             "status": "success",
-    #             "message": "Liste des personnels récupérée",
-    #             "data": serializer.data
-    #         }
-    #         return Response(response, status=status.HTTP_200_OK)
-
-    # def _build_personnelle_response(self, personnelle, propos, cin, photo, contact_urgence, fonction,
-    #                                poste, service, superieur, coord_bancaire, agence, banque,
-    #                                sexe, etatcivil, relation):
-    #     return {
-    #         "personnelle": {
-    #             "id": personnelle.id,
-    #             "nom": personnelle.nom,
-    #             "prenom": personnelle.prenom,
-    #             "dateNaissance": personnelle.dateNaissance,
-    #             "lieuNaissance": personnelle.lieuNaissance,
-    #             "sexe": {
-    #                 "id": sexe.id,
-    #                 "nom": sexe.nom
-    #             },
-    #             "propos": {
-    #                 "id": propos.id,
-    #                 "nifStat": propos.nifStat,
-    #                 "numeroCnaps": propos.numeroCnaps,
-    #                 "tel": propos.tel,
-    #                 "email": propos.email,
-    #                 "nombreEnfant": propos.nombreEnfant,
-    #                 "etatCivil": {
-    #                     "id": etatcivil.id,
-    #                     "nom": etatcivil.nom
-    #                 }
-    #             },
-    #             "cin": {
-    #                 "id": cin.id,
-    #                 "numeroCin": cin.numeroCin,
-    #                 "dateCin": cin.dateCin,
-    #                 "lieuCin": cin.lieuCin
-    #             },
-    #             "photo": {
-    #                 "id": photo.id,
-    #                 "nom": photo.nom,
-    #                 "data": photo.data
-    #             },
-    #             "contact_urgence": {
-    #                 "id": contact_urgence.id,
-    #                 "nom": contact_urgence.nom,
-    #                 "telephone": contact_urgence.telephone,
-    #                 "adresse": contact_urgence.adresse,
-    #                 "relation": {
-    #                     "id": relation.id,
-    #                     "nom": relation.nom
-    #                 }
-    #             },
-    #             "fonction": {
-    #                 "id": fonction.id,
-    #                 "dateDebut": fonction.dateDebut,
-    #                 "dateFin": fonction.dateFin,
-    #                 "poste": {
-    #                     "id": poste.id,
-    #                     "nom": poste.nom,
-    #                     "grade": poste.grade
-    #                 },
-    #                 "service": {
-    #                     "id": service.id,
-    #                     "nom": service.nom
-    #                 },
-    #                 "superieur": {
-    #                     "id": superieur.id,
-    #                     "nom": superieur.nom
-    #                 }
-    #             },
-    #             "coordonnees_bancaires": {
-    #                 "id": coord_bancaire.id,
-    #                 "rib": coord_bancaire.rib,
-    #                 "banque": {
-    #                     "id": banque.id,
-    #                     "nom": banque.nom
-    #                 },
-    #                 "agence": {
-    #                     "id": agence.id,
-    #                     "nom": agence.nom
-    #                 }
-    #             }
-    #         }
-    #     }
