@@ -5,22 +5,11 @@ class DiplomeService:
     
     @staticmethod
     def create(data) -> Diplome:
-        photo_data = data.get("photo")
-        file_photo = None
-        
-        # Si on reçoit une chaîne Base64
-        if photo_data and isinstance(photo_data, str) and "," in photo_data:
-            format, imgstr = photo_data.split(';base64,')
-            ext = format.split('/')[-1]
-            file_photo = ContentFile(base64.b64decode(imgstr), name=f"diplome_{data.get('nom')}.{ext}")
-        elif photo_data: # Cas où c'est déjà un fichier ou une chaîne simple
-            file_photo = photo_data
-
         return Diplome.objects.create(
             nom=data.get("nom"),
             etablissement=data.get("etablissement"),
             dateObtention=data.get("dateObtention"),
-            photo=file_photo, # On passe le fichier décodé
+            photo=data.get("photo"), # C'est l'objet fichier direct
             personnelle_id=data.get("personnelle")
         )
 

@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from django.db import transaction
 from rest_framework.renderers import JSONRenderer
 from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser
 
 from api.services.personnelles.propos import (
     CinsService, PersonnelleServices, EtatCivilService,
@@ -25,21 +26,32 @@ from api.services.personnelles.diplome.diplomeService import DiplomeService
 from api.services.personnelles.diplome.experienceService import ExperienceService
 
 from api.models import EtatCivil, Sexes, Relations, Postes
+from api.services.personnelles.propos import PhotosService
 
 
 class PersonnelFullController(APIView):
     renderer_classes = [JSONRenderer]
+    parser_classes = (MultiPartParser, FormParser)
     def post(self, request):
         data = request.data
+        files = request.FILES #
         # Debug pour voir ce qui arrive réellement
         print("DATA REÇUE :", data)
 
         try:
             with transaction.atomic():
                 # 1. Récupération des objets liés (vérification existence)
-                sexe = Sexes.objects.get(id=data.get("sexe"))
-                etatcivil = EtatCivil.objects.get(id=data.get("etatCivil"))
-                poste = Postes.objects.get(id=data.get("poste"))
+                sexe_id = data.get("sexe")
+                etat_civil_id = data.get("etatCivil")
+                poste_id = data.get("poste")
+
+                if not sexe_id or not etat_civil_id or not poste_id:
+                    return Response({"error": "Sexe, Etat Civil et Poste sont obligatoires"}, status=400)
+
+                # 1. Récupération des objets liés
+                sexe = Sexes.objects.get(id=sexe_id)
+                etatcivil = EtatCivil.objects.get(id=etat_civil_id)
+                poste = Postes.objects.get(id=poste_id)
 
                 # 2. Banque et Agence
                 banque = BanqueService.create({"nom": data.get("banque")})
@@ -49,11 +61,14 @@ class PersonnelFullController(APIView):
                 })
 
                 # 3. Coordonnées bancaires
+                image_rib = request.FILES.get('photoRib')
+                print(f"DEBUG RIB: Fichier reçu = {image_rib}") # <--- Ajoute ça pour être sûr !
+
                 coord = CoordonneesBancaireServices.create({
                     "rib": data.get("rib"),
                     "banque": banque,
                     "agence": agence,
-                    "photoRib": data.get("photoRib")
+                    "photo_rib": image_rib # On envoie le fichier au service
                 })
 
                 # 4. CIN
@@ -75,6 +90,8 @@ class PersonnelFullController(APIView):
                 })
 
                 # 6. Personnelles
+                # --- Dans ton Controller Django ---
+                image_residence = request.FILES.get('photoResidence') 
                 personnelles = PersonnelleServices.create({
                     "nom": data.get("nom"),
                     "prenom": data.get("prenoms"),
@@ -85,20 +102,35 @@ class PersonnelFullController(APIView):
                     "telPerso": data.get("contactPersonnel"),
                     "sexe": sexe,
                     "propos": propos,
-                    "cin": cin
+                    "cin": cin,
+                    "photoResidence": image_residence, # On passe le fichier ici
+                    # ...
                 })
-
                 # 7. Contacts d'urgence (Traitement individuel car le JSON est plat)
                 # Contact 1
                 if data.get("personne1"):
                     rel1 = Relations.objects.get(id=data.get("relation1"))
                     ContactUrgencesService.create({
+                # Ajout de la photo principale si présente
                         "nom": data.get("personne1"),
                         "telephone": data.get("telephone1"),
                         "adresse": data.get("adresse1"),
                         "personnelle": personnelles,
                         "relation": rel1
                     })
+                #photos
+                photo_file = request.FILES.get('photo')
+            print(f"--- DEBUG AVANT SERVICE ---")
+            print(f"Fichier trouvé : {photo_file}")
+            print(f"Taille du fichier : {photo_file.size if photo_file else '0'} octets")
+
+            if photo_file:
+                # On force l'appel avec des clés explicites
+                PhotosService.create({
+                    "nom": data.get("nom") + "_photo",
+                    "data": photo_file,  # On passe l'objet InMemoryUploadedFile
+                    "personnelle": personnelles.id
+                })
                 
                 # Contact 2
                 if data.get("personne2"):
@@ -162,7 +194,7 @@ class PersonnelFullController(APIView):
                                 "nom": dip.get("Diplome"),
                                 "etablissement": dip.get("etablissement"),
                                 "dateObtention": dip.get("dateObtention"),
-                                "photo": dip.get("photo"),
+                                "photo": request.FILES.get("photo"),
                                 "personnelle": personnelles.id
                             })
 
@@ -174,7 +206,7 @@ class PersonnelFullController(APIView):
                             "organisme": form.get("organisme"),
                             "datedebut": form.get("datedebutFor"),
                             "datefin": form.get("datefinFor"),
-                            "attestation": form.get("attestation"),
+                            "attestation": request.FILES.get("attestation"),
                             "personnelle": personnelles.id
                 })
                 
@@ -182,6 +214,8 @@ class PersonnelFullController(APIView):
 
         except Exception as e:
             print("ERREUR SERVEUR :", str(e))
+            print("Champs texte reçus :", data.keys())
+            print("Fichiers reçus :", request.FILES.keys())
             return Response({"error": str(e)}, status=400)
 
     def get(self, request):

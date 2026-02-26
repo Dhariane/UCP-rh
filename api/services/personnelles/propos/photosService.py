@@ -4,19 +4,11 @@ from api.dto.personnelles.propos.photosDto import PhotosDto
 class PhotosService:
     @staticmethod
     def create(data_dict) -> Photos:
-        # 1. On crée l'objet SANS remplir le champ 'data' (pour éviter l'erreur de limite 100 car.)
-        photo_instance = Photos(
-            nom = data_dict["nom"][:95], 
-            personnelle_id = data_dict["personnelle"]
+        return Photos.objects.create(
+            nom=data_dict["nom"][:95],
+            personnelle_id=data_dict["personnelle"],
+            data=data_dict["data"] # On met le fichier directement dans le champ ImageField
         )
-        
-        # 2. On stocke le Base64 dans une variable temporaire "invisible" pour la base de données
-        photo_instance._base64_temp = data_dict["data"]
-        
-        # 3. On appelle .save(), qui va déclencher la conversion dans le modèle
-        photo_instance.save() 
-        
-        return photo_instance
     @staticmethod
     def getAll():
         return Photos.objects.all().order_by("id")
