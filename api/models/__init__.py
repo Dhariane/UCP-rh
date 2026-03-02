@@ -19,4 +19,6 @@ from .diplome.experience import Experience
 from .diplome.diplome import Diplome
 from .diplome.historiqueDuPoste import HistoriqueDuPoste
 from .propos.enfant import Enfant
+from .auth.login.loginModel import Login
+from .role.roleModel import Role
 

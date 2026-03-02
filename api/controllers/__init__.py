@@ -1,5 +1,5 @@
 from .personnelles.propos.personnelleController import PersonnelleController
-from .login.loginController import LoginController
+from .auth.login.loginController import LoginController
 from .personnelles.propos.etatCivilController import EtatCivilController
 from .personnelles.propos.proposController import ProposController
 from .personnelles.propos.sexeController import SexeController
@@ -21,6 +21,7 @@ from .personnelles.diplome.diplomeController import DiplomeController
 from .personnelles.diplome.formationController import FormationController
 from .personnelles.diplome.historiqueDuPosteController import HistoriqueDuPosteController
 from .personnelles.propos.enfantController import EnfantController
+from .role.roleController import RoleController     
 __all__ = [
     "EtatCivilController",
     "ProposController",
@@ -44,5 +45,8 @@ __all__ = [
     "DiplomeController",
     "FormationController",
     "HistoriqueDuPosteController",
-    "EnfantController"
+    "EnfantController",
+    "LoginController",
+    "RoleController"
+    
 ]
