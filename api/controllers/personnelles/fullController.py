@@ -5,6 +5,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 
+from api.dto import PersonnellesDTO
 from api.services.personnelles.propos import (
     CinsService, PersonnelleServices, EtatCivilService,
     ProposService, SexeService, EnfantService, FamilleService
@@ -35,6 +36,14 @@ class PersonnelFullController(APIView):
     def post(self, request):
         data = request.data
         files = request.FILES #
+        try:
+            experiences = json.loads(data.get("experiences", "[]"))
+            diplomes = json.loads(data.get("diplomes", "[]"))
+            formations = json.loads(data.get("formations", "[]"))
+            enfants = json.loads(data.get("enfants", "[]"))
+            historiques = json.loads(data.get("historiqueDuPoste", "[]"))
+        except Exception as e:
+            return Response({"error": "Format JSON invalide"}, status=400)
         # Debug pour voir ce qui arrive réellement
         print("DATA REÇUE :", data)
 
@@ -174,42 +183,61 @@ class PersonnelFullController(APIView):
                     })
 
                 # ----- Expériences -----
-                                # ----- Expériences -----
-                for exp in data.get("experiences", []):
-                    if isinstance(exp, dict): # On vérifie que c'est un dictionnaire
-                        ExperienceService.create({
-                            "nombreExperience": exp.get("nbrExp"),
-                            "entreprise": exp.get("entreprise"),
-                            "poste": exp.get("posteExp"),
-                            "datedebut": exp.get("datedebut"),
-                            "datefin": exp.get("datefin"),
-                            "description": exp.get("description"),
-                            "personnelle": personnelles.id
-                        })
-
-                    # ----- Diplômes -----
-                    for dip in data.get("diplomes", []):
-                        if isinstance(dip, dict):
-                            DiplomeService.create({
-                                "nom": dip.get("Diplome"),
-                                "etablissement": dip.get("etablissement"),
-                                "dateObtention": dip.get("dateObtention"),
-                                "photo": request.FILES.get("photo"),
-                                "personnelle": personnelles.id
-                            })
-
-                # ----- Formations -----
-                for form in data.get("formations", []):
-                    if isinstance(form, dict):
-                        FormationService.create({
-                            "titre": form.get("titreFormation"),
-                            "organisme": form.get("organisme"),
-                            "datedebut": form.get("datedebutFor"),
-                            "datefin": form.get("datefinFor"),
-                            "attestation": request.FILES.get("attestation"),
-                            "personnelle": personnelles.id
-                })
                 
+                for exp in experiences:
+                    ExperienceService.create({
+                        "nombreExperience": exp.get("nbrExp"),
+                        "entreprise": exp.get("entreprise"),
+                        "poste": exp.get("posteExp"),
+                        "datedebut": exp.get("datedebut"),
+                        "datefin": exp.get("datefin"),
+                        "description": exp.get("description"),
+                        "personnelle": personnelles.id
+                    })
+
+                # 3. ----- Diplômes -----
+                # On utilise la liste 'diplomes' qu'on vient de parser
+                for dip in diplomes:
+                    DiplomeService.create({
+                        "nom": dip.get("Diplome"),
+                        "etablissement": dip.get("etablissement"),
+                        "dateObtention": dip.get("dateObtention"),
+                        "photo": request.FILES.get("photo"), # Le fichier est bien là d'après tes logs
+                        "personnelle": personnelles.id
+                    })
+
+                # 4. ----- Formations -----
+                
+                for form in formations:
+                    FormationService.create({
+                        "titre": form.get("titre"),
+                        "organisme": form.get("organisme"),
+                        "datedebut": form.get("datedebut"),
+                        "datefin": form.get("datefin"),
+                        "attestation": request.FILES.get("attestation"),
+                        "personnelle": personnelles.id
+                    })
+                
+                # ----- Enfants -----
+                for enf in enfants:
+                    EnfantService.create({
+                        "nom": enf.get("nom"),
+                        "prenom": enf.get("prenom"),
+                        "dateNaissance": enf.get("dateNaissance"),
+                        "lieuNaissance": enf.get("lieuNaissance"),
+                        "personnelle": personnelles.id
+                    })
+
+                # ----- Historique du poste -----
+                for hist in historiques:
+                    HistoriqueDuPosteService.create({
+                        "poste": hist.get("poste"),
+                        "dateDebut": hist.get("datedebut") or hist.get("dateDebut"),
+                        "dateFin": hist.get("datefin") or hist.get("dateFin"),
+                        "description": hist.get("description"),
+                        "personnelle": personnelles.id
+                    })
+
                 return Response({"status": "success"}, status=201)
 
         except Exception as e:
