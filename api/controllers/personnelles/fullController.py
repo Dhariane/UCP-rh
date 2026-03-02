@@ -1,3 +1,4 @@
+from api.models.fonction.typeContrat import TypeContrats
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import transaction
@@ -10,14 +11,18 @@ from api.services.personnelles.propos import (
     CinsService, PersonnelleServices, EtatCivilService,
     PhotosService, ProposService,SexeService,EnfantService,FamilleService)
 from api.services.personnelles.fonction import FonctionService, PosteService, ServiceService, SuperieurService
+from api.services.personnelles.fonction.contratService import ContratService
+from api.services.personnelles.fonction.typeContrantService import TypeContratService
 from api.services.personnelles.contact import ContactUrgencesService, RelationService
 from api.services.personnelles.banque import CoordonneesBancaireServices, AgenceService, BanqueService
 from api.services.personnelles.diplome.diplomeService import DiplomeService
 from api.services.personnelles.diplome.experienceService import ExperienceService
 from api.services.personnelles.diplome.formationService import FormationService
 from api.services.personnelles.diplome.historiqueDuPosteService import HistoriqueDuPosteService
+from api.services.personnelles.fonction.contratService import ContratService
+from api.services.personnelles.fonction.typeContrantService import TypeContratService
 
-from api.models import EtatCivil,Sexes,Relations,Postes,Personnelles
+from api.models import EtatCivil,Sexes,Relations,Postes,Personnelles,Services
 
 class PersonnelFullController(APIView):
     renderer_classes = [JSONRenderer]
@@ -50,6 +55,18 @@ class PersonnelFullController(APIView):
                 sexe = Sexes.objects.get(id=sexe_id)
                 etatcivil = EtatCivil.objects.get(id=etat_civil_id)
                 poste = Postes.objects.get(id=poste_id)
+                # Récupération ou création du type de contrat
+                type_contrat_id = data.get("typeContrat")  # Id ou nom envoyé depuis Postman
+                if type_contrat_id:
+                    try:
+                        type_contrat = TypeContratService.get(type_contrat_id)
+                    except TypeContrats.DoesNotExist:
+                        return Response({"error": "Type de contrat invalide"}, status=400)
+                else:
+                    return Response({"error": "Type de contrat requis"}, status=400)
+                
+                service_id = data.get("service")
+                service = Services.objects.get(id=service_id)
 
                 # 2. Banque et Agence
                 banque = BanqueService.create({"nom": data.get("banque")})
@@ -90,6 +107,9 @@ class PersonnelFullController(APIView):
                 # 6. Personnelles
                 # --- Dans ton Controller Django ---
                 image_residence = request.FILES.get('photoResidence') 
+                file_casier = request.FILES.get('casierjudiciaire') 
+                acte_de_naissance = request.FILES.get('acteNaissance')  
+                file_cin = request.FILES.get("cinphoto")             
                 personnelles = PersonnelleServices.create({
                     "nom": data.get("nom"),
                     "prenom": data.get("prenoms"),
@@ -101,8 +121,20 @@ class PersonnelFullController(APIView):
                     "sexe": sexe,
                     "propos": propos,
                     "cin": cin,
-                    "photoResidence": image_residence, # On passe le fichier ici
-                    # ...
+                    "photoResidence": image_residence,
+                    "casierjudiciaire": file_casier,
+                    "acteNaissance":acte_de_naissance,
+                    "cinphoto": file_cin
+                })
+                # Récupération du fichier envoyé (photo du contrat)
+                photo_contrat = request.FILES.get("photoContrat")
+
+                # Création du Contrat
+                contrat = ContratService.create({
+                    "NumeroContrat": data.get("NumeroContrat"),
+                    "photoContrat": photo_contrat,
+                    "typeContrat": type_contrat,  # l'objet TypeContrat
+                    "personnelle": personnelles  # l'objet Personnelles créé
                 })
                 # 7. Contacts d'urgence (Traitement individuel car le JSON est plat)
                 # Contact 1
@@ -168,6 +200,7 @@ class PersonnelFullController(APIView):
                         "nomConjoint": data.get("nomConjoint"),
                         "prenomConjoint": data.get("prenomConjoint"),
                         "nombreEnfant": data.get("nombreEnfants") or 0,
+                        "acteMariage": request.FILES.get("acteMariage"),
                         "personnelle": personnelles
                     })
 
@@ -201,8 +234,8 @@ class PersonnelFullController(APIView):
                     FormationService.create({
                         "titre": form.get("titre"),
                         "organisme": form.get("organisme"),
-                        "datedebut": form.get("datedebut"),
-                        "datefin": form.get("datefin"),
+                        "lieu": form.get("lieu"),
+                        "annee": form.get("annee"),
                         "attestation": request.FILES.get("attestation"),
                         "personnelle": personnelles.id
                     })
@@ -214,6 +247,7 @@ class PersonnelFullController(APIView):
                         "prenom": enf.get("prenom"),
                         "dateNaissance": enf.get("dateNaissance"),
                         "lieuNaissance": enf.get("lieuNaissance"),
+                        "certificatVie": request.FILES.get("certificatVie"),
                         "personnelle": personnelles.id
                     })
 
@@ -236,6 +270,7 @@ class PersonnelFullController(APIView):
             return Response({"error": str(e)}, status=400)
 
     def get(self, request):
+        
         try:
             # Récupère toutes les personnelles
             personnelles_list = Personnelles.objects.all().prefetch_related(
@@ -250,7 +285,8 @@ class PersonnelFullController(APIView):
                 'fonctions__superieur',
                 'propos__etatCivil',
                 'cin',
-                'contactUrgence__relation'
+                'contactUrgence__relation',
+            
             )
             
             result = []
@@ -399,6 +435,17 @@ class PersonnelFullController(APIView):
                             "lieuNaissance": enf.lieuNaissance
                         }
                         for enf in personnelle.Enfant.all()
+                    ],
+                    
+                    # Contrats
+                    "contrats": [
+                        {
+                            "id": c.id,
+                            "NumeroContrat": c.NumeroContrat,
+                            "photoContrat": str(c.photoContrat) if c.photoContrat else None,
+                            "typeContrat": c.typeContrat.TypeContrat if c.typeContrat else None
+                        }
+                        for c in personnelle.contrat.all()
                     ]
                 }
                 result.append(personnelle_data)

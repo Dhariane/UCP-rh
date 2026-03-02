@@ -19,4 +19,7 @@ from .diplome.experience import Experience
 from .diplome.diplome import Diplome
 from .diplome.historiqueDuPoste import HistoriqueDuPoste
 from .propos.enfant import Enfant
+from .fonction.contrat import Contrat
+from .fonction.typeContrat import TypeContrats
+from .fonction.modefinancement import ModeFinancement
 

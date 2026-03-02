@@ -37,6 +37,9 @@ class Famille(models.Model):
         null= True,
         blank=True
     )
+    acteMariage=models.FileField(
+        upload_to='acteMariage/'
+    )
     personnelle = models.ForeignKey(
         Personnelles, 
         on_delete=models.PROTECT, 

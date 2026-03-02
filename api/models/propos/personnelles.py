@@ -53,7 +53,17 @@ class Personnelles(BaseNom):
         null=True,
         blank=True
     )
+    cinphoto=models.FileField(
+        upload_to='photocin/'
+    )
 
+    acteNaissance=models.FileField(
+        upload_to='acteNaissance/'
+    )
+
+    casierjudiciaire=models.FileField(
+        upload_to='Casierjudiciaire/'
+    )
     def __str__(self):
         return f"{self.prenom} {self.nom}"
     

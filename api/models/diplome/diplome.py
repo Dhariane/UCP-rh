@@ -18,6 +18,6 @@ class Diplome(models.Model):
 
     dateObtention=models.DateField()
 
-    photo=models.ImageField(
+    photo=models.FileField(
         upload_to='photos/'
     )
