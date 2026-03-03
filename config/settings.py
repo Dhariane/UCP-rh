@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     # Librairies tierces
     'corsheaders',
     'rest_framework',
+    'rest_framework.authtoken',
     
     # Tes applications
     'api',
@@ -79,6 +80,7 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.JSONParser',
         'rest_framework.parsers.MultiPartParser', # Pour accepter les fichiers
         'rest_framework.parsers.FormParser',
+        'rest_framework.authentication.TokenAuthentication',
     ),
 }
 
@@ -88,12 +90,18 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'rh',
         'USER': 'postgres',
+<<<<<<< HEAD
         'PASSWORD': '1234',
         'HOST': 'localhost',
         'PORT': '5432',
         'OPTIONS': {
             'client_encoding': 'UTF8',
         },
+=======
+        'PASSWORD': 'misaharitsoanjr11',
+        'HOST': 'localhost',   # ou IP du serveur PostgreSQL
+        'PORT': '5432',        # port par défaut PostgreSQL
+>>>>>>> dab8f54ee12fb3499d50c57727e71dae74e2d37a
     }
 }
 
@@ -131,6 +139,15 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'randriadode@gmail.com'
-EMAIL_HOST_PASSWORD = 'dhnl hrlk cfir tztp'
+EMAIL_HOST_USER = 'misarabesa@gmail.com'
+EMAIL_HOST_PASSWORD = 'diwi clxv fsky llfp'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# Remplace tout ton ancien bloc email par celui-ci (les codes sont dans ton Mailtrap)
+#EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+#EMAIL_HOST = 'sandbox.smtp.mailtrap.io'
+#EMAIL_PORT = 2525
+#EMAIL_HOST_USER = '5c63412d229a8f'      # Ton ID Mailtrap
+#EMAIL_HOST_PASSWORD = '59ddff6a8ca12d'  # Ton Password Mailtrap
+#EMAIL_USE_TLS = True
+#EMAIL_USE_SSL = False

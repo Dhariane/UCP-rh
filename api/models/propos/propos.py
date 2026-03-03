@@ -30,7 +30,8 @@ class Propos(models.Model):
     email = models.EmailField(
         max_length=100,
         null=True,
-        blank=True
+        blank=True,
+        unique=True
     )
 
     nombreEnfant = models.IntegerField(

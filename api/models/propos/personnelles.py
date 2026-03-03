@@ -51,7 +51,8 @@ class Personnelles(BaseNom):
     emailPerso = models.EmailField(
         max_length=100,
         null=True,
-        blank=True
+        blank=True,
+        unique=True
     )
     cinphoto=models.FileField(
         upload_to='photocin/'
