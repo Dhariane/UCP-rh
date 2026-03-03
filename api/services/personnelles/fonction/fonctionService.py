@@ -12,7 +12,6 @@ class FonctionService:
             personnelle=data['personnelle'],
             service=data['service'],
             poste=data['poste'],
-            superieur=data['superieur']
         )
 
     @staticmethod

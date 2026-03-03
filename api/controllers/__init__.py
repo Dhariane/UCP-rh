@@ -13,7 +13,6 @@ from .personnelles.contact.relationController import RelationController
 from .personnelles.fonction.fonctionController import FonctionController
 from .personnelles.fonction.PosteController import PosteController
 from .personnelles.fonction.ServiceController import ServiceController
-from .personnelles.fonction.superieurController import SuperieurController
 from .personnelles.fullController import PersonnelFullController
 from .personnelles.propos.familleController import FamilleController
 from .personnelles.diplome.experienceController import ExperienceController
@@ -35,7 +34,6 @@ __all__ = [
     "FonctionController",
     "PosteController",
     "ServiceController",
-    "SuperieurController",
     "CinsController",
     "PersonnelleController",
     "PhotosController",

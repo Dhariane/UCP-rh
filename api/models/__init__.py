@@ -12,7 +12,6 @@ from .banque.banques import Banques
 from .banque.agences import Agences
 from .banque.coordonneesBancaires import CoordonneesBancaires
 from .propos.photos import Photos
-from .fonction.superieurs import Superieur
 from .propos.famille import Famille
 from .diplome.formation import Formation
 from .diplome.experience import Experience

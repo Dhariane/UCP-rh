@@ -8,7 +8,6 @@ from .personnelles.contact.RelationDto import RelationDto
 from .personnelles.fonction.fonctionDto import FonctionDto
 from .personnelles.fonction.PosteDto import PosteDTO
 from .personnelles.fonction.ServiceDto import ServiceDto
-from .personnelles.fonction.superieurDto import SuperieurDto
 from .personnelles.propos.CinsDto import CinsDTO
 from .personnelles.propos.personnellesDto import  PersonnellesDTO
 from .personnelles.propos.photosDto import PhotosDto
@@ -30,7 +29,6 @@ __all__ = [
     "FonctionDto",
     "PosteDTO",
     "ServiceDto",
-    "SuperieurDto",
     "CinsDTO",
     "PersonnellesDTO",
     "PhotosDto",
