@@ -23,6 +23,7 @@ from api.services.personnelles.fonction.contratService import ContratService
 from api.services.personnelles.fonction.typeContrantService import TypeContratService
 from api.services.personnelles.fonction.modefinancementService import ModeFinancementService
 from api.models import EtatCivil,Sexes,Relations,Postes,Personnelles,Services,ModeFinancement
+from api.services.auth.login.loginService import  LoginService
 
 class PersonnelFullController(APIView):
     renderer_classes = [JSONRenderer]
@@ -242,6 +243,11 @@ class PersonnelFullController(APIView):
                         "description": hist.get("description"),
                         "personnelle": personnelles.id
                     })
+                LoginService.create(propos)
+
+                return Response({"status": "success", 
+                                 "message": "Personnel et accès créés avec succès Son Compte est creer et un email de notification a été envoyé"},
+                                 status=201)
 
                 return Response({"status": "success"}, status=201)
 

@@ -18,12 +18,9 @@ from .diplome.experience import Experience
 from .diplome.diplome import Diplome
 from .diplome.historiqueDuPoste import HistoriqueDuPoste
 from .propos.enfant import Enfant
-<<<<<<< HEAD
 from .fonction.contrat import Contrat
 from .fonction.typeContrat import TypeContrats
 from .fonction.modefinancement import ModeFinancement
-=======
 from .auth.login.loginModel import Login
 from .role.roleModel import Role
->>>>>>> dab8f54ee12fb3499d50c57727e71dae74e2d37a
 

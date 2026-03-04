@@ -20,13 +20,10 @@ from .personnelles.diplome.diplomeController import DiplomeController
 from .personnelles.diplome.formationController import FormationController
 from .personnelles.diplome.historiqueDuPosteController import HistoriqueDuPosteController
 from .personnelles.propos.enfantController import EnfantController
-<<<<<<< HEAD
 from .personnelles.fonction.contratController import ContratController
 from .personnelles.fonction.typeContratController import TypeContratController
 from .personnelles.fonction.modefinancementController import ModeFinancementController
-=======
 from .role.roleController import RoleController     
->>>>>>> dab8f54ee12fb3499d50c57727e71dae74e2d37a
 __all__ = [
     "EtatCivilController",
     "ProposController",
@@ -50,13 +47,9 @@ __all__ = [
     "FormationController",
     "HistoriqueDuPosteController",
     "EnfantController",
-<<<<<<< HEAD
     "ContratController",
     "TypeContratController",
-    "ModeFinancementController"
-=======
+    "ModeFinancementController",
     "LoginController",
     "RoleController"
-    
->>>>>>> dab8f54ee12fb3499d50c57727e71dae74e2d37a
 ]

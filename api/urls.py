@@ -48,20 +48,15 @@ urlpatterns = [
     path('historiques-postes/<int:id>/', HistoriqueDuPosteController.as_view(), name='historique-detail'),
     path('enfants', EnfantController.as_view(), name='enfant'),
     path('enfants/<int:id>/', EnfantController.as_view(), name='enfant-detail'),
-<<<<<<< HEAD
     path('contrats',ContratController.as_view(),name='contrat'),
     path('contrats/<int:id>/', EnfantController.as_view(), name='enfant-detail'),
     path('typecontrats',TypeContratController.as_view(),name='type_contrat'),
     path('typecontrats/<int:id>/', EnfantController.as_view(), name='enfant-detail'),
     path('modefinancement',ModeFinancementController.as_view(),name='ModeFinancement'),
     path('modefinancement/<int:id>/', ModeFinancementController.as_view(), name='ModeFinancement'),
-=======
     path('logins', LoginController.as_view(), name='logins'),
     path('logins/<int:id>/', LoginController.as_view(), name='login-detail'),
     path('roles', RoleController.as_view(), name='roles'),
     path('roles/<int:id>/', RoleController.as_view(), name='role-detail'),
-    
-    
->>>>>>> dab8f54ee12fb3499d50c57727e71dae74e2d37a
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

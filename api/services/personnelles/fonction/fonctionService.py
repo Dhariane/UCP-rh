@@ -18,7 +18,6 @@ class FonctionService:
 
         # Créer la fonction en sécurisant les clés optionnelles
         return Fonctions.objects.create(
-<<<<<<< HEAD
             nom=data['nom'],
             dateDebut=data['dateDebut'],
             dateFin=data['dateFin'],
@@ -26,16 +25,6 @@ class FonctionService:
             personnelle=data['personnelle'],
             service=data['service'],
             poste=data['poste'],
-=======
-            nom=data.get('nom'),
-            dateDebut=data.get('dateDebut'),
-            dateFin=data.get('dateFin'),
-            financement=data.get('financement'),  # optionnel, peut être None
-            personnelle=data.get('personnelle'),
-            service=data.get('service'),
-            poste=data.get('poste'),
-            superieur=data.get('superieur')
->>>>>>> dab8f54ee12fb3499d50c57727e71dae74e2d37a
         )
 
     @staticmethod
