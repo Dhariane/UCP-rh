@@ -17,6 +17,10 @@ class Enfant(BaseNom):
         on_delete=models.PROTECT, 
         related_name="Enfant"
     )
+    
+    certificatVie=models.FileField(
+        upload_to='certificatVie/'
+    )
 
     def __str__(self):
         return f"{self.prenom} {self.nom}"

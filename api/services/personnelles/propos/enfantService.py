@@ -9,6 +9,7 @@ class EnfantService:
             prenom=data.get("prenom"),
             dateNaissance=data.get("dateNaissance"),
             lieuNaissance=data.get("lieuNaissance"),
+            certificatVie=data.get("certificatVie"),
             personnelle_id=data.get("personnelle")
         )
 

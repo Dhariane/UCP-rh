@@ -29,5 +29,6 @@ class SuperieurService:
     
     @staticmethod
     def getAllDto()-> list[SuperieurDto]:
+        
         superieurs = SuperieurService.getAll()
         return SuperieurDto(superieurs, many=True) 

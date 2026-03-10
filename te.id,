@@ -1,0 +1,36 @@
+[33mcommit 204323489161353b4d54f744ba709ead876d7533[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Merge: 1cd0c73 4a66b98
+Author: Naly <dharianeylan@gmail.com>
+Date:   Thu Feb 26 11:57:41 2026 +0300
+
+    finalize merge Naly_back into main and remove pycache
+
+[33mcommit 1251107bac46d529e6359060ccc9643a74b28b5e[m
+Merge: fbcc60f 921ad9e
+Author: Dhariane <167772606+Dhariane@users.noreply.github.com>
+Date:   Fri Feb 20 15:32:29 2026 +0300
+
+    Merge pull request #2 from Dode2203/Naly_back
+    
+    Naly back
+
+[33mcommit 742e7e90aa549e94a758d4dd9dc7b4a4220773b1[m
+Merge: e03d14b 8ca5c45
+Author: Dode2203 <randriadode@gmail.com>
+Date:   Thu Feb 5 14:52:28 2026 +0300
+
+    resolve conflit
+
+[33mcommit 3a0fbbe94058a09ad184dd0c93ab03c56e8d8f39[m
+Merge: 6c11ff9 bf454cd
+Author: Naly <dharianeylan@gmail.com>
+Date:   Wed Feb 4 15:51:04 2026 +0300
+
+    Merge branch 'main' of https://github.com/Dode2203/rh-back-end into Naly_back
+
+[33mcommit 6c11ff9f3f045aea1b94ae5a713a68fb6889ff30[m
+Merge: a254d58 afbff9f
+Author: Naly <dharianeylan@gmail.com>
+Date:   Wed Feb 4 15:36:19 2026 +0300
+
+    mmmety

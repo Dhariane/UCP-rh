@@ -8,8 +8,8 @@ class FormationDTO(serializers.ModelSerializer):
             'id',
             'titre',
             'organisme',
-            'datedebut',
-            'datefin',
+            'lieu',
+            'annee',
             'attestation',
             'personnelle'
         ]

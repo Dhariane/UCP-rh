@@ -19,5 +19,6 @@ class FamilleDto(serializers.ModelSerializer):
             "nomConjoint",
             "prenomConjoint",
             "nombreEnfant",
+            "acteMariage",
             "personnelle"
         ]

@@ -6,7 +6,6 @@ from .personnelles.banque import banqueService
 from .personnelles.contact import ContactUrgentService
 from .personnelles.fonction import fonctionService
 from .personnelles.fonction import PosteService
-from .personnelles.fonction import superieurService
 from .personnelles.propos import CinsService
 from .personnelles.propos import etatCivilService
 from .personnelles.propos import personnellesService
@@ -29,7 +28,6 @@ __all__ = [
     "ContactUrgentService",
     "fonctionService",
     "PosteService",
-    "superieurService",
     "proposService",
     "etatCivilService",
     "ServiceService",

@@ -14,7 +14,10 @@ class PersonnelleServices:
     @staticmethod
     def create(data) -> Personnelles:
 
-        file_photo = data.get("photoResidence") 
+        file_photo = data.get("photoResidence")
+        file_casier = data.get("casierjudiciaire")
+        file_acte = data.get("acteNaissance")
+        file_cin = data.get("cinphoto")
         return Personnelles.objects.create(
             nom=data.get('nom'),
             prenom=data.get('prenom'),
@@ -26,13 +29,16 @@ class PersonnelleServices:
             propos=data.get('propos'),
             cin=data.get('cin'),
             adresse=data.get('adresse'), 
-            photoResidence=file_photo
+            photoResidence=file_photo,
+            casierjudiciaire=file_casier,
+            acteNaissance=file_acte,
+            cinphoto=file_cin
         )
 
     @staticmethod
     def update(id: int, data) -> Personnelles:
         """
-        Met à jour une instance existante. 
+        Met à jour une instance existante.
         Si photoResidence n'est pas fourni dans 'data', l'ancienne est conservée.
         """
         personne = Personnelles.objects.get(id=id)

@@ -1,5 +1,5 @@
 from .personnelles.propos.personnelleController import PersonnelleController
-from .login.loginController import LoginController
+from .auth.login.loginController import LoginController
 from .personnelles.propos.etatCivilController import EtatCivilController
 from .personnelles.propos.proposController import ProposController
 from .personnelles.propos.sexeController import SexeController
@@ -13,7 +13,6 @@ from .personnelles.contact.relationController import RelationController
 from .personnelles.fonction.fonctionController import FonctionController
 from .personnelles.fonction.PosteController import PosteController
 from .personnelles.fonction.ServiceController import ServiceController
-from .personnelles.fonction.superieurController import SuperieurController
 from .personnelles.fullController import PersonnelFullController
 from .personnelles.propos.familleController import FamilleController
 from .personnelles.diplome.experienceController import ExperienceController
@@ -21,6 +20,10 @@ from .personnelles.diplome.diplomeController import DiplomeController
 from .personnelles.diplome.formationController import FormationController
 from .personnelles.diplome.historiqueDuPosteController import HistoriqueDuPosteController
 from .personnelles.propos.enfantController import EnfantController
+from .personnelles.fonction.contratController import ContratController
+from .personnelles.fonction.typeContratController import TypeContratController
+from .personnelles.fonction.modefinancementController import ModeFinancementController
+from .role.roleController import RoleController     
 __all__ = [
     "EtatCivilController",
     "ProposController",
@@ -32,7 +35,6 @@ __all__ = [
     "FonctionController",
     "PosteController",
     "ServiceController",
-    "SuperieurController",
     "CinsController",
     "PersonnelleController",
     "PhotosController",
@@ -44,5 +46,10 @@ __all__ = [
     "DiplomeController",
     "FormationController",
     "HistoriqueDuPosteController",
-    "EnfantController"
+    "EnfantController",
+    "ContratController",
+    "TypeContratController",
+    "ModeFinancementController",
+    "LoginController",
+    "RoleController"
 ]

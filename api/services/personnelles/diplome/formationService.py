@@ -8,15 +8,15 @@ class FormationService:
         return Formation.objects.create(
             titre=data.get("titre"),
             organisme=data.get("organisme"),
-            datedebut=data.get("datedebut"),
-            datefin=data.get("datefin"),
-            attestation=data.get("attestation"), # C'est l'objet fichier direct
+            lieu=data.get("lieu"),
+            annee=data.get("annee"),
+            attestation=data.get("attestation"),
             personnelle_id=data.get("personnelle")
         )
 
     @staticmethod
     def getAll():
-        return Formation.objects.all().order_by("-datedebut")
+        return Formation.objects.all().order_by("-annee")
 
     @staticmethod
     def getById(id: int) -> Formation:
