@@ -16,3 +16,6 @@ __pycache__/
 
 # Migrations (Optionnel : gardez-les si nécessaire, mais ignorez les fichiers compilés)
 *.pyc
+
+# Fichiers médias (pour ne pas alourdir le repo)
+media/
