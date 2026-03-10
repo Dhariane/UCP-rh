@@ -223,16 +223,25 @@ class PersonnelFullController(APIView):
                         "personnelle": personnelles.id
                     })
 
-                # Enfants
-                for enf in enfants:
-                    EnfantService.create({
+                for i, enf in enumerate(enfants):
+                    # On génère la clé attendue
+                    key = f"certificat_enfant_{i}" 
+                    
+                    # 1. On prépare les données de base
+                    donnees_enfant = {
                         "nom": enf.get("nom"),
                         "prenom": enf.get("prenom"),
                         "dateNaissance": enf.get("dateNaissance"),
                         "lieuNaissance": enf.get("lieuNaissance"),
-                        "certificatVie": files.get("certificatVie"),
                         "personnelle": personnelles.id
-                    })
+                    }
+                    
+                    # 2. On n'ajoute le fichier que s'il est réellement présent
+                    if key in files:
+                        donnees_enfant["certificatVie"] = files.get(key)
+                    
+                    # 3. Création sécurisée
+                    EnfantService.create(donnees_enfant)
 
                 # Historique du poste
                 for hist in historiques:
