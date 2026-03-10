@@ -6,14 +6,15 @@ class FamilleService:
     @staticmethod
     def create(data)-> Famille:
         return Famille.objects.create(
-            nomPere=data["nomPere"],
-            prenomPere=data["prenomPere"],
-            nomMere=data["nomMere"],
-            prenomMere=data["prenomMere"],
-            nomConjoint=data["nomConjoint"],
-            prenomConjoint=data["prenomConjoint"],
-            nombreEnfant=data["nombreEnfant"],
-            personnelle=data["personnelle"]
+            nomPere=data.get("nomPere"),
+            prenomPere=data.get("prenomPere"),
+            nomMere=data.get("nomMere"),
+            prenomMere=data.get("prenomMere"),
+            nomConjoint=data.get("nomConjoint"),
+            prenomConjoint=data.get("prenomConjoint"),
+            nombreEnfant=data.get("nombreEnfant"),
+            acteMariage=data.get("acteMariage"),
+            personnelle=data.get("personnelle")
         )
     @staticmethod
     def getAll():

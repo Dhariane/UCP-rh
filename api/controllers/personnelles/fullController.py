@@ -1,3 +1,4 @@
+from api.models.fonction.typeContrat import TypeContrats
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import transaction
@@ -9,22 +10,35 @@ from api.dto import PersonnellesDTO
 from api.services.personnelles.propos import (
     CinsService, PersonnelleServices, EtatCivilService,
     PhotosService, ProposService,SexeService,EnfantService,FamilleService)
-from api.services.personnelles.fonction import FonctionService, PosteService, ServiceService, SuperieurService
+from api.services.personnelles.fonction import FonctionService, PosteService, ServiceService
+from api.services.personnelles.fonction.contratService import ContratService
+from api.services.personnelles.fonction.typeContrantService import TypeContratService
 from api.services.personnelles.contact import ContactUrgencesService, RelationService
 from api.services.personnelles.banque import CoordonneesBancaireServices, AgenceService, BanqueService
 from api.services.personnelles.diplome.diplomeService import DiplomeService
 from api.services.personnelles.diplome.experienceService import ExperienceService
 from api.services.personnelles.diplome.formationService import FormationService
 from api.services.personnelles.diplome.historiqueDuPosteService import HistoriqueDuPosteService
-
-from api.models import EtatCivil,Sexes,Relations,Postes,Personnelles
+from api.services.personnelles.fonction.contratService import ContratService
+from api.services.personnelles.fonction.typeContrantService import TypeContratService
+from api.services.personnelles.fonction.modefinancementService import ModeFinancementService
+from api.models import EtatCivil,Sexes,Relations,Postes,Personnelles,Services,ModeFinancement
+from api.services.auth.login.loginService import  LoginService
 
 class PersonnelFullController(APIView):
     renderer_classes = [JSONRenderer]
     parser_classes = (MultiPartParser, FormParser)
+
     def post(self, request):
         data = request.data
-        files = request.FILES #
+        # CAPI DES FICHIERS IMMÉDIATEMENT (Sécurité pour éviter les None)
+        files = {k: v for k, v in request.FILES.items()}
+        
+        # Réinitialisation des curseurs de fichiers
+        for f in files.values():
+            f.seek(0)
+
+        # Parsing JSON
         try:
             experiences = json.loads(data.get("experiences", "[]"))
             diplomes = json.loads(data.get("diplomes", "[]"))
@@ -33,12 +47,10 @@ class PersonnelFullController(APIView):
             historiques = json.loads(data.get("historiqueDuPoste", "[]"))
         except Exception as e:
             return Response({"error": "Format JSON invalide"}, status=400)
-        # Debug pour voir ce qui arrive réellement
-        print("DATA REÇUE :", data)
 
         try:
             with transaction.atomic():
-                # 1. Récupération des objets liés (vérification existence)
+                # 1. Récupération des objets liés
                 sexe_id = data.get("sexe")
                 etat_civil_id = data.get("etatCivil")
                 poste_id = data.get("poste")
@@ -46,10 +58,21 @@ class PersonnelFullController(APIView):
                 if not sexe_id or not etat_civil_id or not poste_id:
                     return Response({"error": "Sexe, Etat Civil et Poste sont obligatoires"}, status=400)
 
-                # 1. Récupération des objets liés
                 sexe = Sexes.objects.get(id=sexe_id)
                 etatcivil = EtatCivil.objects.get(id=etat_civil_id)
                 poste = Postes.objects.get(id=poste_id)
+                
+                type_contrat_id = data.get("typecontrat")
+                if type_contrat_id:
+                    try:
+                        type_contrat = TypeContratService.get(type_contrat_id)
+                    except Exception:
+                        return Response({"error": "Type de contrat invalide"}, status=400)
+                else:
+                    return Response({"error": "Type de contrat requis"}, status=400)
+                
+                service = Services.objects.get(id=data.get("service"))
+                financement = ModeFinancement.objects.get(id=data.get("financement"))
 
                 # 2. Banque et Agence
                 banque = BanqueService.create({"nom": data.get("banque")})
@@ -59,14 +82,11 @@ class PersonnelFullController(APIView):
                 })
 
                 # 3. Coordonnées bancaires
-                image_rib = request.FILES.get('photoRib')
-                print(f"DEBUG RIB: Fichier reçu = {image_rib}") # <--- Ajoute ça pour être sûr !
-
                 coord = CoordonneesBancaireServices.create({
                     "rib": data.get("rib"),
                     "banque": banque,
                     "agence": agence,
-                    "photo_rib": image_rib # On envoie le fichier au service
+                    "photo_rib": files.get('photoRibFile')
                 })
 
                 # 4. CIN
@@ -88,8 +108,6 @@ class PersonnelFullController(APIView):
                 })
 
                 # 6. Personnelles
-                # --- Dans ton Controller Django ---
-                image_residence = request.FILES.get('photoResidence') 
                 personnelles = PersonnelleServices.create({
                     "nom": data.get("nom"),
                     "prenom": data.get("prenoms"),
@@ -101,36 +119,40 @@ class PersonnelFullController(APIView):
                     "sexe": sexe,
                     "propos": propos,
                     "cin": cin,
-                    "photoResidence": image_residence, # On passe le fichier ici
-                    # ...
+                    "photoResidence": files.get('photoresidence'),
+                    "casierjudiciaire": files.get('photoCasier'),
+                    "acteNaissance": files.get('photoacteNaissance'),
+                    "cinphoto": files.get("photoCin")
                 })
-                # 7. Contacts d'urgence (Traitement individuel car le JSON est plat)
-                # Contact 1
+
+                # Création du Contrat
+                contrat = ContratService.create({
+                    "NumeroContrat": data.get("NumeroContrat"),
+                    "photoContrat": files.get("photoContrat"),
+                    "typeContrat": type_contrat,
+                    "personnelle": personnelles
+                })
+
+                # 7. Contacts d'urgence
                 if data.get("personne1"):
                     rel1 = Relations.objects.get(id=data.get("relation1"))
                     ContactUrgencesService.create({
-                # Ajout de la photo principale si présente
                         "nom": data.get("personne1"),
                         "telephone": data.get("telephone1"),
                         "adresse": data.get("adresse1"),
                         "personnelle": personnelles,
                         "relation": rel1
                     })
-                #photos
-                photo_file = request.FILES.get('photo')
-            print(f"--- DEBUG AVANT SERVICE ---")
-            print(f"Fichier trouvé : {photo_file}")
-            print(f"Taille du fichier : {photo_file.size if photo_file else '0'} octets")
 
-            if photo_file:
-                # On force l'appel avec des clés explicites
-                PhotosService.create({
-                    "nom": data.get("nom") + "_photo",
-                    "data": photo_file,  # On passe l'objet InMemoryUploadedFile
-                    "personnelle": personnelles.id
-                })
-                
-                # Contact 2
+                # Photo principale
+                photo_file = files.get('photoFile')
+                if photo_file:
+                    PhotosService.create({
+                        "nom": data.get("nom") + "_photo",
+                        "data": photo_file,
+                        "personnelle": personnelles.id
+                    })
+
                 if data.get("personne2"):
                     rel2 = Relations.objects.get(id=data.get("relation2"))
                     ContactUrgencesService.create({
@@ -142,23 +164,17 @@ class PersonnelFullController(APIView):
                     })
 
                 # 8. Fonction
-                service = ServiceService.create({"nom": data.get("service")})
-                superieur = None
-                if data.get("superieur"):
-                    superieur = SuperieurService.create({"nom": data.get("superieur")})
-
                 FonctionService.create({
                     "nom": data.get("fonction"),
                     "dateDebut": data.get("dateEmbauche"),
                     "dateFin": data.get("dateSortie") if data.get("dateSortie") else None,
-                    "financement":data.get("financement"),
+                    "financement": financement,
                     "personnelle": personnelles,
-                    "superieur": superieur,
                     "poste": poste,
                     "service": service,
                 })
 
-                # 9. Famille (Données à plat dans le view)
+                # 9. Famille
                 if data.get("nomPere") or data.get("nomMere"):
                     FamilleService.create({
                         "nomPere": data.get("nomPere"),
@@ -168,56 +184,66 @@ class PersonnelFullController(APIView):
                         "nomConjoint": data.get("nomConjoint"),
                         "prenomConjoint": data.get("prenomConjoint"),
                         "nombreEnfant": data.get("nombreEnfants") or 0,
+                        "acteMariage": files.get("acteMariage"),
                         "personnelle": personnelles
                     })
 
-                # ----- Expériences -----
-                
+                # Expériences
                 for exp in experiences:
                     ExperienceService.create({
                         "nombreExperience": exp.get("nbrExp"),
                         "entreprise": exp.get("entreprise"),
-                        "poste": exp.get("posteExp"),
-                        "datedebut": exp.get("datedebut"),
-                        "datefin": exp.get("datefin"),
+                        "poste": exp.get("poste"),
+                        "datedebut": exp.get("dateDebut"),
+                        "datefin": exp.get("dateFin"),
                         "description": exp.get("description"),
                         "personnelle": personnelles.id
                     })
 
-                # 3. ----- Diplômes -----
-                # On utilise la liste 'diplomes' qu'on vient de parser
-                for dip in diplomes:
+                # Diplômes
+                for i, dip in enumerate(diplomes):
+                    key = f"diplome_file_{i}"
                     DiplomeService.create({
-                        "nom": dip.get("Diplome"),
+                        "nom": dip.get("intitule"),
                         "etablissement": dip.get("etablissement"),
-                        "dateObtention": dip.get("dateObtention"),
-                        "photo": request.FILES.get("photo"), # Le fichier est bien là d'après tes logs
+                        "dateObtention": dip.get("annee"),
+                        "photo": files.get(key),
                         "personnelle": personnelles.id
                     })
 
-                # 4. ----- Formations -----
-                
-                for form in formations:
+                # Formations
+                for i, form in enumerate(formations):
+                    key = f"formation_file_{i}"
                     FormationService.create({
-                        "titre": form.get("titre"),
+                        "titre": form.get("theme"),
                         "organisme": form.get("organisme"),
-                        "datedebut": form.get("datedebut"),
-                        "datefin": form.get("datefin"),
-                        "attestation": request.FILES.get("attestation"),
+                        "lieu": form.get("lieu"),
+                        "annee": form.get("annee"),
+                        "attestation": files.get(key),
                         "personnelle": personnelles.id
                     })
-                
-                # ----- Enfants -----
-                for enf in enfants:
-                    EnfantService.create({
+
+                for i, enf in enumerate(enfants):
+                    # On génère la clé attendue
+                    key = f"certificat_enfant_{i}" 
+                    
+                    # 1. On prépare les données de base
+                    donnees_enfant = {
                         "nom": enf.get("nom"),
                         "prenom": enf.get("prenom"),
                         "dateNaissance": enf.get("dateNaissance"),
                         "lieuNaissance": enf.get("lieuNaissance"),
                         "personnelle": personnelles.id
-                    })
+                    }
+                    
+                    # 2. On n'ajoute le fichier que s'il est réellement présent
+                    if key in files:
+                        donnees_enfant["certificatVie"] = files.get(key)
+                    
+                    # 3. Création sécurisée
+                    EnfantService.create(donnees_enfant)
 
-                # ----- Historique du poste -----
+                # Historique du poste
                 for hist in historiques:
                     HistoriqueDuPosteService.create({
                         "poste": hist.get("poste"),
@@ -226,16 +252,20 @@ class PersonnelFullController(APIView):
                         "description": hist.get("description"),
                         "personnelle": personnelles.id
                     })
+                LoginService.create(propos)
+
+                return Response({"status": "success", 
+                                 "message": "Personnel et accès créés avec succès Son Compte est creer et un email de notification a été envoyé"},
+                                 status=201)
 
                 return Response({"status": "success"}, status=201)
 
         except Exception as e:
-            print("ERREUR SERVEUR :", str(e))
-            print("Champs texte reçus :", data.keys())
-            print("Fichiers reçus :", request.FILES.keys())
+            print("ERREUR CRITIQUE :", str(e))
             return Response({"error": str(e)}, status=400)
 
     def get(self, request):
+        
         try:
             # Récupère toutes les personnelles
             personnelles_list = Personnelles.objects.all().prefetch_related(
@@ -250,7 +280,8 @@ class PersonnelFullController(APIView):
                 'fonctions__superieur',
                 'propos__etatCivil',
                 'cin',
-                'contactUrgence__relation'
+                'contactUrgence__relation',
+            
             )
             
             result = []
@@ -399,6 +430,17 @@ class PersonnelFullController(APIView):
                             "lieuNaissance": enf.lieuNaissance
                         }
                         for enf in personnelle.Enfant.all()
+                    ],
+                    
+                    # Contrats
+                    "contrats": [
+                        {
+                            "id": c.id,
+                            "NumeroContrat": c.NumeroContrat,
+                            "photoContrat": str(c.photoContrat) if c.photoContrat else None,
+                            "typeContrat": c.typeContrat.TypeContrat if c.typeContrat else None
+                        }
+                        for c in personnelle.contrat.all()
                     ]
                 }
                 result.append(personnelle_data)

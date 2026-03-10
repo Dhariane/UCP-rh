@@ -24,10 +24,14 @@ class PersonnellesDTO(serializers.ModelSerializer):
             "prenom",
             "dateNaissance",
             "lieuNaissance",
+            "adresse",
             "sexe",
             "propos",
             "cin",
             "photoResidence",
+            "acteNaissance",
+            "casierjudiciaire",
+            "cinphoto",
             "telPerso",
             "emailPerso"
         ]

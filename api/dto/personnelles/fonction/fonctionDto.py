@@ -8,9 +8,8 @@ class FonctionDto(serializers.ModelSerializer):
             "nom",
             "dateDebut",
             "dateFin",
-            "financement",
             "personnelle",
             "service",
             "poste",
-            "superieur"
+            "financement"
         ]

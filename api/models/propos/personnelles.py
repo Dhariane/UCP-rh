@@ -51,9 +51,20 @@ class Personnelles(BaseNom):
     emailPerso = models.EmailField(
         max_length=100,
         null=True,
-        blank=True
+        blank=True,
+        unique=True
+    )
+    cinphoto=models.FileField(
+        upload_to='photocin/'
     )
 
+    acteNaissance=models.FileField(
+        upload_to='acteNaissance/'
+    )
+
+    casierjudiciaire=models.FileField(
+        upload_to='Casierjudiciaire/'
+    )
     def __str__(self):
         return f"{self.prenom} {self.nom}"
     
