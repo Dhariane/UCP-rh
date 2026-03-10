@@ -1,4 +1,18 @@
+# Environnement virtuel
+venv/
+env/
+.env
+
+# Fichiers de cache Python
 __pycache__/
 *.pyc
-media/
-venv/
+*.pyo
+*.pyd
+
+# Dossiers IDE / Système
+.vscode/
+.idea/
+.DS_Store
+
+# Migrations (Optionnel : gardez-les si nécessaire, mais ignorez les fichiers compilés)
+*.pyc
