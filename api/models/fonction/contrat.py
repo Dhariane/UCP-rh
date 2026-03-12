@@ -11,12 +11,12 @@ class Contrat(models.Model):
 
     typeContrat = models.ForeignKey(
         TypeContrats,
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name="typecontrats"
     )
 
     personnelle = models.ForeignKey(
         Personnelles,
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name="contrat"
     )

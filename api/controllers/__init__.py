@@ -18,7 +18,6 @@ from .personnelles.propos.familleController import FamilleController
 from .personnelles.diplome.experienceController import ExperienceController
 from .personnelles.diplome.diplomeController import DiplomeController
 from .personnelles.diplome.formationController import FormationController
-from .personnelles.diplome.historiqueDuPosteController import HistoriqueDuPosteController
 from .personnelles.propos.enfantController import EnfantController
 from .personnelles.fonction.contratController import ContratController
 from .personnelles.fonction.typeContratController import TypeContratController
@@ -45,7 +44,6 @@ __all__ = [
     "ExperienceController",
     "DiplomeController",
     "FormationController",
-    "HistoriqueDuPosteController",
     "EnfantController",
     "ContratController",
     "TypeContratController",

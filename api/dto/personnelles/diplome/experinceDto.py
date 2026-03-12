@@ -6,7 +6,6 @@ class ExperienceDTO(serializers.ModelSerializer):
         model = Experience
         fields = [
             'id',
-            'nombreExperience',
             'entreprise',
             'poste',
             'datedebut',

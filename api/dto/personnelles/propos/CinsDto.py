@@ -8,5 +8,6 @@ class CinsDTO(serializers.ModelSerializer):
             "id",
             "numeroCin",
             "dateCin",
-            "lieuCin"
+            "lieuCin",
+            "personnelle"
         ]

@@ -14,7 +14,7 @@ class Enfant(BaseNom):
     )
     personnelle = models.ForeignKey(
         Personnelles, 
-        on_delete=models.PROTECT, 
+        on_delete=models.CASCADE, 
         related_name="Enfant"
     )
     

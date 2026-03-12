@@ -15,7 +15,6 @@ from .personnelles.propos import sexeService
 from .personnelles.diplome import experienceService
 from .personnelles.diplome import diplomeService
 from .personnelles.diplome import formationService
-from .personnelles.diplome import historiqueDuPosteService
 from .personnelles.propos import enfantService
 __all__ = [
     "personnellesService",
@@ -35,7 +34,6 @@ __all__ = [
     "experienceService",
     "diplomeService",
     "formationService",
-    "historiqueDuPosteService",
     "enfantService"
     
 ]

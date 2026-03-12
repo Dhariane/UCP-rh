@@ -7,4 +7,4 @@ from django.db import models
 class CoordonneesBancairesDto(serializers.ModelSerializer):
     class Meta:
         model = CoordonneesBancaires
-        fields = ["id", "banque", "agence", "rib","photoRib"]
+        fields = ["id", "banque", "agence", "rib","photoRib","personnelle"]
