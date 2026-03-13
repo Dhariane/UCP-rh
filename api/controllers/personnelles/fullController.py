@@ -125,6 +125,7 @@ class PersonnelFullController(APIView):
                 # Création du Contrat
                 contrat = ContratService.create({
                     "NumeroContrat": data.get("NumeroContrat"),
+                    "essai":data.get("essai"),
                     "photoContrat": files.get("photoContrat"),
                     "typeContrat": type_contrat,
                     "personnelle": personnelles
@@ -182,6 +183,9 @@ class PersonnelFullController(APIView):
                         "prenomConjoint": data.get("prenomConjoint"),
                         "nombreEnfant": data.get("nombreEnfants") or 0,
                         "acteMariage": files.get("acteMariage"),
+                        "telConjoint":data.get("telConjoint"),
+                        "adresseConjoint":data.get("adresseConjoint"),
+                        "emailConjoin":data.get("emailConjoint"),
                         "personnelle": personnelles
                     })
 

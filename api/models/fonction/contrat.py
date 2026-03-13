@@ -3,7 +3,12 @@ from api.models.propos.personnelles import Personnelles
 from api.models.fonction.typeContrat import TypeContrats
 
 class Contrat(models.Model):
-    NumeroContrat = models.CharField()
+    NumeroContrat = models.CharField(
+        unique=True
+    )
+    essai = models.CharField(
+        unique=True
+    )
 
     photoContrat=models.FileField(
         upload_to='Contrats/'

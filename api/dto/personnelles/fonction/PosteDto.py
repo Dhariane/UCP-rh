@@ -7,5 +7,7 @@ class PosteDTO(serializers.ModelSerializer):
         fields = [
             "id",
             "nom",
-            "grade"
+            "grade",
+            "email",
+            "tel"
         ]
