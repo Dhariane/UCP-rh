@@ -4,6 +4,7 @@ from api.models.auth.login.loginModel import Login
 class LoginDTO(serializers.ModelSerializer):
     # On peut afficher l'email directement au lieu de l'ID de la personne
     email_detail = serializers.EmailField(source='email.email', read_only=True)
+    personnel_id = serializers.IntegerField(source='email.id', read_only=True)
     
     class Meta:
         model = Login
@@ -11,6 +12,7 @@ class LoginDTO(serializers.ModelSerializer):
             'id', 
             'email',         # Accepte l'email (ForeignKey vers Propos)
             'email_detail',  # Pour l'affichage clair en lecture
+            'personnel_id'
             'role', 
             'password', 
             'created_at'

@@ -38,6 +38,8 @@ class LoginController(APIView):
                         "status": "success",
                         "token": token.key,
                         "user": {
+                            "id": login_account.id,              # ID de la table Login
+                            "personnel_id": login_account.email.id, # ID de l'employé (via la FK email)
                             "email": email_saisi,
                             "role": login_account.role.name if login_account.role else "User"
                         }
