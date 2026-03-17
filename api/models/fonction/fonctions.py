@@ -22,6 +22,8 @@ class Fonctions(models.Model):
 
     poste = models.ForeignKey(
         Postes,
+        blank=True,
+        null=True,
         on_delete=models.CASCADE,
         related_name="fonctions"
     )

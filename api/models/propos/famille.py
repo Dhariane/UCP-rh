@@ -44,7 +44,6 @@ class Famille(models.Model):
         max_length=100,
         null=True,
         blank=True,
-        unique=True
     )
     nombreEnfant= models.CharField(
         max_length=100,

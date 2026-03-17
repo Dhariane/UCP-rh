@@ -49,18 +49,36 @@ class PersonnelFullController(APIView):
 
         try:
             with transaction.atomic():
-                # 1. Récupération des objets liés
+                # 1. Récupération des IDs depuis les données
                 sexe_id = data.get("sexe")
                 etat_civil_id = data.get("etatCivil")
-                poste_id = data.get("poste")
+                poste_id = data.get("poste")  # Peut être None ou une chaîne vide
 
-                if not sexe_id or not etat_civil_id or not poste_id:
-                    return Response({"error": "Sexe, Etat Civil et Poste sont obligatoires"}, status=400)
+                # On retire poste_id de la vérification obligatoire
+                if not sexe_id or not etat_civil_id:
+                    return Response({"error": "Sexe et Etat Civil sont obligatoires"}, status=400)
 
-                sexe = Sexes.objects.get(id=sexe_id)
-                etatcivil = EtatCivil.objects.get(id=etat_civil_id)
-                poste = Postes.objects.get(id=poste_id)
-                
+                # Récupération sécurisée des objets obligatoires
+                try:
+                    sexe = Sexes.objects.get(id=sexe_id)
+                    etatcivil = EtatCivil.objects.get(id=etat_civil_id)
+                    
+                    # Récupération sécurisée des autres objets obligatoires
+                    service = Services.objects.get(id=data.get("service"))
+                    financement = ModeFinancement.objects.get(id=data.get("financement"))
+                except (Sexes.DoesNotExist, Services.DoesNotExist, ModeFinancement.DoesNotExist) as e:
+                    return Response({"error": f"Référence introuvable : {str(e)}"}, status=400)
+
+                # --- LOGIQUE POUR LE POSTE OPTIONNEL ---
+                poste = None
+                if poste_id and poste_id not in ["", "null", "undefined"]:
+                    try:
+                        poste = Postes.objects.get(id=poste_id)
+                    except Postes.DoesNotExist:
+                        # Optionnel : décider si un mauvais ID de poste doit bloquer ou juste être ignoré
+                        return Response({"error": "Le poste spécifié n'existe pas"}, status=400)
+
+                # --- LOGIQUE TYPE CONTRAT (Ton code existant) ---
                 type_contrat_id = data.get("typecontrat")
                 if type_contrat_id:
                     try:
@@ -69,9 +87,6 @@ class PersonnelFullController(APIView):
                         return Response({"error": "Type de contrat invalide"}, status=400)
                 else:
                     return Response({"error": "Type de contrat requis"}, status=400)
-                
-                service = Services.objects.get(id=data.get("service"))
-                financement = ModeFinancement.objects.get(id=data.get("financement"))
 
                 # 2. Banque et Agence
                 banque = BanqueService.create({"nom": data.get("banque")})
@@ -82,7 +97,7 @@ class PersonnelFullController(APIView):
 
                 personnelles = PersonnelleServices.create({
                     "nom": data.get("nom"),
-                    "prenom": data.get("prenoms"),
+                    "prenom": data.get("prenom"),
                     "dateNaissance": data.get("dateNaissance"),
                     "lieuNaissance": data.get("lieuNaissance"),
                     "adresse": data.get("adresse"),
@@ -125,7 +140,8 @@ class PersonnelFullController(APIView):
                 # Création du Contrat
                 contrat = ContratService.create({
                     "NumeroContrat": data.get("NumeroContrat"),
-                    "essai":data.get("essai"),
+                    "periodeEssai":data.get("periodeEssai"),
+                    "dateFinEssai":data.get("dateFinEssai"),
                     "photoContrat": files.get("photoContrat"),
                     "typeContrat": type_contrat,
                     "personnelle": personnelles
@@ -185,7 +201,7 @@ class PersonnelFullController(APIView):
                         "acteMariage": files.get("acteMariage"),
                         "telConjoint":data.get("telConjoint"),
                         "adresseConjoint":data.get("adresseConjoint"),
-                        "emailConjoin":data.get("emailConjoint"),
+                        "emailConjoint":data.get("emailConjoint"),
                         "personnelle": personnelles
                     })
 
@@ -253,7 +269,7 @@ class PersonnelFullController(APIView):
                 # --- RÉCUPÉRATION D'UN SEUL PERSONNEL (POUR SON COMPTE) ---
                 # On utilise prefetch_related pour charger toutes les listes en une seule fois
                 personne = Personnelles.objects.prefetch_related(
-                    'sexe', 'cin', 'propos', 'propos__etatCivil',
+                    'sexe', 'cins','propos_list','propos_list__etatCivil',
                     'Diplome', 'Experience', 'Enfant', 'contrat', 
                     'contrat__typeContrat', 'fonctions', 'fonctions__service', 
                     'fonctions__poste', 'contactUrgence', 'photos'

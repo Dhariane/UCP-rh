@@ -46,7 +46,7 @@ class Propos(models.Model):
     personnelle = models.ForeignKey(
         'Personnelles', 
         on_delete=models.CASCADE,
-        related_name='propos'
+        related_name='propos_list'
     )
 
     def __str__(self):

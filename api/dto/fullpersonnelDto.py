@@ -93,8 +93,8 @@ class EnfantSerializer(serializers.ModelSerializer):
 # --- 5. LE SERIALIZER GLOBAL : PersonnelFullSerializer ---
 class PersonnelFullSerializer(serializers.ModelSerializer):
     sexe = SexeSerializer(read_only=True)
-    cin = CinSerializer(read_only=True)
-    propos = ProposSerializer(read_only=True)
+    cins = CinSerializer(many=True, read_only=True)
+    propos = ProposSerializer(source='propos_list', many=True, read_only=True)
     
     # Relations contractuelles
     # 'contrat' et 'fonctions' doivent être les related_name dans tes modèles

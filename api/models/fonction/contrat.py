@@ -6,8 +6,13 @@ class Contrat(models.Model):
     NumeroContrat = models.CharField(
         unique=True
     )
-    essai = models.CharField(
-        unique=True
+    periodeEssai = models.CharField(
+        null=True
+    )
+
+    dateFinEssai = models.DateField(
+        null=True,
+        blank=True
     )
 
     photoContrat=models.FileField(
