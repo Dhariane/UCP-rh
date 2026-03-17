@@ -1,4 +1,3 @@
-
 from api.models.propos.etatCivils import EtatCivil
 from django.db import models
 
@@ -39,14 +38,16 @@ class Propos(models.Model):
         blank=True
     )
 
-
     etatCivil = models.ForeignKey(
         EtatCivil,
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name="propos"
     )
-
-
+    personnelle = models.ForeignKey(
+        'Personnelles', 
+        on_delete=models.CASCADE,
+        related_name='propos_list'
+    )
 
     def __str__(self):
         return f"Propos #{self.id}"

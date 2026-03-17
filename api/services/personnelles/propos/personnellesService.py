@@ -26,8 +26,6 @@ class PersonnelleServices:
             emailPerso=data.get('emailPerso'),
             telPerso=data.get("telPerso"),
             sexe=data.get('sexe'),
-            propos=data.get('propos'),
-            cin=data.get('cin'),
             adresse=data.get('adresse'), 
             photoResidence=file_photo,
             casierjudiciaire=file_casier,

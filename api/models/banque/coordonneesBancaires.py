@@ -8,17 +8,24 @@ class CoordonneesBancaires(models.Model):
     )
     banque = models.ForeignKey(
         Banques,
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name="coordonneesBancaires"
     )
     agence = models.ForeignKey(
         Agences,
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name="coordonneesBancaires"
     )
     # Ajout du champ photo
     photoRib = models.ImageField(
         upload_to='ribs/',
+        null=True, 
+        blank=True
+    )
+    personnelle = models.OneToOneField(
+        'Personnelles', 
+        on_delete=models.CASCADE, 
+        related_name='coordonnees_bancaires',
         null=True, 
         blank=True
     )

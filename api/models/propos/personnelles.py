@@ -1,8 +1,7 @@
 from django.db import models
 from api.models.utils.baseNom import BaseNom
 from api.models.propos.sexe import Sexes
-from api.models.propos.Cins import Cins
-from api.models.propos.propos import Propos
+
 
 class Personnelles(BaseNom):
     # Define fields for the Personnelles model here
@@ -18,19 +17,6 @@ class Personnelles(BaseNom):
     sexe = models.ForeignKey(
         Sexes, 
         on_delete=models.PROTECT,
-        related_name="personnelles"
-    )
-    propos = models.ForeignKey(
-        Propos,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True, 
-        related_name="personnelles"
-    )
-    cin = models.ForeignKey(
-        Cins,on_delete=models.SET_NULL,
-        null=True, 
-        blank=True,
         related_name="personnelles"
     )
     adresse = models.CharField(

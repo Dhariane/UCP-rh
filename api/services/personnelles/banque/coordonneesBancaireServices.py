@@ -18,7 +18,8 @@ class CoordonneesBancaireServices:
             rib=data.get('rib'),
             banque=data.get('banque'),
             agence=data.get('agence'),
-            photoRib=data.get('photo_rib') # L'objet fichier direct
+            photoRib=data.get('photo_rib'),
+            personnelle_id=data.get("personnelle")
         )
     @staticmethod
     def update(id: int, data) -> CoordonneesBancaires:

@@ -16,25 +16,27 @@ class Fonctions(models.Model):
     )
     personnelle = models.ForeignKey(
         Personnelles,
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name="fonctions"
     )
 
     poste = models.ForeignKey(
         Postes,
-        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
         related_name="fonctions"
     )
 
     service = models.ForeignKey(
         Services,
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name="fonctions"
     )
 
     financement = models.ForeignKey(
         ModeFinancement,
-        on_delete=models.PROTECT,null=True,
+        on_delete=models.CASCADE,null=True,
         related_name="financement"
     )
 

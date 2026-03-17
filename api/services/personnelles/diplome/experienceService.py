@@ -6,13 +6,12 @@ class ExperienceService:
     @staticmethod
     def create(data) -> Experience:
         return Experience.objects.create(
-            nombreExperience=data['nombreExperience'],
             entreprise=data['entreprise'],
             poste=data['poste'],
             datedebut=data['datedebut'],
             datefin=data['datefin'],
             description=data['description'],
-            personnelle_id=data['personnelle'] # On utilise l'ID de la relation
+            personnelle_id=data['personnelle'] 
         )
 
     @staticmethod

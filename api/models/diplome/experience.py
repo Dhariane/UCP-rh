@@ -2,7 +2,6 @@ from django.db import models
 from api.models.propos.personnelles import Personnelles
 
 class Experience(models.Model):
-    nombreExperience=models.IntegerField()
     
     entreprise= models.CharField(
         max_length=100,
@@ -18,12 +17,18 @@ class Experience(models.Model):
 
     datedebut=models.DateField()
 
-    datefin=models.DateField()
+    datefin=models.DateField(
+        null=True,
+        blank=True
+    )
 
-    description=models.TextField()
+    description=models.TextField(
+        null=True,
+        blank=True
+    )
 
     personnelle = models.ForeignKey(
         Personnelles, 
-        on_delete=models.PROTECT, 
+        on_delete=models.CASCADE, 
         related_name="Experience"
     )

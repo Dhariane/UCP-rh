@@ -32,6 +32,19 @@ class Famille(models.Model):
         null= True,
         blank=True
     )
+    telConjoint= models.CharField(
+        max_length=100,
+        null= True,
+        blank=True
+    )
+    adresseConjoint= models.CharField(
+        max_length=100,
+    )
+    emailConjoint = models.EmailField(
+        max_length=100,
+        null=True,
+        blank=True,
+    )
     nombreEnfant= models.CharField(
         max_length=100,
         null= True,
@@ -42,5 +55,5 @@ class Famille(models.Model):
     )
     personnelle = models.ForeignKey(
         Personnelles, 
-        on_delete=models.PROTECT, 
+        on_delete=models.CASCADE, 
         related_name="Famille")

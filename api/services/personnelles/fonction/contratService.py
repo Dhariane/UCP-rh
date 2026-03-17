@@ -8,6 +8,8 @@ class ContratService:
             NumeroContrat=data['NumeroContrat'],
             photoContrat=data.get('photoContrat'),
             typeContrat=data['typeContrat'],
+            periodeEssai=data['periodeEssai'],
+            dateFinEssai=data['dateFinEssai'],
             personnelle=data['personnelle']
         )
 

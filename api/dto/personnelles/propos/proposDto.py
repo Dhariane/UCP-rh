@@ -19,6 +19,7 @@ class ProposDTO(serializers.ModelSerializer):
             "tel",
             "email",
             "nombreEnfant",
-            "etatCivil"
+            "etatCivil",
+            "personnelle"
         ]
 

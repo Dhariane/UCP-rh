@@ -6,8 +6,11 @@ class PosteService:
     def create(data) -> Postes:
         return Postes.objects.create(
             nom=data['nom'], 
-            grade=data['grade'])
-
+            grade=data['grade'],
+            email=data['email'],
+            tel=data['tel']
+        )
+            
     @staticmethod
     def getAll():
         return Postes.objects.all().order_by("id")

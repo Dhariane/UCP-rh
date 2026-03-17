@@ -9,7 +9,7 @@ from PIL import Image
 
 class Photos(BaseNom):
     data = models.ImageField(upload_to='photos/')
-    personnelle = models.ForeignKey(Personnelles, on_delete=models.PROTECT, related_name="photos")
+    personnelle = models.ForeignKey(Personnelles, on_delete=models.CASCADE, related_name="photos")
 
     def save(self, *args, **kwargs):
         # On vérifie si on a stocké du Base64 dans l'attribut temporaire _base64_temp

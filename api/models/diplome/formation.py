@@ -7,7 +7,7 @@ class Formation(models.Model):
 
     personnelle = models.ForeignKey(
         Personnelles, 
-        on_delete=models.PROTECT, 
+        on_delete=models.CASCADE, 
         related_name="Formation"
     )
 

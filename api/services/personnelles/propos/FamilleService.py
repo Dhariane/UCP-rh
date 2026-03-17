@@ -12,6 +12,9 @@ class FamilleService:
             prenomMere=data.get("prenomMere"),
             nomConjoint=data.get("nomConjoint"),
             prenomConjoint=data.get("prenomConjoint"),
+            telConjoint=data.get("telConjoint"),
+            adresseConjoint=data.get("adresseConjoint"),
+            emailConjoint=data.get("emailConjoint"),
             nombreEnfant=data.get("nombreEnfant"),
             acteMariage=data.get("acteMariage"),
             personnelle=data.get("personnelle")
