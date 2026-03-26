@@ -13,9 +13,7 @@ class FamilleDto(serializers.ModelSerializer):
         fields = [
             "id",
             "nomPere",
-            "prenomPere",
             "nomMere",
-            "prenomMere",
             "nomConjoint",
             "prenomConjoint",
             "telConjoint",

@@ -1,6 +1,7 @@
 from django.db import models
 from api.models.utils.baseNom import BaseNom
 from api.models.propos.personnelles import Personnelles
+from api.models.propos.sexe import Sexes
 
 class Enfant(BaseNom):
     # Define fields for the Personnelles model here
@@ -20,6 +21,11 @@ class Enfant(BaseNom):
     
     certificatVie=models.FileField(
         upload_to='certificatVie/'
+    )
+    sexe = models.ForeignKey(
+        Sexes, 
+        on_delete=models.PROTECT,
+        related_name="enfant"
     )
 
     def __str__(self):

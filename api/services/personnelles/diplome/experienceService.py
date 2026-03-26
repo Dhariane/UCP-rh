@@ -1,5 +1,5 @@
 from api.models import Experience
-from api.dto.personnelles.diplome.experinceDto import ExperienceDTO
+from api.dto.personnelles.diplome.experienceDto import ExperienceDTO
 
 class ExperienceService:
     

@@ -17,6 +17,9 @@ class CinsService:
             numeroCin=data.get("numeroCin"),
             dateCin=data.get("dateCin"),
             lieuCin=data.get("lieuCin"),
+            numeroDuplicata=data.get("numeroDuplicata"),
+            dateDuplicata=data.get("dateDuplicata"),
+            lieuDuplicata=data.get("lieuDuplicata"),
             personnelle=data.get("personnelle")
         )
 

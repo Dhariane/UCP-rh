@@ -25,6 +25,8 @@ class PersonnellesDTO(serializers.ModelSerializer):
             "dateNaissance",
             "lieuNaissance",
             "adresse",
+            "quartier",
+            "ville",
             "sexe",
             "propos",
             "cin",
