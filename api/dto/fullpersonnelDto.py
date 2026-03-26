@@ -99,9 +99,7 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
     nombreEnfants = serializers.ReadOnlyField(source='propos_list.first.nombreEnfant', default=0)
     
     nomPere = serializers.SerializerMethodField()
-    prenomPere = serializers.SerializerMethodField()
     nomMere = serializers.SerializerMethodField()
-    prenomMere = serializers.SerializerMethodField()
     
     rib = serializers.SerializerMethodField()
     banque = serializers.SerializerMethodField() # Utilise la méthode get_banque
@@ -124,7 +122,7 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
             'cin','date_embauche', 'poste_superieur', 'service_actuel', 'financement_actuel',
             'contrat', 'dateDelivranceCin', 'lieuDelivranceCin',
             'etatCivil', 'nombreEnfants', 'conjoint',
-            'nomPere', 'prenomPere', 'nomMere', 'prenomMere',
+            'nomPere','nomMere',
             'emailProfessionnel', 'contactProfessionnel', 'nif', 'stat', 'cnaps',
             'rib', 'banque', 'agence',
             'enfants', 'contactsUrgence', 'diplomes', 'experiences', 'formations',
@@ -186,17 +184,9 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
         f = self._get_famille(obj)
         return f.nomPere if f else ""
 
-    def get_prenomPere(self, obj):
-        f = self._get_famille(obj)
-        return f.prenomPere if f else ""
-
     def get_nomMere(self, obj):
         f = self._get_famille(obj)
         return f.nomMere if f else ""
-
-    def get_prenomMere(self, obj):
-        f = self._get_famille(obj)
-        return f.prenomMere if f else ""
 
     def get_rib(self, obj):
         # On importe ici pour éviter les imports circulaires
@@ -311,7 +301,7 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
             'emailPersonnel', 'telephonePersonnel', 'sexe',
             'cin', 'dateDelivranceCin', 'lieuDelivranceCin',
             'nif', 'stat', 'cnaps', 'emailProfessionnel', 'contactProfessionnel', 'etatCivil', 'nombreEnfants',
-            'nomPere', 'prenomPere', 'nomMere', 'prenomMere',
+            'nomPere', 'nomMere',
             'nomConjoint', 'prenomConjoint', 'telConjoint', 'emailConjoint', 'adresseConjoint',
             'rib'
         ]
@@ -336,9 +326,7 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
         
         famille_data = {
             'nomPere': validated_data.pop('nomPere', None),
-            'prenomPere': validated_data.pop('prenomPere', None),
             'nomMere': validated_data.pop('nomMere', None),
-            'prenomMere': validated_data.pop('prenomMere', None),
             'nomConjoint': validated_data.pop('nomConjoint', None),
             'prenomConjoint': validated_data.pop('prenomConjoint', None),
             'telConjoint': validated_data.pop('telConjoint', None),
