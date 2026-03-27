@@ -27,18 +27,16 @@ class FamilleService:
     
     @staticmethod
     def update(id: int, data: dict) -> Famille:
-        # 1. On récupère l'instance existante
-        Familles = Famille.objects.get(id=id)
+        # On récupère l'instance
+        instance = Famille.objects.get(id=id)
         
-        # 2. On boucle sur les clés envoyées dans le dictionnaire 'data'
+        # On met à jour uniquement les champs envoyés dans 'data'
         for key, value in data.items():
-            # On vérifie que l'attribut existe bien dans le modèle pour éviter les erreurs
-            if hasattr(Familles, key):
-                setattr(Familles, key, value)
+            if hasattr(instance, key):
+                setattr(instance, key, value)
         
-        # 3. On enregistre les modifications en une seule fois
-        Familles.save()
-        return Familles
+        instance.save()
+        return instance
     @staticmethod
     def getByIdDto(id:int) -> FamilleDto:
         Familles = FamilleService.getById(id)

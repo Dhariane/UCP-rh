@@ -10,8 +10,9 @@ from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
 
 # Importe tes modèles ici
-from api.models import EtatCivil, Sexes, Relations, Postes, Personnelles
-
+from api.models import EtatCivil, Sexes, Relations, Postes, Personnelles,Banques,Cins,ContactUrgences,CoordonneesBancaires,Diplome,Contrat,Enfant,Experience,Famille,Fonctions,Formation,Login,ModeFinancement,Photos,Propos,propos,Role,Services,TypeContrats
+from api.services import agencesService,CinsService,PosteService,RelationService,ServiceService,banqueService,ContactUrgentService,coordonneesBancaireServices,diplomeService,enfantService,etatCivilService,experienceService,fonctionService,formationService,personnelles,personnellesService,photosService,proposService,sexeService
+from api.services.personnelles.propos import FamilleService
 class PersonnelFullController(APIView):
     renderer_classes = [JSONRenderer]
 
@@ -34,11 +35,11 @@ class PersonnelFullController(APIView):
                     return Response({"error": f"Référence manquante en base : {str(e)}"}, status=400)
 
                 # 2. CRÉATION DES SERVICES DE BASE
-                agence = AgenceService.create({"nom": data.get("agence")})
-                banque = BanqueService.create({"nom": data.get("banque")})
+                agence = agencesService.create({"nom": data.get("agence")})
+                banque = banqueService.create({"nom": data.get("banque")})
 
                 # 3. COORDONNÉES BANCAIRES
-                coord = CoordonneesBancaireServices.create({
+                coord = coordonneesBancaireServices.create({
                     "rib": data.get("rib"),
                     "banque": banque,
                     "agence": agence,
@@ -53,7 +54,7 @@ class PersonnelFullController(APIView):
                 })
 
                 # 5. PROPOS
-                propos = ProposService.create({
+                propos = proposService.create({
                     "nif": data.get("nif"),
                     "stat": data.get("stat"),
                     "numeroCnaps": data.get("cnaps"),
@@ -64,7 +65,7 @@ class PersonnelFullController(APIView):
                 })
 
                 # 6. PERSONNEL (Note: 'prenoms' avec un 's' dans ton QueryDict)
-                personnelles = PersonnelleServices.create({
+                personnelles = personnellesService.create({
                     "nom": data.get("nom"),
                     "prenom": data.get("prenoms"), 
                     "dateNaissance": data.get("dateNaissance"),
@@ -78,7 +79,7 @@ class PersonnelFullController(APIView):
                 })
 
                 # 7. CONTACT D'URGENCE (Utilise personne1 et relation1)
-                ContactUrgencesService.create({
+                ContactUrgentService.create({
                     "nom": data.get("personne1"),
                     "telephone": data.get("telephone1"),
                     "adresse": data.get("adresse1"),
@@ -88,18 +89,13 @@ class PersonnelFullController(APIView):
 
                 # 8. SERVICE & FONCTION
                 service_obj = ServiceService.create({"nom": data.get("service")})
-                
-                superieur = None
-                if data.get("superieur"):
-                    superieur = SuperieurService.create({"nom": data.get("superieur")})
 
-                FonctionService.create({
+                fonctionService.create({
                     "nom": data.get("fonction"),
                     "dateDebut": data.get("dateEmbauche"), # 'dateEmbauche' dans ton front
                     "dateFin": data.get("dateSortie"),
                     "financement": data.get("financement"),
                     "personnelle": personnelles,
-                    "superieur": superieur,
                     "poste": poste,
                     "service": service_obj,
                 })
@@ -108,7 +104,7 @@ class PersonnelFullController(APIView):
                 # Expériences
                 experiences_data = json.loads(data.get("experiences", "[]"))
                 for exp in experiences_data:
-                    ExperienceService.create({
+                    experienceService.create({
                         "entreprise": exp.get("entreprise"),
                         "poste": exp.get("poste"),
                         "datedebut": exp.get("dateDebut"),
@@ -120,7 +116,7 @@ class PersonnelFullController(APIView):
                 # Enfants
                 enfants_data = json.loads(data.get("enfants", "[]"))
                 for enf in enfants_data:
-                    EnfantService.create({
+                    enfantService.create({
                         "nom": enf.get("nom"),
                         "prenom": enf.get("prenom"),
                         "dateNaissance": enf.get("dateNaissance"),
@@ -130,7 +126,7 @@ class PersonnelFullController(APIView):
                 # Diplômes (Details textuels)
                 diplomes_data = json.loads(data.get("diplomes_details", "[]"))
                 for dip in diplomes_data:
-                    DiplomeService.create({
+                    diplomeService.create({
                         "nom": dip.get("intitule"),
                         "etablissement": dip.get("etablissement"),
                         "dateObtention": dip.get("annee"),

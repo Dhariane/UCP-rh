@@ -23,12 +23,18 @@ class ContactUrgencesService:
         return ContactUrgences.objects.get(id=id)
     
     @staticmethod
-    def update(id: int, telephone: str, adresse: str, personnelle_id: int, relation_id: int) -> ContactUrgences:
+    def update(id: int,nom: str, telephone: str, adresse: str, personnelle: int, relation: int) -> ContactUrgences:
+        # On récupère l'instance existante
         contactUrgence = ContactUrgences.objects.get(id=id)
+        
+        contactUrgence.nom = nom
         contactUrgence.telephone = telephone
         contactUrgence.adresse = adresse
-        contactUrgence.personnelle = personnelle_id 
-        contactUrgence.relation = relation_id
+        
+        # Utilisation de _id pour accepter l'identifiant numérique (ex: 57)
+        contactUrgence.personnelle_id = personnelle 
+        contactUrgence.relation_id = relation
+        
         contactUrgence.save()
         return contactUrgence
     
