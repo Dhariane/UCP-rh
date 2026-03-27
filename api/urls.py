@@ -21,7 +21,7 @@ urlpatterns = [
     path("cins", CinsController.as_view(), name="cins"),
     path("cins/<int:id>/", CinsController.as_view(), name="cins-detail"),
     path("personnelles", PersonnelleController.as_view(), name="personnelles"),
-    # path("personnelles/<int:id>",PersonnelleController.as_view(),name="personnelles-detail")
+    path("personnelles/<int:id>",PersonnelleController.as_view(),name="personnelles-detail"),
     path("contact-urgents", ContactUrgentController.as_view(), name="contact-urgents"),
     path("contact-urgents/<int:id>/", ContactUrgentController.as_view(), name="contact-urgent-detail"),
     path("fonctions", FonctionController.as_view(), name="fonctions"),
@@ -36,7 +36,7 @@ urlpatterns = [
     path("photos/<int:id>/", PhotosController.as_view(), name="photo-detail"),
     path("fullpersonnelles",PersonnelFullController.as_view(),name='fullpersonnelles'),
     path("familles",FamilleController.as_view(),name="familles"),
-    path("familles/<int:id>/",FamilleController.as_view,name="famille-detail"),
+    path("familles/<int:id>/",FamilleController.as_view(),name="famille-detail"),
     path('api/fullpersonnelles/<int:id>/', PersonnelFullController.as_view(), name='full-personnel-detail'),
     path('fullpersonnelles/<int:pk>/', PersonnelFullController.as_view()),
     path('experiences', ExperienceController.as_view(), name='experience'),

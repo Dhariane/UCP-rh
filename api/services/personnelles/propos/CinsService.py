@@ -24,18 +24,20 @@ class CinsService:
         )
 
     @staticmethod
-    def update(id: int, data: dict) -> Cins:
-        """
-        Met à jour dynamiquement les informations de la CIN.
-        """
-        cins = Cins.objects.get(id=id)
-        
-        for field, value in data.items():
-            if hasattr(cins, field):
-                setattr(cins, field, value)
-        
-        cins.save()
-        return cins
+    def update(id, numeroCin, dateCin, lieuCin, numeroDuplicata=None, dateDuplicata=None, lieuDuplicata=None):
+        try:
+            instance = Cins.objects.get(id=id)
+            instance.numeroCin = numeroCin
+            instance.dateCin = dateCin
+            instance.lieuCin = lieuCin
+            # Ajout du numeroDuplicata ici pour être complet
+            instance.numeroDuplicata = numeroDuplicata 
+            instance.dateDuplicata = dateDuplicata
+            instance.lieuDuplicata = lieuDuplicata
+            instance.save()
+            return instance
+        except Cins.DoesNotExist:
+            raise Exception("CIN non trouvé")
 
     @staticmethod
     def getByIdDto(id: int) -> CinsDTO:

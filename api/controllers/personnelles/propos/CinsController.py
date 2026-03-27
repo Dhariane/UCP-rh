@@ -55,21 +55,45 @@ class CinsController(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, id):
-        valiny = CinsDTO(data=request.data)
+        # 1. On autorise la mise à jour partielle (évite l'erreur "champ obligatoire")
+        valiny = CinsDTO(data=request.data, partial=True)
+        
         if not valiny.is_valid():
             return Response(valiny.errors, status=status.HTTP_400_BAD_REQUEST)
+        
         try:
-            etat = CinsService.update(id,
-                                        valiny.validated_data['numeroCin'],
-                                        valiny.validated_data['dateCin'],
-                                        valiny.validated_data['lieuCin'])
-            return Response(CinsService(etat).data, status=status.HTTP_200_OK)
+            # 2. On récupère l'objet existant pour avoir les anciennes valeurs
+            instance = Cins.objects.get(id=id)
+            
+            # 3. On extrait les données : la nouvelle si présente, sinon l'ancienne
+            # .get() sur validated_data ne renvoie que ce qui a été envoyé dans la requête
+            numero = valiny.validated_data.get('numeroCin', instance.numeroCin)
+            date = valiny.validated_data.get('dateCin', instance.dateCin)
+            lieu = valiny.validated_data.get('lieuCin', instance.lieuCin)
+            numDup = valiny.validated_data.get('numeroDuplicata', instance.numeroDuplicata)
+            dateDup = valiny.validated_data.get('dateDuplicata',instance.dateDuplicata)
+            lieuDup = valiny.validated_data.get('lieuDuplicata',instance.lieuDuplicata)
+            # 4. On appelle ton service avec des données complètes (anciennes + nouvelles)
+            etat = CinsService.update(
+                id,
+                numero,
+                date,
+                lieu,
+                numDup,   # Ajouté ici
+                dateDup, 
+                lieuDup
+            )
+            
+            # 5. On retourne la réponse (en supposant que CinsService(etat).data est ton sérialiseur de sortie)
+            return Response(CinsDTO(etat).data, status=status.HTTP_200_OK)
+        
         except Cins.DoesNotExist:
             response = {
                 "status": "error",
                 "message": f"Cins non trouvé pour l'id = {id}",
             }
-
-            return Response(response,
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response(response, status=status.HTTP_404_NOT_FOUND)
+        
+        except Exception as e:
+            # Sécurité supplémentaire pour voir d'autres erreurs éventuelles
+            return Response({"status": "error", "message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
