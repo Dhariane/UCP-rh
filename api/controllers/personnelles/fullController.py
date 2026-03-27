@@ -121,8 +121,8 @@ class PersonnelFullController(APIView):
                     "dateCin": data.get("dateDelivranceCin"),
                     "lieuCin": data.get("lieuDelivranceCin"),
                     "numeroDuplicata":data.get("numeroDuplicata"),
-                    "dateDuplicata":data.get("dateDuplicata"),
-                    "lieuDuplicata":data.get("lieuDuplicata"),
+                    "dateDuplicata":data.get("dateDuplicataCin"),
+                    "lieuDuplicata":data.get("lieuDuplicataCin"),
                     "personnelle": personnelles
 
                 })
@@ -255,7 +255,7 @@ class PersonnelFullController(APIView):
                         "dateNaissance": enf.get("dateNaissance"),
                         "lieuNaissance": enf.get("lieuNaissance"),
                         "personnelle": personnelles.id,
-                        "sexe": sexe
+                        "sexe": sexe.id
                         
                     }
                     fichier_certificat = request.FILES.get(key)

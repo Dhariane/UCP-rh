@@ -12,7 +12,7 @@ class LoginDTO(serializers.ModelSerializer):
             'id', 
             'email',         # Accepte l'email (ForeignKey vers Propos)
             'email_detail',  # Pour l'affichage clair en lecture
-            'personnel_id'
+            'personnel_id',
             'role', 
             'password', 
             'created_at'
