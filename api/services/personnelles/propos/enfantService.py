@@ -10,7 +10,8 @@ class EnfantService:
             dateNaissance=data.get("dateNaissance"),
             lieuNaissance=data.get("lieuNaissance"),
             certificatVie=data.get("certificatVie"),
-            personnelle_id=data.get("personnelle")
+            personnelle_id=data.get("personnelle"),
+            sexe_id=data.get("sexe")
         )
 
     @staticmethod

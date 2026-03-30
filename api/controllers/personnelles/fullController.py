@@ -1,13 +1,17 @@
+from api.models.diplome.diplome import Diplome
+from api.models.diplome.experience import Experience
 from api.models.fonction.typeContrat import TypeContrats
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import transaction
 from rest_framework.renderers import JSONRenderer
 from rest_framework import status
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser,JSONParser
 import json
 from api.dto import PersonnellesDTO
 from api.dto.fullpersonnelDto import PersonnelFullSerializer
+from api.models.propos.enfant import Enfant
+from api.models.propos.propos import Propos
 from api.services.personnelles.propos import (
     CinsService, PersonnelleServices, EtatCivilService,
     PhotosService, ProposService,SexeService,EnfantService,FamilleService)
@@ -22,13 +26,11 @@ from api.services.personnelles.diplome.formationService import FormationService
 from api.services.personnelles.fonction.contratService import ContratService
 from api.services.personnelles.fonction.typeContrantService import TypeContratService
 from api.services.personnelles.fonction.modefinancementService import ModeFinancementService
-from api.models import EtatCivil,Sexes,Relations,Postes,Personnelles,Services,ModeFinancement
+from api.models import EtatCivil,Sexes,Relations,Postes,Personnelles,Services,ModeFinancement,Cins
 from api.services.auth.login.loginService import  LoginService
 
 class PersonnelFullController(APIView):
-    renderer_classes = [JSONRenderer]
-    parser_classes = (MultiPartParser, FormParser)
-
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     def post(self, request):
         data = request.data
         # CAPI DES FICHIERS IMMÉDIATEMENT (Sécurité pour éviter les None)
@@ -102,7 +104,9 @@ class PersonnelFullController(APIView):
                     "lieuNaissance": data.get("lieuNaissance"),
                     "adresse": data.get("adresse"),
                     "emailPerso": data.get('emailPersonnel'),
-                    "telPerso": data.get("contactPersonnel"),
+                    "telPerso": data.get("telephonePersonnel"),
+                    "quartier":data.get("quartier"),
+                    "ville":data.get("ville"),
                     "sexe": sexe,
                     "photoResidence": files.get('photoresidence'),
                     "casierjudiciaire": files.get('photoCasier'),
@@ -114,6 +118,9 @@ class PersonnelFullController(APIView):
                     "numeroCin": data.get("cin"),
                     "dateCin": data.get("dateDelivranceCin"),
                     "lieuCin": data.get("lieuDelivranceCin"),
+                    "numeroDuplicata":data.get("numeroDuplicata"),
+                    "dateDuplicata":data.get("dateDuplicataCin"),
+                    "lieuDuplicata":data.get("lieuDuplicataCin"),
                     "personnelle": personnelles
 
                 })
@@ -123,7 +130,7 @@ class PersonnelFullController(APIView):
                     "nif": data.get("nif"),
                     "stat": data.get("stat"),
                     "numeroCnaps": data.get("cnaps"),
-                    "tel": data.get("contactPersonnel"),
+                    "tel": data.get("contactProfessionnel"),
                     "email": data.get("emailProfessionnel"),
                     "nombreEnfant": data.get("nombreEnfants") or 0,
                     "etatCivil": etatcivil,
@@ -142,6 +149,7 @@ class PersonnelFullController(APIView):
                     "NumeroContrat": data.get("NumeroContrat"),
                     "periodeEssai":data.get("periodeEssai"),
                     "dateFinEssai":data.get("dateFinEssai"),
+                    "salaire":data.get("salaire"),
                     "photoContrat": files.get("photoContrat"),
                     "typeContrat": type_contrat,
                     "personnelle": personnelles
@@ -192,9 +200,7 @@ class PersonnelFullController(APIView):
                 if data.get("nomPere") or data.get("nomMere"):
                     FamilleService.create({
                         "nomPere": data.get("nomPere"),
-                        "prenomPere": data.get("prenomPere"),
                         "nomMere": data.get("nomMere"),
-                        "prenomMere": data.get("prenomMere"),
                         "nomConjoint": data.get("nomConjoint"),
                         "prenomConjoint": data.get("prenomConjoint"),
                         "nombreEnfant": data.get("nombreEnfants") or 0,
@@ -246,7 +252,9 @@ class PersonnelFullController(APIView):
                         "prenom": enf.get("prenom"),
                         "dateNaissance": enf.get("dateNaissance"),
                         "lieuNaissance": enf.get("lieuNaissance"),
-                        "personnelle": personnelles.id
+                        "personnelle": personnelles.id,
+                        "sexe": sexe.id
+                        
                     }
                     fichier_certificat = request.FILES.get(key)
                     if fichier_certificat:
@@ -289,96 +297,260 @@ class PersonnelFullController(APIView):
             return Response({"error": "Le personnel demandé n'existe pas."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    @transaction.atomic
     def put(self, request, pk):
         try:
-            # 1. On récupère l'instance principale
-            personne = Personnelles.objects.get(pk=pk)
+            # 1. Récupération de l'instance principale avec verrouillage pour la transaction
+            personne = Personnelles.objects.select_for_update().get(pk=pk)
             data = request.data
             files = request.FILES
 
-            # 2. Mise à jour des tables liées simples (CIN et Propos)
-            if personne.cin:
-                personne.cin.numeroCin = data.get('numeroCin', personne.cin.numeroCin)
-                personne.cin.dateCin = data.get('dateCin', personne.cin.dateCin)
-                personne.cin.lieuCin = data.get('lieuCin', personne.cin.lieuCin)
-                personne.cin.save()
+            # --- 2. Mise à jour CIN (Cins) ---
+            cin_lie = Cins.objects.filter(personnelle=personne).first()
+            cin_vals = {
+                "numeroCin": data.get('cin') or data.get('numeroCin'),
+                "dateCin": data.get('dateDelivranceCin') or data.get('dateCin'),
+                "lieuCin": data.get('lieuDelivranceCin') or data.get('lieuCin')
+            }
+            if cin_lie:
+                for key, val in cin_vals.items():
+                    if val: setattr(cin_lie, key, val)
+                if 'photoCin' in files: cin_lie.photo = files['photoCin']
+                cin_lie.save()
+            else:
+                Cins.objects.create(personnelle=personne, **cin_vals)
 
-            if personne.propos:
-                personne.propos.numeroCnaps = data.get('numeroCnaps', personne.propos.numeroCnaps)
-                personne.propos.tel = data.get('tel', personne.propos.tel)
-                personne.propos.email = data.get('email', personne.propos.email)
-                personne.propos.nombreEnfant = data.get('nombreEnfant', personne.propos.nombreEnfant)
+            # --- 3. Mise à jour des Propos (Infos sociales & RH) ---
+            propos_lie = Propos.objects.filter(personnelle=personne).first()
+            if propos_lie:
+                propos_lie.numeroCnaps = data.get('cnaps') or data.get('numeroCnaps', propos_lie.numeroCnaps)
+                propos_lie.nif = data.get('nif', propos_lie.nif)
+                propos_lie.stat = data.get('stat', propos_lie.stat)
+                propos_lie.tel = data.get('contactProfessionnel') or data.get('tel', propos_lie.tel)
+                propos_lie.email = data.get('emailProfessionnel') or data.get('email', propos_lie.email)
+                propos_lie.nombreEnfant = data.get('nombreEnfants') or data.get('nombreEnfant', propos_lie.nombreEnfant)
                 if data.get('etatCivil'):
-                    personne.propos.etatCivil_id = data.get('etatCivil')
-                personne.propos.save()
+                    propos_lie.etatCivil_id = data.get('etatCivil')
+                propos_lie.save()
 
-            # 3. Mise à jour des Coordonnées Bancaires
-            coord = getattr(personne, 'coordonnees_bancaires', None)
+            # --- 4. Mise à jour Coordonnées Bancaires ---
+            from api.models.banque.coordonneesBancaires import CoordonneesBancaires # Vérifie ton import
+            coord = CoordonneesBancaires.objects.filter(personnelle=personne).first()
             if coord:
                 coord.rib = data.get('rib', coord.rib)
-                if data.get('banque'):
-                    coord.banque_id = data.get('banque')
-                if data.get('agence'):
-                    coord.agence_id = data.get('agence')
-                if files.get('photo_rib'): # Vérifie bien le nom du champ file envoyé
-                    coord.photo_rib = files.get('photo_rib')
+                if data.get('banque'): coord.banque_id = data.get('banque')
+                if data.get('agence'): coord.agence_id = data.get('agence')
+                if 'photoRibFile' in files: coord.photo_rib = files['photoRibFile']
                 coord.save()
 
-            # 4. Mise à jour du Personnel (table principale)
+            # --- 5. Mise à jour de la Famille (Parents et Conjoint) ---
+            from api.models.propos.famille import Famille
+            famille_lie = Famille.objects.filter(personnelle=personne).first()
+            famille_fields = [
+                "nomPere", "prenomPere", "nomMere", "prenomMere", 
+                "nomConjoint", "prenomConjoint", "telConjoint", 
+                "adresseConjoint", "emailConjoint"
+            ]
+            if famille_lie:
+                for field in famille_fields:
+                    val = data.get(field)
+                    if val is not None: setattr(famille_lie, field, val)
+                if 'acteMariage' in files: famille_lie.acteMariage = files['acteMariage']
+                famille_lie.save()
+
+            # --- 6. Mise à jour du Personnel (Table principale) ---
             personne.nom = data.get('nom', personne.nom)
             personne.prenom = data.get('prenom', personne.prenom)
             personne.adresse = data.get('adresse', personne.adresse)
-            personne.telPerso = data.get('telPerso', personne.telPerso)
+            personne.dateNaissance = data.get('dateNaissance', personne.dateNaissance)
+            personne.lieuNaissance = data.get('lieuNaissance', personne.lieuNaissance)
+            personne.emailPerso = data.get('emailPersonnel', personne.emailPerso)
+            # Gestion flexible du téléphone
+            personne.telPerso = data.get('telephonePersonnel') or data.get('telPerso') or personne.telPerso
             
-            if files.get('cinphoto'): personne.cinphoto = files.get('cinphoto')
-            if files.get('photoResidence'): personne.photoResidence = files.get('photoResidence')
-
+            if data.get('sexe'): personne.sexe_id = data.get('sexe')
+            
+            # Fichiers scans directs sur Personnelles
+            if 'photo' in files: personne.photos = files['photo']
+            if 'photoresidence' in files: personne.photoResidence = files['photoresidence']
+            if 'photoCasier' in files: personne.casierjudiciaire = files['photoCasier']
+            if 'photoacteNaissance' in files: personne.acteNaissance = files['photoacteNaissance']
+            
             personne.save()
 
-            # 5. MISE À JOUR DES LISTES (Diplômes, Enfants, Expériences)
-            # On vide et on recrée uniquement si les données sont présentes dans la requête
-            
-            # Exemple pour Diplômes
-            if 'diplomes' in data or any(key.startswith('diplomes[') for key in data):
-                personne.Diplome.all().delete()
+            # DIPLÔMES
+            # --- SECTION DIPLOMES ---
+            if any(key.startswith('diplomes[') for key in data):
+                # On récupère les diplômes déjà existants en base pour ce personnel
+                existing_diplomes = {d.id: d for d in personne.Diplome.all()}
+                received_ids = []
                 i = 0
+                
                 while f'diplomes[{i}][nom]' in data:
-                    Diplome.objects.create(
-                        personnelle=personne,
-                        nom=data.get(f'diplomes[{i}][nom]'),
-                        etablissement=data.get(f'diplomes[{i}][etablissement]'),
-                        dateObtention=data.get(f'diplomes[{i}][dateObtention]')
-                    )
+                    d_id = data.get(f'diplomes[{i}][id]')
+                    
+                    # Nettoyage des valeurs (vide, "null", "undefined" -> None)
+                    def get_clean_diplome(field):
+                        v = data.get(f'diplomes[{i}][{field}]')
+                        return v if v and str(v).strip() not in ["", "null", "undefined"] else None
+
+                    d_vals = {
+                        'nom': get_clean_diplome('nom'),
+                        'etablissement': get_clean_diplome('etablissement'),
+                        'dateObtention': get_clean_diplome('annee'), # Vérifie si c'est 'annee' ou 'dateObtention' dans ton FormData
+                    }
+                    
+                    # Gestion du fichier (scan diplôme)
+                    photo_file = files.get(f'diplomes[{i}][scan_diplome]')
+                    if photo_file:
+                        d_vals['photo'] = photo_file
+
+                    if d_id and str(d_id).isdigit() and int(d_id) in existing_diplomes:
+                        # --- UPDATE ---
+                        obj = existing_diplomes[int(d_id)]
+                        for key, val in d_vals.items():
+                            if val is not None:
+                                setattr(obj, key, val)
+                        obj.save()
+                        received_ids.append(int(d_id))
+                    else:
+                        # --- CREATE ---
+                        # SÉCURITÉ : Vérifier les champs obligatoires pour un nouveau diplôme
+                        if not d_vals['nom'] or not d_vals['etablissement']:
+                            return Response(
+                                {"error": f"Le nom et l'établissement sont obligatoires pour le diplôme à l'index {i}"},
+                                status=status.HTTP_400_BAD_REQUEST
+                            )
+                        
+                        new_obj = Diplome.objects.create(
+                            personnelle=personne, 
+                            **{k:v for k,v in d_vals.items() if v is not None}
+                        )
+                        received_ids.append(new_obj.id)
+                        
                     i += 1
+                
+                # Supprime les diplômes qui ne sont plus envoyés (ceux supprimés dans le front)
+                personne.Diplome.exclude(id__in=received_ids).delete()
 
-            # Exemple pour Enfants
-            if 'enfants' in data or any(key.startswith('enfants[') for key in data):
-                personne.Enfant.all().delete()
-                j = 0
-                while f'enfants[{j}][nom]' in data:
-                    Enfant.objects.create(
-                        personnelle=personne,
-                        nom=data.get(f'enfants[{j}][nom]'),
-                        prenom=data.get(f'enfants[{j}][prenom]'),
-                        dateNaissance=data.get(f'enfants[{j}][dateNaissance]'),
-                        lieuNaissance=data.get(f'enfants[{j}][lieuNaissance]')
+            # ENFANTS
+            # --- Section ENFANTS ---
+                if any(key.startswith('enfants[') for key in data):
+                    existing_enfants = {e.id: e for e in personne.Enfant.all()}
+                    received_ids = []
+                    j = 0
+                    
+                    while f'enfants[{j}][nom]' in data:
+                        e_id = data.get(f'enfants[{j}][id]')
+                        
+                        # --- NETTOYAGE STRICT ---
+                        # On récupère la valeur brute et on s'assure que si c'est vide, ça devient None
+                        def get_clean(field):
+                            val = data.get(f'enfants[{j}][{field}]')
+                            if val == "" or val == "null" or val == "undefined":
+                                return None
+                            return val
+
+                        e_vals = {
+                            'nom': get_clean('nom'),
+                            'prenom': get_clean('prenom'),
+                            'dateNaissance': get_clean('dateNaissance'),
+                            'lieuNaissance': get_clean('lieuNaissance'),
+                        }
+                        
+                        # Fichier certificat
+                        certif_file = files.get(f'enfants[{j}][certificatFile]')
+                        if certif_file:
+                            e_vals['certificatVie'] = certif_file
+
+                        # --- LOGIQUE UPDATE / CREATE ---
+                        if e_id and str(e_id).isdigit() and int(e_id) in existing_enfants:
+                            obj = existing_enfants[int(e_id)]
+                            for key, val in e_vals.items():
+                                if val is not None: # Si c'était vide, val est None, donc on n'y touche pas
+                                    setattr(obj, key, val)
+                            obj.save()
+                            received_ids.append(int(e_id))
+                        else:
+                            # Pour un nouveau (CREATE), on enlève les None pour laisser le modèle
+                            # soit prendre la valeur par défaut, soit lever une erreur propre
+                            clean_new = {k: v for k, v in e_vals.items() if v is not None}
+                            new_obj = Enfant.objects.create(personnelle=personne, **clean_new)
+                            received_ids.append(new_obj.id)
+                            
+                        j += 1
+
+                    personne.Enfant.exclude(id__in=received_ids).delete()
+
+            # EXPÉRIENCES
+            if any(key.startswith('experiences[') for key in data):
+                existing_exps = {ex.id: ex for ex in personne.Experience.all()}
+                received_ids = []
+                k = 0
+                
+                while f'experiences[{k}][entreprise]' in data:
+                    exp_id = data.get(f'experiences[{k}][id]')
+                    exp_vals = {
+                        'entreprise': data.get(f'experiences[{k}][entreprise]'),
+                        'poste': data.get(f'experiences[{k}][poste]'),
+                        'datedebut': data.get(f'experiences[{k}][datedebut]'),
+                        'datefin': data.get(f'experiences[{k}][datefin]'),
+                        'description': data.get(f'experiences[{k}][description]'),
+                    }
+
+                    if exp_id and str(exp_id).isdigit() and int(exp_id) in existing_exps:
+                        # UPDATE
+                        obj = existing_exps[int(exp_id)]
+                        for key, val in exp_vals.items():
+                            if val is not None:
+                                setattr(obj, key, val)
+                        obj.save()
+                        received_ids.append(int(exp_id))
+                    else:
+                        # CREATE
+                        clean_vals = {k: v for k, v in exp_vals.items() if v is not None}
+                        new_obj = Experience.objects.create(personnelle=personne, **clean_vals)
+                        received_ids.append(new_obj.id)
+                    k += 1
+
+                personne.Experience.exclude(id__in=received_ids).delete()
+
+            # CONTACTS URGENCE (Gestion dynamique)
+            if data.get('personne1'):
+                # On nettoie les anciens contacts d'urgence avant de remettre les nouveaux
+                from api.models.contact.contactUrgences import ContactUrgences
+                ContactUrgences.objects.filter(personnelle=personne).delete()
+                
+                # Contact 1
+                ContactUrgences.objects.create(
+                    nom=data.get('personne1'),
+                    telephone=data.get('telephone1'),
+                    adresse=data.get('adresse1'),
+                    relation_id=data.get('relation1'),
+                    personnelle=personne
+                )
+                # Contact 2 (optionnel)
+                if data.get('personne2'):
+                    ContactUrgences.objects.create(
+                        nom=data.get('personne2'),
+                        telephone=data.get('telephone2'),
+                        adresse=data.get('adresse2'),
+                        relation_id=data.get('relation2'),
+                        personnelle=personne
                     )
-                    j += 1
 
-            # 6. RELOAD & SERIALIZE (C'est ici qu'on corrige ton problème d'affichage)
-            # On refait un GET complet en base de données pour tout charger proprement
-            personne_complete = Personnelles.objects.prefetch_related(
-                'sexe', 'cin', 'propos', 'coordonnees_bancaires', 
-                'contrat', 'fonctions', 'Diplome', 'Experience', 'Enfant'
+            # --- 8. RELOAD FINAL ---
+            personne_updated = Personnelles.objects.prefetch_related(
+                'sexe', 'cins', 'propos_list', 'Diplome', 'Enfant', 'Experience', 'contactUrgence'
             ).get(pk=pk)
 
-            serializer = PersonnelFullSerializer(personne_complete, context={'request': request})
+            serializer = PersonnelFullSerializer(personne_updated, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         except Personnelles.DoesNotExist:
             return Response({"error": "Personnel non trouvé"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": f"Erreur critique PUT: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
         try:

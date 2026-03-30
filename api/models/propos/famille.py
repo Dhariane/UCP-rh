@@ -3,22 +3,12 @@ from django.db import models
 
 class Famille(models.Model):
     nomPere= models.CharField(
-        max_length=100,
-        null= True,
-        blank=True
-    )
-    prenomPere= models.CharField(
-        max_length=100,
+        max_length=255,
         null= True,
         blank=True
     )
     nomMere= models.CharField(
-        max_length=100,
-        null= True,
-        blank=True
-    )
-    prenomMere= models.CharField(
-        max_length=100,
+        max_length=255,
         null= True,
         blank=True
     )

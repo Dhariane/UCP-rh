@@ -24,6 +24,16 @@ class Personnelles(BaseNom):
         null=True, 
         blank=True
     )
+    quartier = models.CharField(
+        max_length=255, 
+        null=True, 
+        blank=True
+    )
+    ville = models.CharField(
+        max_length=255, 
+        null=True, 
+        blank=True
+    )
     photoResidence = models.ImageField(
         upload_to='residences/',
         null=True,

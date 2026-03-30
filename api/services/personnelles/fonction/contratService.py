@@ -10,6 +10,7 @@ class ContratService:
             typeContrat=data['typeContrat'],
             periodeEssai=data['periodeEssai'],
             dateFinEssai=data['dateFinEssai'],
+            salaire=data['salaire'],
             personnelle=data['personnelle']
         )
 

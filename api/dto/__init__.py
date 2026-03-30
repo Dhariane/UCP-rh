@@ -12,7 +12,7 @@ from .personnelles.propos.CinsDto import CinsDTO
 from .personnelles.propos.personnellesDto import  PersonnellesDTO
 from .personnelles.propos.photosDto import PhotosDto
 from .personnelles.propos.sexeDto import SexeDTO
-from .personnelles.diplome.experinceDto import ExperienceDTO
+from .personnelles.diplome.experienceDto import ExperienceDTO
 from .personnelles.diplome.diplomeDto import DiplomeDTO
 from .personnelles.diplome.formationDto import FormationDTO
 from .personnelles.propos.enfantDto import EnfantDTO

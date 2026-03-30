@@ -7,9 +7,7 @@ class FamilleService:
     def create(data)-> Famille:
         return Famille.objects.create(
             nomPere=data.get("nomPere"),
-            prenomPere=data.get("prenomPere"),
             nomMere=data.get("nomMere"),
-            prenomMere=data.get("prenomMere"),
             nomConjoint=data.get("nomConjoint"),
             prenomConjoint=data.get("prenomConjoint"),
             telConjoint=data.get("telConjoint"),

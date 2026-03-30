@@ -8,7 +8,8 @@ class ContratDto(serializers.ModelSerializer):
             "id",
             "NumeroContrat",
             "photoContrat",
-            "essai",
+            "periodeEssai",
             "typeContrat",
+            "salaire",
             "personnelle",
         ]

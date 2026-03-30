@@ -18,6 +18,10 @@ class Contrat(models.Model):
     photoContrat=models.FileField(
         upload_to='Contrats/'
     )
+    salaire=models.CharField(
+        null=True,
+        blank=True
+    )
 
     typeContrat = models.ForeignKey(
         TypeContrats,

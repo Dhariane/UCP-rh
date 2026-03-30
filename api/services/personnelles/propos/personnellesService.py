@@ -24,6 +24,8 @@ class PersonnelleServices:
             dateNaissance=data.get('dateNaissance'),
             lieuNaissance=data.get('lieuNaissance'),
             emailPerso=data.get('emailPerso'),
+            quartier=data.get('quartier'),
+            ville=data.get('ville'),
             telPerso=data.get("telPerso"),
             sexe=data.get('sexe'),
             adresse=data.get('adresse'), 

@@ -15,6 +15,7 @@ class EnfantDTO(serializers.ModelSerializer):
             'lieuNaissance',
             'personnelle',
             'certificatVie',
+            'sexe',
             'age'
         ]
 
