@@ -151,7 +151,7 @@ class PersonnelFullController(APIView):
                     "NumeroContrat": data.get("NumeroContrat"),
                     "periodeEssai":data.get("periodeEssai"),
                     "dateFinEssai":data.get("dateFinEssai"),
-                    "salaire":data.get("salaire"),
+                    "salaire":data.get("honoraire"),
                     "photoContrat": files.get("photoContrat"),
                     "typeContrat": type_contrat,
                     "personnelle": personnelles
