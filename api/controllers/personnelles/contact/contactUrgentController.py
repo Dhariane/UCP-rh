@@ -64,43 +64,13 @@ class ContactUrgentController(APIView):
         return Response(response, status=status.HTTP_201_CREATED)
     
     def put(self, request, id):
-        # 1. Validation partielle pour ne pas bloquer sur les champs non modifiés
-        valiny = ContactUrgentsDto(data=request.data, partial=True)
-        
-        if not valiny.is_valid():
-            return Response({"status": "error", "errors": valiny.errors}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            # 2. Récupération de l'instance pour les valeurs par défaut
-            instance = ContactUrgences.objects.get(id=id)
-            
-            # 3. Extraction des données (Nouvelle ou Ancienne)
-            nom = valiny.validated_data.get('nom',instance.nom)
-            telephone = valiny.validated_data.get('telephone', instance.telephone)
-            adresse = valiny.validated_data.get('adresse', instance.adresse)
-            
-            # Gestion des clés étrangères (on récupère l'ID numérique)
-            p_val = valiny.validated_data.get('personnelle', instance.personnelle_id)
-            personnelle = p_val.id if hasattr(p_val, 'id') else p_val
-            
-            r_val = valiny.validated_data.get('relation', instance.relation_id)
-            relation = r_val.id if hasattr(r_val, 'id') else r_val
+        # On passe partial=True pour autoriser le PATCH
+        serializer = ContactUrgentsDto(data=request.data, partial=True)
+        if serializer.is_valid():
+            # On envoie tout le dictionnaire validé au service
+            instance = ContactUrgencesService.update(id, serializer.validated_data)
+            return Response({"status": "success", "data": ContactUrgentsDto(instance).data})
+        return Response(serializer.errors, status=400)
 
-            # 4. Appel du service avec tes variables exactes
-            contactUrgence = ContactUrgencesService.update(
-                id=id,
-                nom=nom,
-                telephone=telephone,
-                adresse=adresse,
-                personnelle=personnelle,
-                relation=relation
-            )
-            
-            return Response({
-                "status": "success",
-                "message": "ContactUrgence updated successfully",
-                "data": ContactUrgentsDto(contactUrgence).data
-            }, status=status.HTTP_200_OK)
-
-        except ContactUrgences.DoesNotExist:
-            return Response({"status": "error", "message": "ContactUrgence not found"}, status=status.HTTP_404_NOT_FOUND)
+    def patch(self, request, id):
+        return self.put(request, id)

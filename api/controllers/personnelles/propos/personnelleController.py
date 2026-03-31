@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser,JSONParser
 
 from api.models.propos.personnelles import Personnelles
 from api.services.personnelles.propos.personnellesService import PersonnelleServices
@@ -9,7 +9,7 @@ from api.dto.personnelles.propos.personnellesDto import PersonnellesDTO
 
 class PersonnelleController(APIView):
     # Indispensable pour recevoir des fichiers (Images/PDF)
-    parser_classes = (MultiPartParser, FormParser)
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get(self, request, id=None):
         if id:
@@ -60,24 +60,22 @@ class PersonnelleController(APIView):
 
     def put(self, request, id):
         try:
-            # partial=True permet de ne modifier que quelques champs si nécessaire
+            # partial=True est la clé : il dit au Serializer 
+            # de ne pas exiger TOUS les champs obligatoires
             serializer = PersonnellesDTO(data=request.data, partial=True)
             
             if serializer.is_valid():
                 personne = PersonnelleServices.update(id, serializer.validated_data)
                 return Response({
                     "status": "success",
-                    "message": "Mise à jour réussie",
                     "data": PersonnellesDTO(personne).data
                 }, status=status.HTTP_200_OK)
             
-            return Response({
-                "status": "error",
-                "errors": serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
-            
+            return Response({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         except Personnelles.DoesNotExist:
-            return Response({
-                "status": "error",
-                "message": "Personne non trouvée"
-            }, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Non trouvé"}, status=status.HTTP_404_NOT_FOUND)
+
+    # --- AJOUTE CETTE MÉTHODE ---
+    def patch(self, request, id):
+        """Autorise explicitement la méthode PATCH en utilisant la logique du PUT"""
+        return self.put(request, id)

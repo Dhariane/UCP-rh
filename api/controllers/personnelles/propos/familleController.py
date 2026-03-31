@@ -46,23 +46,14 @@ class FamilleController(APIView):
         }
         return Response(response, status=status.HTTP_201_CREATED)
     def put(self, request, id):
-        # 1. Ajoute partial=True pour ne pas bloquer si un nom est manquant
-        valiny = FamilleDto(data=request.data, partial=True)
-        
-        if not valiny.is_valid():
-            return Response({"status": "error", "errors": valiny.errors}, status=400)
-        
-        try:
-            # 2. TU AVAIS OUBLIÉ D'APPELER LE SERVICE ICI :
-            famille_modifiee = FamilleService.update(id, valiny.validated_data)
-            
-            # 3. On retourne le résultat via le DTO
-            return Response({
-                "status": "success",
-                "message": "Mise à jour réussie",
-                "data": FamilleDto(famille_modifiee).data
-            }, status=status.HTTP_200_OK)
-            
-        except Famille.DoesNotExist:
-            return Response({"status": "error", "message": "Famille non trouvée"}, status=404)
+        # On passe partial=True pour autoriser le PATCH
+        serializer = FamilleDto(data=request.data, partial=True)
+        if serializer.is_valid():
+            # On envoie tout le dictionnaire validé au service
+            instance = FamilleService.update(id, serializer.validated_data)
+            return Response({"status": "success", "data": FamilleDto(instance).data})
+        return Response(serializer.errors, status=400)
+
+    def patch(self, request, id):
+        return self.put(request, id)
         

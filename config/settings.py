@@ -80,7 +80,10 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.JSONParser',
         'rest_framework.parsers.MultiPartParser', # Pour accepter les fichiers
         'rest_framework.parsers.FormParser',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ),
 }
 
