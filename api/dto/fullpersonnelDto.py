@@ -33,7 +33,7 @@ class ContactUrgenceSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactUrgences
         fields = ['id', 'nom', 'telephone', 'adresse', 'relation']
-        depth = 1
+
 
 class DiplomeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -64,6 +64,7 @@ class TypeContratSerializer(serializers.ModelSerializer):
     class Meta:
         model = TypeContrats
         fields = ['id', 'nom']
+
 class FormationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Formation
@@ -102,7 +103,7 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
     nomMere = serializers.SerializerMethodField()
     
     rib = serializers.SerializerMethodField()
-    banque = serializers.SerializerMethodField() # Utilise la méthode get_banque
+    banque = serializers.SerializerMethodField() 
     agence = serializers.SerializerMethodField()
     
     conjoint = serializers.SerializerMethodField()
@@ -115,7 +116,6 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Personnelles
-        # CRUCIAL : On définit l'ordre d'affichage ici
         fields = [
             'id', 'nom', 'prenom', 'sexe', 'dateNaissance', 'lieuNaissance', 'adresse',
             'emailPersonnel', 'telephonePersonnel', 'photoUrl',
@@ -128,11 +128,6 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
             'enfants', 'contactsUrgence', 'diplomes', 'experiences', 'formations',
             'photoResidence', 'cinphoto', 'acteNaissance', 'casierjudiciaire'
         ]
-
-    class Meta:
-        model = Personnelles
-        fields = '__all__'
-    
 
     def _get_famille(self, obj):
         return Famille.objects.filter(personnelle=obj).first()
@@ -152,34 +147,6 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
         c = obj.cins.first()
         return c.lieuCin if c else ""
 
-    def get_etatCivil(self, obj):
-        p = self._get_propos(obj)
-        return p.etatCivil.id if p and p.etatCivil else ""
-
-    def get_nombreEnfants(self, obj):
-        p = self._get_propos(obj)
-        return p.nombreEnfant if p else 0
-
-    def get_emailProfessionnel(self, obj):
-        p = self._get_propos(obj)
-        return p.email if p else ""
-
-    def get_nif(self, obj):
-        p = self._get_propos(obj)
-        return p.nif if p else ""
-
-    def get_stat(self, obj):
-        p = self._get_propos(obj)
-        return p.stat if p else ""
-
-    def get_cnaps(self, obj):
-        p = self._get_propos(obj)
-        return p.numeroCnaps if p else ""
-
-    def get_contactProfessionnel(self, obj):
-        p = self._get_propos(obj)
-        return p.tel if p else ""
-
     def get_nomPere(self, obj):
         f = self._get_famille(obj)
         return f.nomPere if f else ""
@@ -189,9 +156,7 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
         return f.nomMere if f else ""
 
     def get_rib(self, obj):
-        # On importe ici pour éviter les imports circulaires
         from api.models import CoordonneesBancaires 
-        # On cherche directement dans la table en filtrant par l'ID du personnel
         b = CoordonneesBancaires.objects.filter(personnelle=obj).first()
         return b.rib if b else ""
 
@@ -204,6 +169,7 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
         from api.models import CoordonneesBancaires
         b = CoordonneesBancaires.objects.filter(personnelle=obj).first()
         return b.agence.nom if b and b.agence else ""
+
     def get_conjoint(self, obj):
         f = self._get_famille(obj)
         if f:
@@ -219,8 +185,8 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
     def get_photoUrl(self, obj):
         p = obj.photos.first()
         return p.data.url if p and p.data else None
+
     def get_contrat(self, obj):
-        # On cherche directement dans la table Contrat le premier lié à ce personnel
         c = Contrat.objects.filter(personnelle=obj).first()
         if c:
             return {
@@ -232,15 +198,9 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
             }
         return None
 
-    # --- LOGIQUE POUR LA FONCTION (Poste, Service, Financement) ---
     def _get_fonction_info(self, obj):
         if not hasattr(self, '_cached_fonction'):
-            # On essaie 'personnelle', si ça échoue, on peut tester 'personnel'
             f = Fonctions.objects.filter(personnelle=obj).first()
-            if not f:
-                # Tentative de secours au cas où le nom du champ est différent
-                # f = Fonction.objects.filter(personnel=obj).first() 
-                pass
             self._cached_fonction = f
         return self._cached_fonction
 
@@ -265,12 +225,11 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
 # ==========================================
 
 class PersonnelUpdateSerializer(serializers.ModelSerializer):
-    # Champs pour correspondre au format du front
     emailPersonnel = serializers.EmailField(source='emailPerso', required=False)
     telephonePersonnel = serializers.CharField(source='telPerso', required=False)
     
-    # Champs virtuels pour les tables liées
-    cin = serializers.CharField(required=False, allow_blank=True)
+    # Correction ICI : On utilise num_cin_input pour ne pas entrer en conflit avec le champ 'cin' du modèle
+    num_cin_input = serializers.CharField(required=False, allow_blank=True)
     dateDelivranceCin = serializers.DateField(required=False, allow_null=True)
     lieuDelivranceCin = serializers.CharField(required=False, allow_blank=True)
     
@@ -285,7 +244,6 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
     nomPere = serializers.CharField(required=False, allow_blank=True)
     nomMere = serializers.CharField(required=False, allow_blank=True)
 
-    
     nomConjoint = serializers.CharField(required=False, allow_blank=True)
     prenomConjoint = serializers.CharField(required=False, allow_blank=True)
     telConjoint = serializers.CharField(required=False, allow_blank=True)
@@ -299,7 +257,7 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
         fields = [
             'nom', 'prenom', 'dateNaissance', 'lieuNaissance', 'adresse', 
             'emailPersonnel', 'telephonePersonnel', 'sexe',
-            'cin', 'dateDelivranceCin', 'lieuDelivranceCin',
+            'num_cin_input', 'dateDelivranceCin', 'lieuDelivranceCin',
             'nif', 'stat', 'cnaps', 'emailProfessionnel', 'contactProfessionnel', 'etatCivil', 'nombreEnfants',
             'nomPere', 'nomMere',
             'nomConjoint', 'prenomConjoint', 'telConjoint', 'emailConjoint', 'adresseConjoint',
@@ -307,9 +265,8 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
         ]
 
     def update(self, instance, validated_data):
-        # Séparation des données liées
         cin_data = {
-            'numeroCin': validated_data.pop('cin', None),
+            'numeroCin': validated_data.pop('num_cin_input', None), # On récupère le bon champ
             'dateCin': validated_data.pop('dateDelivranceCin', None),
             'lieuCin': validated_data.pop('lieuDelivranceCin', None),
         }
@@ -365,7 +322,6 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
         # 5. Update RIB
         if rib_val is not None:
             from api.models import CoordonneesBancaires
-            # On cherche l'enregistrement existant ou on en crée un nouveau
             r_obj, created = CoordonneesBancaires.objects.get_or_create(personnelle=instance)
             r_obj.rib = rib_val
             r_obj.save()

@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from django.db import transaction
 from rest_framework.renderers import JSONRenderer
 from rest_framework import status
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser,JSONParser
 import json
 from api.dto import PersonnellesDTO
 from api.dto.fullpersonnelDto import PersonnelFullSerializer
@@ -30,9 +30,7 @@ from api.models import EtatCivil,Sexes,Relations,Postes,Personnelles,Services,Mo
 from api.services.auth.login.loginService import  LoginService
 
 class PersonnelFullController(APIView):
-    renderer_classes = [JSONRenderer]
-    parser_classes = (MultiPartParser, FormParser)
-
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     def post(self, request):
         data = request.data
         # CAPI DES FICHIERS IMMÉDIATEMENT (Sécurité pour éviter les None)
