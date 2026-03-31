@@ -113,13 +113,15 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
     service_actuel = serializers.SerializerMethodField()
     financement_actuel = serializers.SerializerMethodField()
     date_embauche = serializers.SerializerMethodField()
+    fonction = serializers.SerializerMethodField()
+    date_sortie = serializers.SerializerMethodField()
 
     class Meta:
         model = Personnelles
         fields = [
             'id', 'nom', 'prenom', 'sexe', 'dateNaissance', 'lieuNaissance', 'adresse',
             'emailPersonnel', 'telephonePersonnel', 'photoUrl',
-            'cin','date_embauche', 'poste_superieur', 'service_actuel', 'financement_actuel',
+            'cin','date_embauche','fonction','date_sortie', 'poste_superieur', 'service_actuel', 'financement_actuel',
             'contrat', 'dateDelivranceCin', 'lieuDelivranceCin',
             'etatCivil', 'nombreEnfants', 'conjoint',
             'nomPere','nomMere',
@@ -128,16 +130,33 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
             'enfants', 'contactsUrgence', 'diplomes', 'experiences', 'formations',
             'photoResidence', 'cinphoto', 'acteNaissance', 'casierjudiciaire'
         ]
-
+    def _get_fonction_info(self, obj):
+        if not hasattr(self, '_cached_fonction'):
+            # On récupère la ligne de la table Fonctions liée à ce personnel
+            self._cached_fonction = Fonctions.objects.filter(personnelle=obj).first()
+        return self._cached_fonction
     def _get_famille(self, obj):
         return Famille.objects.filter(personnelle=obj).first()
-
+    def get_fonction(self, obj):
+        f = self._get_fonction_info(obj)
+        return f.nom if f else "Non défini"
+    def get_date_sortie(self, obj):
+        f = self._get_fonction_info(obj)
+        return str(f.dateFin) if f and f.dateFin else None
     def _get_propos(self, obj):
         return obj.propos_list.first()
 
     def get_cin(self, obj):
         c = obj.cins.first()
-        return c.numeroCin if c else ""
+        if c:
+            return {
+                "numero": c.numeroCin or "",
+                "dateDelivrance": str(c.dateCin) if c.dateCin else "",
+                "lieuDelivrance": c.lieuCin or "",
+                "dateDuplicata": str(c.dateDuplicata) if getattr(c, 'dateDuplicata', None) else "",
+                "lieuDuplicata": c.lieuDuplicata if getattr(c, 'lieuDuplicata', None) else ""
+            }
+        return None
 
     def get_dateDelivranceCin(self, obj):
         c = obj.cins.first()
@@ -187,11 +206,13 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
         return p.data.url if p and p.data else None
 
     def get_contrat(self, obj):
-        c = Contrat.objects.filter(personnelle=obj).first()
+        # On récupère le dernier contrat en date
+        c = Contrat.objects.filter(personnelle=obj).last() 
         if c:
             return {
                 "numero": getattr(c, 'NumeroContrat', ""),
                 "type": c.typeContrat.TypeContrat if getattr(c, 'typeContrat', None) else None,
+                "salaire": getattr(c, 'salaire', 0), # Ajout du salaire ici
                 "periodeEssai": getattr(c, 'periodeEssai', ""),
                 "dateFinEssai": str(c.dateFinEssai) if getattr(c, 'dateFinEssai', None) else "",
                 "photo": c.photoContrat.url if (getattr(c, 'photoContrat', None) and c.photoContrat) else None

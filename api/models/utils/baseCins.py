@@ -5,7 +5,7 @@ class BaseCins(models.Model):
     dateCin = models.DateField()
     lieuCin = models.CharField(max_length=100)
     numeroDuplicata = models.CharField(max_length=50, blank=True, null=True)
-    dateDuplicata = models.DateField(blank=True, null=True)
+    dateDuplicata = models.DateField(null=True,blank=True)
     lieuDuplicata = models.CharField(max_length=100, blank=True, null=True)
     class Meta:
         abstract = True

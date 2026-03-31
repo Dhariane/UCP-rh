@@ -65,3 +65,7 @@ VALUES
     ('Responsable des Ressources Humaines', 2),
     ('Expert Technique Senior', 2),
     ('Specialiste en Passation de Marches', 2);
+
+INSERT INTO api_role (name, created_at) VALUES
+    ('admin', NOW()),
+    ('User', NOW());
