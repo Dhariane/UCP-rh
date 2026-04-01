@@ -57,6 +57,8 @@ urlpatterns = [
     path('logins/<int:id>/', LoginController.as_view(), name='login-detail'),
     path('roles', RoleController.as_view(), name='roles'),
     path('roles/<int:id>/', RoleController.as_view(), name='role-detail'),
+    path('permission', PermissionController.as_view(), name='permission'),
+    path('permission/<int:id>/', PermissionController.as_view(), name='permission-detail'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
