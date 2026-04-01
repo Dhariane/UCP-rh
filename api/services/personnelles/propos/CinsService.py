@@ -24,18 +24,13 @@ class CinsService:
         )
 
     @staticmethod
-    def update(id: int, data: dict) -> Cins:
-        """
-        Met à jour dynamiquement les informations de la CIN.
-        """
-        cins = Cins.objects.get(id=id)
-        
-        for field, value in data.items():
-            if hasattr(cins, field):
-                setattr(cins, field, value)
-        
-        cins.save()
-        return cins
+    def update(id, data):
+        try:
+            Cins.objects.filter(id=id).update(**data)
+            return Cins.objects.get(id=id)
+        except Exception as e:
+            print(f"Erreur Service CIN: {e}")
+            raise e
 
     @staticmethod
     def getByIdDto(id: int) -> CinsDTO:
@@ -44,7 +39,5 @@ class CinsService:
 
     @staticmethod
     def getAllDto():
-        # Optionnel : Ajout de la récupération de la liste complète en DTO 
-        # pour rester cohérent avec ProposService
         cins_list = CinsService.getAll()
         return CinsDTO(cins_list, many=True)
