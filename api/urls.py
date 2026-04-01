@@ -59,3 +59,7 @@ urlpatterns = [
     path('roles/<int:id>/', RoleController.as_view(), name='role-detail'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# C'EST ICI QUE ÇA DOIT ÊTRE POUR QUE ÇA MARCHE :
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
