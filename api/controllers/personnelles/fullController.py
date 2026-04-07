@@ -276,29 +276,42 @@ class PersonnelFullController(APIView):
     def get(self, request, pk=None):
         try:
             if pk:
-                # --- RÉCUPÉRATION D'UN SEUL PERSONNEL (POUR SON COMPTE) ---
-                # On utilise prefetch_related pour charger toutes les listes en une seule fois
+                # On récupère l'individu avec TOUTES ses relations pour éviter le "N+1 problem"
                 personne = Personnelles.objects.prefetch_related(
-                    'sexe', 'cins','propos_list','propos_list__etatCivil',
-                    'Diplome', 'Experience', 'Enfant', 'contrat', 
-                    'contrat__typeContrat', 'fonctions', 'fonctions__service', 
-                    'fonctions__poste', 'contactUrgence', 'photos'
+                    'sexe', 
+                    'cins', 
+                    'propos_list', 
+                    'propos_list__etatCivil',
+                    'Diplome', 
+                    'Experience', 
+                    'Enfant', 
+                    'contrat', 
+                    'contrat__typeContrat', 
+                    'fonctions',  # <--- Vérifie bien que le related_name est 'fonctions' dans ton modèle
+                    'fonctions__service', 
+                    'fonctions__poste', 
+                    'contactUrgence', 
+                    'photos'
                 ).get(pk=pk)
                 
-                # context={'request': request} permet d'avoir l'URL complète pour les images (http://...)
                 serializer = PersonnelFullSerializer(personne, context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
             else:
-                # --- RÉCUPÉRATION DE TOUT LE PERSONNEL (POUR LA LISTE) ---
-                personnes = Personnelles.objects.all().prefetch_related('sexe', 'fonctions__poste', 'fonctions__service')
+                # Pour la liste globale, on reste léger pour ne pas saturer la RAM
+                personnes = Personnelles.objects.all().prefetch_related(
+                    'sexe', 
+                    'fonctions__poste', 
+                    'fonctions__service',
+                    'fonctions__financement' # Ajoute le financement ici aussi !
+                )
                 serializer = PersonnelFullSerializer(personnes, many=True, context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
         except Personnelles.DoesNotExist:
             return Response({"error": "Le personnel demandé n'existe pas."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": f"Erreur serveur: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
     @transaction.atomic
     def put(self, request, pk):
