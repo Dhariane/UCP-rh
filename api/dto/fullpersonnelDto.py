@@ -81,49 +81,44 @@ class FormationSerializer(serializers.ModelSerializer):
 # ==========================================
 
 class PersonnelFullSerializer(serializers.ModelSerializer):
-    # --- Alias pour le Front-end ---
+    # --- Alias et Relations ---
     emailPersonnel = serializers.CharField(source='emailPerso', default="")
     telephonePersonnel = serializers.CharField(source='telPerso', default="")
-    quartier = serializers.CharField(default="")
-    ville = serializers.CharField(default="")
-    
-    # --- Relations imbriquées ---
     enfants = EnfantSerializer(many=True, read_only=True, source='Enfant')
     contactsUrgence = ContactUrgenceSerializer(many=True, read_only=True, source='contactUrgence')
     diplomes = DiplomeSerializer(many=True, read_only=True, source='Diplome')
     experiences = ExperienceSerializer(many=True, read_only=True, source='Experience')
     formations = FormationSerializer(many=True, read_only=True, source='Formation')
+    
 
-    # --- Champs calculés ---
+    # --- Champs SerializerMethodField ---
     cin = serializers.SerializerMethodField()
     dateDelivranceCin = serializers.SerializerMethodField()
     lieuDelivranceCin = serializers.SerializerMethodField()
-    
-    nif = serializers.ReadOnlyField(source='propos_list.first.nif', default="")
-    stat = serializers.ReadOnlyField(source='propos_list.first.stat', default="")
-    cnaps = serializers.ReadOnlyField(source='propos_list.first.numeroCnaps', default="")
-    emailProfessionnel = serializers.ReadOnlyField(source='propos_list.first.email', default="")
-    contactProfessionnel = serializers.ReadOnlyField(source='propos_list.first.tel', default="")
-    etatCivil = serializers.ReadOnlyField(source='propos_list.first.etatCivil.id', default=None)
-    nombreEnfants = serializers.ReadOnlyField(source='propos_list.first.nombreEnfant', default=0)
-    
     nomPere = serializers.SerializerMethodField()
     nomMere = serializers.SerializerMethodField()
-    
     rib = serializers.SerializerMethodField()
     banque = serializers.SerializerMethodField() 
     agence = serializers.SerializerMethodField()
     photoRib = serializers.SerializerMethodField()
-    
     conjoint = serializers.SerializerMethodField()
     photoUrl = serializers.SerializerMethodField()
     contrat = serializers.SerializerMethodField()
-    poste_superieur = serializers.SerializerMethodField()
-    service_actuel = serializers.SerializerMethodField()
-    financement_actuel = serializers.SerializerMethodField()
     date_embauche = serializers.SerializerMethodField()
-    fonction = serializers.SerializerMethodField()
     date_sortie = serializers.SerializerMethodField()
+    financement_actuel = serializers.SerializerMethodField()
+    service_actuel = serializers.SerializerMethodField()
+    poste_superieur = serializers.SerializerMethodField()
+    fonction = serializers.SerializerMethodField()
+
+    # --- Champs ReadOnly (Propos) ---
+    nif = serializers.SerializerMethodField()
+    stat = serializers.SerializerMethodField()
+    cnaps = serializers.SerializerMethodField()
+    emailProfessionnel = serializers.SerializerMethodField()
+    contactProfessionnel = serializers.SerializerMethodField()
+    etatCivil = serializers.SerializerMethodField()
+    nombreEnfants = serializers.SerializerMethodField()
 
     class Meta:
         model = Personnelles
@@ -139,125 +134,158 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
             'enfants', 'contactsUrgence', 'diplomes', 'experiences', 'formations',
             'photoResidence', 'cinphoto', 'acteNaissance', 'casierjudiciaire'
         ]
-    def _get_fonction_info(self, obj):
-        if not hasattr(self, '_cached_fonction'):
-            # On récupère la ligne de la table Fonctions liée à ce personnel
-            self._cached_fonction = Fonctions.objects.filter(personnelle=obj).first()
-        return self._cached_fonction
-    def _get_famille(self, obj):
-        return Famille.objects.filter(personnelle=obj).first()
-    def get_fonction(self, obj):
-        f = self._get_fonction_info(obj)
-        return f.nom if f else "Non défini"
-    def get_date_sortie(self, obj):
-        f = self._get_fonction_info(obj)
-        return str(f.dateFin) if f and f.dateFin else None
-    def _get_propos(self, obj):
-        return obj.propos_list.first()
 
+    # ==========================================================
+    # LA MÉTHODE MANQUANTE (CACHE)
+    # ==========================================================
+    def _get_related_data(self, obj):
+        """ Centralise la récupération avec un dictionnaire par ID d'objet """
+        # On initialise le dictionnaire global s'il n'existe pas encore
+        if not hasattr(self, '_cached_dict'):
+            self._cached_dict = {}
+
+        # Si les données de CET employé ne sont pas encore en cache, on les récupère
+        if obj.id not in self._cached_dict:
+            self._cached_dict[obj.id] = {
+                'fonction': Fonctions.objects.filter(personnelle=obj).last(),
+                'propos': Propos.objects.filter(personnelle=obj).last(), 
+                'famille': Famille.objects.filter(personnelle=obj).first(),
+                'banque': CoordonneesBancaires.objects.filter(personnelle=obj).first(),
+                'cin': obj.cins.first()
+            }
+        
+        return self._cached_dict[obj.id]
+
+    # Ensuite, tes getters appellent toujours la même chose :
+    def get_fonction(self, obj):
+        f = self._get_related_data(obj)['fonction']
+        return f.nom if f else ""
+    
+    def get_nif(self, obj):
+        p = self._get_related_data(obj)['propos']
+        return p.nif if p else ""
+
+    def get_stat(self, obj):
+        p = self._get_related_data(obj)['propos']
+        return p.stat if p else ""
+
+    def get_cnaps(self, obj):
+        p = self._get_related_data(obj)['propos']
+        return p.numeroCnaps if p else ""
+
+    def get_emailProfessionnel(self, obj):
+        p = self._get_related_data(obj)['propos']
+        return p.email if p else ""
+
+    def get_contactProfessionnel(self, obj):
+        p = self._get_related_data(obj)['propos']
+        return p.tel if p else ""
+
+    def get_etatCivil(self, obj):
+        p = self._get_related_data(obj)['propos']
+        return p.etatCivil.id if p and p.etatCivil else None
+
+    def get_nombreEnfants(self, obj):
+        p = self._get_related_data(obj)['propos']
+        return p.nombreEnfant if p else 0
+
+    def get_financement_actuel(self, obj):
+        f = self._get_related_data(obj)['fonction']
+        return f.financement.nom if f and f.financement else "Non défini"
+
+    def get_service_actuel(self, obj):
+        f = self._get_related_data(obj)['fonction']
+        return f.service.nom if f and f.service else "Non défini"
+
+    def get_poste_superieur(self, obj):
+        f = self._get_related_data(obj)['fonction']
+        return f.poste.nom if f and f.poste else "Non défini"
+
+    def get_date_embauche(self, obj):
+        f = self._get_related_data(obj)['fonction']
+        return str(f.dateDebut) if f and f.dateDebut else None
+
+    def get_date_sortie(self, obj):
+        f = self._get_related_data(obj)['fonction']
+        return str(f.dateFin) if f and f.dateFin else None
+
+    # --- Getters Famille ---
+    def get_nomPere(self, obj):
+        fam = self._get_related_data(obj)['famille']
+        return fam.nomPere if fam else ""
+
+    def get_nomMere(self, obj):
+        fam = self._get_related_data(obj)['famille']
+        return fam.nomMere if fam else ""
+
+    # --- Getters Banque ---
+    def get_rib(self, obj):
+        b = self._get_related_data(obj)['banque']
+        return b.rib if b else ""
+
+    def get_banque(self, obj):
+        b = self._get_related_data(obj)['banque']
+        return b.banque.nom if b and b.banque else ""
+
+    def get_agence(self, obj):
+        b = self._get_related_data(obj)['banque']
+        return b.agence.nom if b and b.agence else ""
+
+    def get_photoRib(self, obj):
+        b = self._get_related_data(obj)['banque']
+        return b.photoRib.url if b and b.photoRib else None
+
+    # --- Autres ---
     def get_cin(self, obj):
-        c = obj.cins.first()
+        c = self._get_related_data(obj)['cin']
         if c:
             return {
                 "numero": c.numeroCin or "",
                 "dateDelivrance": str(c.dateCin) if c.dateCin else "",
                 "lieuDelivrance": c.lieuCin or "",
-                "dateDuplicata": str(c.dateDuplicata) if getattr(c, 'dateDuplicata', None) else "",
-                "lieuDuplicata": c.lieuDuplicata if getattr(c, 'lieuDuplicata', None) else "",
-                "numeroDuplicata": getattr(c, 'numeroDuplicata', ""), # <--- ÉTAIT MANQUANT
+                "numeroDuplicata": getattr(c, 'numeroDuplicata', ""),
                 "dateDuplicata": str(c.dateDuplicata) if getattr(c, 'dateDuplicata', None) else "",
                 "lieuDuplicata": getattr(c, 'lieuDuplicata', "")
             }
         return None
-    def get_photoRib(self, obj):
-        from api.models import CoordonneesBancaires
-        b = CoordonneesBancaires.objects.filter(personnelle=obj).first()
-        return b.photoRib.url if b and b.photoRib else None
 
     def get_dateDelivranceCin(self, obj):
-        c = obj.cins.first()
+        c = self._get_related_data(obj)['cin']
         return str(c.dateCin) if c else ""
 
     def get_lieuDelivranceCin(self, obj):
-        c = obj.cins.first()
+        c = self._get_related_data(obj)['cin']
         return c.lieuCin if c else ""
-
-    def get_nomPere(self, obj):
-        f = self._get_famille(obj)
-        return f.nomPere if f else ""
-
-    def get_nomMere(self, obj):
-        f = self._get_famille(obj)
-        return f.nomMere if f else ""
-
-    def get_rib(self, obj):
-        from api.models import CoordonneesBancaires 
-        b = CoordonneesBancaires.objects.filter(personnelle=obj).first()
-        return b.rib if b else ""
-
-    def get_banque(self, obj):
-        from api.models import CoordonneesBancaires
-        b = CoordonneesBancaires.objects.filter(personnelle=obj).first()
-        return b.banque.nom if b and b.banque else ""
-
-    def get_agence(self, obj):
-        from api.models import CoordonneesBancaires
-        b = CoordonneesBancaires.objects.filter(personnelle=obj).first()
-        return b.agence.nom if b and b.agence else ""
-
-    def get_conjoint(self, obj):
-        f = self._get_famille(obj)
-        if f:
-            return {
-                "nomConjoint": f.nomConjoint or "",
-                "prenomConjoint": f.prenomConjoint or "",
-                "adresseConjoint": f.adresseConjoint or "",
-                "telConjoint": f.telConjoint or "",
-                "emailConjoint": f.emailConjoint or "",
-                "acteMariage": f.acteMariage.url if f.acteMariage else None
-            }
-        return {}
 
     def get_photoUrl(self, obj):
         p = obj.photos.first()
         return p.data.url if p and p.data else None
 
+    def get_conjoint(self, obj):
+        fam = self._get_related_data(obj)['famille']
+        if fam:
+            return {
+                "nomConjoint": fam.nomConjoint or "",
+                "prenomConjoint": fam.prenomConjoint or "",
+                "adresseConjoint": fam.adresseConjoint or "",
+                "telConjoint": fam.telConjoint or "",
+                "emailConjoint": fam.emailConjoint or "",
+                "acteMariage": fam.acteMariage.url if fam.acteMariage else None
+            }
+        return {}
+
     def get_contrat(self, obj):
-        # On récupère le dernier contrat en date
         c = Contrat.objects.filter(personnelle=obj).last() 
         if c:
             return {
                 "numero": getattr(c, 'NumeroContrat', ""),
                 "type": c.typeContrat.TypeContrat if getattr(c, 'typeContrat', None) else None,
-                "salaire": getattr(c, 'salaire', 0), # Ajout du salaire ici
+                "salaire": getattr(c, 'salaire', 0),
                 "periodeEssai": getattr(c, 'periodeEssai', ""),
                 "dateFinEssai": str(c.dateFinEssai) if getattr(c, 'dateFinEssai', None) else "",
                 "photo": c.photoContrat.url if (getattr(c, 'photoContrat', None) and c.photoContrat) else None
             }
         return None
-
-    def _get_fonction_info(self, obj):
-        if not hasattr(self, '_cached_fonction'):
-            f = Fonctions.objects.filter(personnelle=obj).first()
-            self._cached_fonction = f
-        return self._cached_fonction
-
-    def get_poste_superieur(self, obj):
-        f = self._get_fonction_info(obj)
-        return f.poste.nom if f and f.poste else "Non défini"
-
-    def get_service_actuel(self, obj):
-        f = self._get_fonction_info(obj)
-        return f.service.nom if f and f.service else "Non défini"
-
-    def get_financement_actuel(self, obj):
-        f = self._get_fonction_info(obj)
-        return f.financement.nom if f and f.financement else None
-
-    def get_date_embauche(self, obj):
-        f = self._get_fonction_info(obj)
-        return f.dateDebut if f else None
-
 # ==========================================
 # 4. SERIALIZER DE MISE À JOUR (UPDATE)
 # ==========================================
