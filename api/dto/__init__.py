@@ -17,6 +17,7 @@ from .personnelles.diplome.diplomeDto import DiplomeDTO
 from .personnelles.diplome.formationDto import FormationDTO
 from .personnelles.propos.enfantDto import EnfantDTO
 from .permission.permissionDto import PermissionDto
+from .admin.loginadDto import LoginadminDTO
 
 
 __all__ = [
@@ -38,5 +39,6 @@ __all__ = [
     "DiplomeDTO",
     "FormationDTO",
     "EnfantDTO",
-    
+    "LoginadminDTO",
+    "PermissionDto"
 ]

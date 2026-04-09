@@ -24,6 +24,7 @@ from .personnelles.fonction.typeContratController import TypeContratController
 from .personnelles.fonction.modefinancementController import ModeFinancementController
 from .role.roleController import RoleController
 from .permission.permissionController import PermissionController    
+from .admin.loginadController import LoginadminController
 __all__ = [
     "EtatCivilController",
     "ProposController",
@@ -51,5 +52,6 @@ __all__ = [
     "ModeFinancementController",
     "LoginController",
     "RoleController",
-    "PermissionController"
+    "PermissionController",
+    "LoginadminController"
 ]
