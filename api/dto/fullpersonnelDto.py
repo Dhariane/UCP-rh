@@ -293,14 +293,19 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
 # from rest_framework import serializers
 # from api.models import Personnelles, Cins, Propos, Familles, CoordonneesBancaires, Enfant, Experience, Diplome, Formation, ContactUrgence, Contrat
 
+import json
+
 
 class PersonnelUpdateSerializer(serializers.ModelSerializer):
-    # --- CONFIGURATION DES CHAMPS (Aliasing pour le Frontend) ---
+    # --- CONFIGURATION DES CHAMPS (Aliasing Frontend) ---
     emailPersonnel = serializers.EmailField(source='emailPerso', required=False)
     telephonePersonnel = serializers.CharField(source='telPerso', required=False)
     num_cin_input = serializers.CharField(required=False, allow_blank=True)
     dateDelivranceCin = serializers.DateField(required=False, allow_null=True)
     lieuDelivranceCin = serializers.CharField(required=False, allow_blank=True)
+    dateDuplicataCin = serializers.DateField(required=False, allow_null=True)
+    lieuDuplicataCin = serializers.CharField(required=False, allow_blank=True)
+    photoCin = serializers.FileField(required=False, allow_null=True)
     
     # --- CHAMPS PROPOS & FAMILLE ---
     nif = serializers.CharField(required=False, allow_blank=True)
@@ -310,28 +315,53 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
     contactProfessionnel = serializers.CharField(required=False, allow_blank=True)
     etatCivil = serializers.IntegerField(required=False)
     nombreEnfants = serializers.IntegerField(required=False)
+    # --- À METTRE EN HAUT AVEC LES AUTRES DÉCLARATIONS ---
+    date_embauche = serializers.DateField(required=False, allow_null=True)
+    fonction = serializers.CharField(required=False, allow_blank=True)
+    date_sortie = serializers.DateField(required=False, allow_null=True)
+    poste_superieur = serializers.CharField(required=False, allow_blank=True)
+    service_actuel = serializers.CharField(required=False, allow_blank=True)
+    financement_actuel = serializers.CharField(required=False, allow_blank=True)
+    num_contrat = serializers.CharField(required=False, allow_blank=True)
+    type_contrat = serializers.CharField(required=False, allow_blank=True)
+    photoContrat = serializers.FileField(required=False, allow_null=True)
+    photoUrl = serializers.FileField(required=False, allow_null=True)
+    # --- CHAMPS PARENTS & CONJOINT ---
+    nomPere = serializers.CharField(required=False, allow_blank=True)
+    nomMere = serializers.CharField(required=False, allow_blank=True)
+    nomConjoint = serializers.CharField(required=False, allow_blank=True)
+    prenomConjoint = serializers.CharField(required=False, allow_blank=True)
+    telConjoint = serializers.CharField(required=False, allow_blank=True)
+    emailConjoint = serializers.EmailField(required=False, allow_blank=True, allow_null=True)
+    adresseConjoint = serializers.CharField(required=False, allow_blank=True)
+
+    # --- BANQUE ---
+    banque = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    agence = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    villeAgence = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    rib = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    photoRib = serializers.FileField(required=False, allow_null=True)
+
+    photoResidence = serializers.FileField(required=False, allow_null=True)
+    acteNaissance = serializers.FileField(required=False, allow_null=True)
+    casierjudiciaire = serializers.FileField(required=False, allow_null=True)
+
+    # --- AJOUT POUR LE CONJOINT (Acte de mariage) ---
+    acteMariage = serializers.FileField(required=False, allow_null=True)
     
-    # --- AJOUT DU CHAMP VILLE AGENCE ---
-    villeAgence = serializers.CharField(required=False, allow_blank=True)
-    
-    # --- LISTES D'ACTIONS (EXPERIENCES, DIPLOMES, FORMATIONS) ---
+    # --- LISTES D'ACTIONS ---
     ajouter_experiences = serializers.ListField(required=False)
     mettre_a_jour_experiences = serializers.ListField(required=False)
     supprimer_experiences = serializers.ListField(required=False)
-
     ajouter_diplomes = serializers.ListField(required=False)
     mettre_a_jour_diplomes = serializers.ListField(required=False)
     supprimer_diplomes = serializers.ListField(required=False)
-
     ajouter_formations = serializers.ListField(required=False)
     mettre_a_jour_formations = serializers.ListField(required=False)
     supprimer_formations = serializers.ListField(required=False)
-
-    # --- LISTES D'ACTIONS (ENFANTS & CONTACTS) ---
     ajouter_enfants = serializers.ListField(required=False)
     mettre_a_jour_enfants = serializers.ListField(required=False)
     supprimer_enfants = serializers.ListField(required=False)
-
     ajouter_contacts_urgence = serializers.ListField(required=False)
     mettre_a_jour_contacts_urgence = serializers.ListField(required=False)
     supprimer_contacts_urgence = serializers.ListField(required=False)
@@ -341,30 +371,37 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def _parse_json(self, data):
-        """Utilitaire pour décoder le JSON venant de Postman ou React"""
         if not data: return []
         try:
             if isinstance(data, list) and len(data) > 0 and isinstance(data[0], str):
                 return json.loads(data[0])
-            if isinstance(data, str):
-                return json.loads(data)
+            if isinstance(data, str): return json.loads(data)
             return data
         except: return []
 
     def update(self, instance, validated_data):
-        # 1. EXTRACTION DES LISTES
-        add_exp = self._parse_json(validated_data.pop('ajouter_experiences', []))
-        upd_exp = self._parse_json(validated_data.pop('mettre_a_jour_experiences', []))
-        del_exp = self._parse_json(validated_data.pop('supprimer_experiences', []))
-
-        add_dip = self._parse_json(validated_data.pop('ajouter_diplomes', []))
-        upd_dip = self._parse_json(validated_data.pop('mettre_a_jour_diplomes', []))
-        del_dip = self._parse_json(validated_data.pop('supprimer_diplomes', []))
-
-        add_form = self._parse_json(validated_data.pop('ajouter_formations', []))
-        upd_form = self._parse_json(validated_data.pop('mettre_a_jour_formations', []))
-        del_form = self._parse_json(validated_data.pop('supprimer_formations', []))
-
+        # --- 1. EXTRACTION DES DONNÉES HORS-MODÈLE PRINCIPAL ---
+        nom_p = validated_data.pop('nomPere', None)
+        nom_m = validated_data.pop('nomMere', None)
+        nom_c = validated_data.pop('nomConjoint', None)
+        pre_c = validated_data.pop('prenomConjoint', None)
+        tel_c = validated_data.pop('telConjoint', None)
+        eml_c = validated_data.pop('emailConjoint', None)
+        adr_c = validated_data.pop('adresseConjoint', None)
+        a_mariage = validated_data.pop('acteMariage', None)
+        
+        b_name = validated_data.pop('banque', None)
+        a_name = validated_data.pop('agence', None)
+        v_val = validated_data.pop('villeAgence', None)
+        r_val = validated_data.pop('rib', None)
+        p_rib = validated_data.pop('photoRib', None)
+        
+        
+        # Extraction CIN data additionnelle
+        d_duplicata = validated_data.pop('dateDuplicataCin', None)
+        l_duplicata = validated_data.pop('lieuDuplicataCin', None)
+        p_cin = validated_data.pop('photoCin', None)
+        
         add_enf = self._parse_json(validated_data.pop('ajouter_enfants', []))
         upd_enf = self._parse_json(validated_data.pop('mettre_a_jour_enfants', []))
         del_enf = self._parse_json(validated_data.pop('supprimer_enfants', []))
@@ -373,51 +410,62 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
         upd_con = self._parse_json(validated_data.pop('mettre_a_jour_contacts_urgence', []))
         del_con = self._parse_json(validated_data.pop('supprimer_contacts_urgence', []))
 
-        # 2. MISE À JOUR DE L'INSTANCE PERSONNELLE (CHAMPS DE BASE + VILLE AGENCE)
-        sexe_id = validated_data.pop('sexe', None)
-        if sexe_id:
-            instance.sexe = sexe_id if isinstance(sexe_id, Sexes) else Sexes.objects.get(id=sexe_id)
+        p_residence = validated_data.pop('photoResidence', None)
+        a_naissance = validated_data.pop('acteNaissance', None)
+        c_judiciaire = validated_data.pop('casierjudiciaire', None)
 
-        # On boucle sur le reste (adresse, ville, quartier, villeAgence, etc.)
+        # --- 2. MISE À JOUR DE L'INSTANCE PERSONNELLE ---
+        sexe_val = validated_data.pop('sexe', None)
+        if sexe_val:
+            instance.sexe = sexe_val if isinstance(sexe_val, Sexes) else Sexes.objects.get(id=sexe_val)
+
         for attr, value in validated_data.items():
             if not isinstance(value, (list, dict)):
                 setattr(instance, attr, value)
         instance.save()
 
-        # 3. GESTION DES EXPÉRIENCES
-        for item in add_exp:
-            item.pop('id', None)
-            Experience.objects.create(personnelle=instance, **item)
-        for item in upd_exp:
-            eid = item.pop('id', None)
-            if eid: Experience.objects.filter(id=eid, personnelle=instance).update(**item)
-        if del_exp: Experience.objects.filter(id__in=del_exp, personnelle=instance).delete()
+        # --- 3. GESTION DES COORDONNÉES BANCAIRES ---
+        bank_obj, _ = CoordonneesBancaires.objects.get_or_create(personnelle=instance)
+        
+        if b_name:
+            nom_banque = b_name.strip()
+            banque_inst = Banques.objects.filter(nom__iexact=nom_banque).first()
+            if not banque_inst:
+                banque_inst = Banques.objects.create(nom=nom_banque)
+            bank_obj.banque = banque_inst
 
-        # 4. GESTION DES DIPLÔMES
-        for item in add_dip:
-            item.pop('id', None)
-            if isinstance(item.get('photo'), str): item.pop('photo') 
-            Diplome.objects.create(personnelle=instance, **item)
-        for item in upd_dip:
-            did = item.pop('id', None)
-            if did:
-                if isinstance(item.get('photo'), str): item.pop('photo')
-                Diplome.objects.filter(id=did, personnelle=instance).update(**item)
-        if del_dip: Diplome.objects.filter(id__in=del_dip, personnelle=instance).delete()
+        if a_name:
+            nom_agence = a_name.strip()
+            agence_inst = Agences.objects.filter(nom__iexact=nom_agence).first()
+            if not agence_inst:
+                agence_inst = Agences.objects.create(nom=nom_agence, ville=v_val if v_val else "")
+            bank_obj.agence = agence_inst
 
-        # 5. GESTION DES FORMATIONS
-        for item in add_form:
-            item.pop('id', None)
-            if isinstance(item.get('attestation'), str): item.pop('attestation')
-            Formation.objects.create(personnelle=instance, **item)
-        for item in upd_form:
-            fid = item.pop('id', None)
-            if fid:
-                if isinstance(item.get('attestation'), str): item.pop('attestation')
-                Formation.objects.filter(id=fid, personnelle=instance).update(**item)
-        if del_form: Formation.objects.filter(id__in=del_form, personnelle=instance).delete()
+        if r_val is not None: bank_obj.rib = r_val
+        if p_rib and not isinstance(p_rib, str): bank_obj.photoRib = p_rib
+        bank_obj.save()
 
-        # 6. GESTION DES ENFANTS
+        # --- 4. LOGIQUE ÉTAT CIVIL & FAMILLE ---
+        etat_civil_id = validated_data.get('etatCivil')
+        f_obj, _ = Famille.objects.get_or_create(personnelle=instance)
+        
+        if nom_p is not None: f_obj.nomPere = nom_p
+        if nom_m is not None: f_obj.nomMere = nom_m
+
+        if str(etat_civil_id) == "2": # Marié
+            if nom_c is not None: f_obj.nomConjoint = nom_c
+            if pre_c is not None: f_obj.prenomConjoint = pre_c
+            if tel_c is not None: f_obj.telConjoint = tel_c
+            if eml_c is not None: f_obj.emailConjoint = eml_c
+            if adr_c is not None: f_obj.adresseConjoint = adr_c
+        else:
+            f_obj.nomConjoint = ""; f_obj.prenomConjoint = ""; f_obj.emailConjoint = None
+            a_mariage = validated_data.pop('acteMariage', None)
+        if a_mariage and not isinstance(a_mariage, str):
+            f_obj.acteMariage = a_mariage
+        f_obj.save()
+
+        # --- 5. GESTION DES ENFANTS ---
         for item in add_enf:
             item.pop('id', None)
             s_id = item.pop('sexe', None)
@@ -430,7 +478,7 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
                 Enfant.objects.filter(id=eid, personnelle=instance).update(**item)
         if del_enf: Enfant.objects.filter(id__in=del_enf, personnelle=instance).delete()
 
-        # 7. GESTION DES CONTACTS D'URGENCE
+        # --- 6. GESTION DES CONTACTS D'URGENCE ---
         for item in add_con:
             item.pop('id', None)
             rel_id = item.pop('relation', None)
@@ -443,41 +491,45 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
                 ContactUrgences.objects.filter(id=cid, personnelle=instance).update(**item)
         if del_con: ContactUrgences.objects.filter(id__in=del_con, personnelle=instance).delete()
 
-        # 8. MISE À JOUR DES TABLES LIÉES (CIN, PROPOS, FAMILLE, RIB)
-        # --- CIN ---
-        if any(k in validated_data for k in ['num_cin_input', 'dateDelivranceCin', 'lieuDelivranceCin']):
-            cin_obj, _ = Cins.objects.get_or_create(personnelle=instance)
-            if 'num_cin_input' in validated_data: cin_obj.numeroCin = validated_data.get('num_cin_input')
-            if 'dateDelivranceCin' in validated_data: cin_obj.dateCin = validated_data.get('dateDelivranceCin')
-            if 'lieuDelivranceCin' in validated_data: cin_obj.lieuCin = validated_data.get('lieuDelivranceCin')
-            cin_obj.save()
+        # --- 7. TABLES CIN ET PROPOS ---
+        cin_obj, _ = Cins.objects.get_or_create(personnelle=instance)
+        if 'num_cin_input' in validated_data: cin_obj.numeroCin = validated_data.get('num_cin_input')
+        if 'dateDelivranceCin' in validated_data: cin_obj.dateDelivrance = validated_data.get('dateDelivranceCin')
+        if 'lieuDelivranceCin' in validated_data: cin_obj.lieuDelivrance = validated_data.get('lieuDelivranceCin')
+        
+        # Sauvegarde duplicata et photo CIN
+        if d_duplicata: cin_obj.dateDuplicata = d_duplicata
+        if l_duplicata: cin_obj.lieuDuplicata = l_duplicata
+        if p_cin and not isinstance(p_cin, str): cin_obj.photoCin = p_cin
+        cin_obj.save()
 
-        # --- PROPOS ---
         p_obj, _ = Propos.objects.get_or_create(personnelle=instance)
         if 'nif' in validated_data: p_obj.nif = validated_data.get('nif')
         if 'stat' in validated_data: p_obj.stat = validated_data.get('stat')
         if 'cnaps' in validated_data: p_obj.numeroCnaps = validated_data.get('cnaps')
-        if 'emailProfessionnel' in validated_data: p_obj.email = validated_data.get('emailProfessionnel')
-        if 'contactProfessionnel' in validated_data: p_obj.tel = validated_data.get('contactProfessionnel')
-        if 'etatCivil' in validated_data: p_obj.etatCivil_id = validated_data.get('etatCivil')
+        if etat_civil_id: p_obj.etatCivil_id = etat_civil_id
         if 'nombreEnfants' in validated_data: p_obj.nombreEnfant = validated_data.get('nombreEnfants')
         p_obj.save()
+        p_residence = validated_data.pop('photoResidence', None)
+        a_naissance = validated_data.pop('acteNaissance', None)
+        c_judiciaire = validated_data.pop('casierjudiciaire', None)
 
-        # --- FAMILLE ---
-        f_obj, _ = Famille.objects.get_or_create(personnelle=instance)
-        if 'nomPere' in validated_data: f_obj.nomPere = validated_data.get('nomPere')
-        if 'nomMere' in validated_data: f_obj.nomMere = validated_data.get('nomMere')
-        if 'nomConjoint' in validated_data: f_obj.nomConjoint = validated_data.get('nomConjoint')
-        if 'prenomConjoint' in validated_data: f_obj.prenomConjoint = validated_data.get('prenomConjoint')
-        if 'telConjoint' in validated_data: f_obj.telConjoint = validated_data.get('telConjoint')
-        if 'emailConjoint' in validated_data: f_obj.emailConjoint = validated_data.get('emailConjoint')
-        if 'adresseConjoint' in validated_data: f_obj.adresseConjoint = validated_data.get('adresseConjoint')
-        f_obj.save()
+        if p_residence and not isinstance(p_residence, str): instance.photoResidence = p_residence
+        if a_naissance and not isinstance(a_naissance, str): instance.acteNaissance = a_naissance
+        if c_judiciaire and not isinstance(c_judiciaire, str): instance.casierjudiciaire = c_judiciaire
+        instance.save()
 
-        # --- RIB ---
-        if 'rib' in validated_data:
-            rib_obj, _ = CoordonneesBancaires.objects.get_or_create(personnelle=instance)
-            rib_obj.rib = validated_data.get('rib')
-            rib_obj.save()
+        from api.models import Contrat # Importe ton modèle de contrat
+        
+        contrat_obj, _ = Contrat.objects.get_or_create(personnelle=instance)
+        
+        if 'num_contrat' in validated_data: contrat_obj.numero = validated_data.get('num_contrat')
+        if 'type_contrat' in validated_data: contrat_obj.type = validated_data.get('type_contrat')
+        
+        p_contrat = validated_data.pop('photoContrat', None)
+        if p_contrat and not isinstance(p_contrat, str):
+            contrat_obj.photo = p_contrat
+            
+        contrat_obj.save()
 
         return instance
