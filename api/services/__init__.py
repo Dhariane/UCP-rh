@@ -16,6 +16,7 @@ from .personnelles.diplome import experienceService
 from .personnelles.diplome import diplomeService
 from .personnelles.diplome import formationService
 from .personnelles.propos import enfantService
+from .admin.loginadService import LoginadminService
 __all__ = [
     "personnellesService",
     "sexeService",

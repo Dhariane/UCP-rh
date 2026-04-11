@@ -66,6 +66,16 @@ VALUES
     ('Expert Technique Senior', 2),
     ('Specialiste en Passation de Marches', 2);
 
-INSERT INTO api_role (name, created_at) VALUES
-    ('admin', NOW()),
-    ('User', NOW());
+INSERT INTO api_role  (name,created_at)  
+VALUES
+     ('admin',NOW()),
+     ('User',NOW());
+
+ajout pour admin direct // ça marche pas:
+ SET session_replication_role = 'replica'; 
+ SET session_replication_role = 'origin';     
+
+Update role test:
+ UPDATE api_login
+ SET role_id = 1
+ WHERE email_id = 'misaharitsoa@gmail.com';

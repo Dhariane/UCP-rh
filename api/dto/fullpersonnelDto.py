@@ -1,3 +1,4 @@
+from decimal import Decimal
 import json
 
 from rest_framework import serializers
@@ -110,6 +111,7 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
     service_actuel = serializers.SerializerMethodField()
     poste_superieur = serializers.SerializerMethodField()
     fonction = serializers.SerializerMethodField()
+    villeAgence = serializers.SerializerMethodField()
 
     # --- Champs ReadOnly (Propos) ---
     nif = serializers.SerializerMethodField()
@@ -130,7 +132,7 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
             'etatCivil', 'nombreEnfants', 'conjoint',
             'nomPere','nomMere',
             'emailProfessionnel', 'contactProfessionnel', 'nif', 'stat', 'cnaps',
-            'rib', 'banque', 'agence','photoRib',
+            'rib', 'banque', 'agence','villeAgence','photoRib',
             'enfants', 'contactsUrgence', 'diplomes', 'experiences', 'formations',
             'photoResidence', 'cinphoto', 'acteNaissance', 'casierjudiciaire'
         ]
@@ -155,6 +157,10 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
             }
         
         return self._cached_dict[obj.id]
+    
+    def get_villeAgence(self, obj):
+        b = self._get_related_data(obj)['banque']
+        return b.agence.ville if b and b.agence else ""
 
     # Ensuite, tes getters appellent toujours la même chose :
     def get_fonction(self, obj):
@@ -307,6 +313,7 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
     lieuDuplicataCin = serializers.CharField(required=False, allow_blank=True)
     photoCin = serializers.FileField(required=False, allow_null=True)
     
+    
     # --- CHAMPS PROPOS & FAMILLE ---
     nif = serializers.CharField(required=False, allow_blank=True)
     stat = serializers.CharField(required=False, allow_blank=True)
@@ -326,6 +333,15 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
     type_contrat = serializers.CharField(required=False, allow_blank=True)
     photoContrat = serializers.FileField(required=False, allow_null=True)
     photoUrl = serializers.FileField(required=False, allow_null=True)
+    cin = serializers.DictField(required=False, allow_null=True)
+    contrat = serializers.DictField(required=False, allow_null=True)
+    num_contrat = serializers.CharField(required=False, allow_blank=True)
+    type_contrat = serializers.CharField(required=False, allow_blank=True)
+    salaire = serializers.DecimalField(max_digits=15, decimal_places=2, required=False, allow_null=True)
+    periodeEssai = serializers.CharField(required=False, allow_blank=True)
+    dateFinEssai = serializers.DateField(required=False, allow_null=True)
+    photoContrat = serializers.FileField(required=False, allow_null=True)
+
     # --- CHAMPS PARENTS & CONJOINT ---
     nomPere = serializers.CharField(required=False, allow_blank=True)
     nomMere = serializers.CharField(required=False, allow_blank=True)
@@ -401,6 +417,9 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
         d_duplicata = validated_data.pop('dateDuplicataCin', None)
         l_duplicata = validated_data.pop('lieuDuplicataCin', None)
         p_cin = validated_data.pop('photoCin', None)
+
+        photo_url = validated_data.pop('photoUrl', None)
+        cin_data = validated_data.pop('cin', None)           # objet cin complet
         
         add_enf = self._parse_json(validated_data.pop('ajouter_enfants', []))
         upd_enf = self._parse_json(validated_data.pop('mettre_a_jour_enfants', []))
@@ -414,7 +433,14 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
         a_naissance = validated_data.pop('acteNaissance', None)
         c_judiciaire = validated_data.pop('casierjudiciaire', None)
 
-        # --- 2. MISE À JOUR DE L'INSTANCE PERSONNELLE ---
+        # Champs Fonction
+        date_embauche = validated_data.pop('date_embauche', None)
+        date_sortie = validated_data.pop('date_sortie', None)
+        fonction_nom = validated_data.pop('fonction', None)
+        poste_nom = validated_data.pop('poste_superieur', None)
+        service_nom = validated_data.pop('service_actuel', None)
+        financement_nom = validated_data.pop('financement_actuel', None)
+
         sexe_val = validated_data.pop('sexe', None)
         if sexe_val:
             instance.sexe = sexe_val if isinstance(sexe_val, Sexes) else Sexes.objects.get(id=sexe_val)
@@ -422,6 +448,10 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
         for attr, value in validated_data.items():
             if not isinstance(value, (list, dict)):
                 setattr(instance, attr, value)
+        
+        if photo_url and not isinstance(photo_url, str):
+            instance.photo = photo_url   # ← change "photo" si ton champ s'appelle autrement
+
         instance.save()
 
         # --- 3. GESTION DES COORDONNÉES BANCAIRES ---
@@ -493,43 +523,115 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
 
         # --- 7. TABLES CIN ET PROPOS ---
         cin_obj, _ = Cins.objects.get_or_create(personnelle=instance)
-        if 'num_cin_input' in validated_data: cin_obj.numeroCin = validated_data.get('num_cin_input')
-        if 'dateDelivranceCin' in validated_data: cin_obj.dateDelivrance = validated_data.get('dateDelivranceCin')
-        if 'lieuDelivranceCin' in validated_data: cin_obj.lieuDelivrance = validated_data.get('lieuDelivranceCin')
+
+        # 1. Données textuelles du CIN (reste inchangé)
+        if isinstance(cin_data, dict):
+            cin_obj.numeroCin = cin_data.get('numero') or cin_obj.numeroCin
+            cin_obj.dateCin = cin_data.get('dateDelivrance') or cin_obj.dateCin
+            cin_obj.lieuCin = cin_data.get('lieuDelivrance') or cin_obj.lieuCin
+            cin_obj.numeroDuplicata = cin_data.get('numeroDuplicata') or getattr(cin_obj, 'numeroDuplicata', '')
+            cin_obj.dateDuplicata = cin_data.get('dateDuplicata') or cin_obj.dateDuplicata
+            cin_obj.lieuDuplicata = cin_data.get('lieuDuplicata') or cin_obj.lieuDuplicata
+            cin_obj.save() # N'oublie pas de sauvegarder l'objet CIN
+
+        # 2. GESTION DE LA PHOTO (Dans la table Personnel / instance)
+        # On récupère la photo depuis validated_data
+        p_cin = validated_data.pop('cinphoto', None)
+
+        # On vérifie si c'est bien un fichier et non une simple string (URL)
+        if p_cin and not isinstance(p_cin, str):
+            # C'est ICI que ça change : on l'assigne à l'instance (Personnel)
+            instance.cinphoto = p_cin
+            instance.save() 
         
-        # Sauvegarde duplicata et photo CIN
-        if d_duplicata: cin_obj.dateDuplicata = d_duplicata
-        if l_duplicata: cin_obj.lieuDuplicata = l_duplicata
-        if p_cin and not isinstance(p_cin, str): cin_obj.photoCin = p_cin
-        cin_obj.save()
-
         p_obj, _ = Propos.objects.get_or_create(personnelle=instance)
-        if 'nif' in validated_data: p_obj.nif = validated_data.get('nif')
-        if 'stat' in validated_data: p_obj.stat = validated_data.get('stat')
-        if 'cnaps' in validated_data: p_obj.numeroCnaps = validated_data.get('cnaps')
-        if etat_civil_id: p_obj.etatCivil_id = etat_civil_id
-        if 'nombreEnfants' in validated_data: p_obj.nombreEnfant = validated_data.get('nombreEnfants')
-        p_obj.save()
-        p_residence = validated_data.pop('photoResidence', None)
-        a_naissance = validated_data.pop('acteNaissance', None)
-        c_judiciaire = validated_data.pop('casierjudiciaire', None)
 
-        if p_residence and not isinstance(p_residence, str): instance.photoResidence = p_residence
-        if a_naissance and not isinstance(a_naissance, str): instance.acteNaissance = a_naissance
-        if c_judiciaire and not isinstance(c_judiciaire, str): instance.casierjudiciaire = c_judiciaire
+        if p_residence and not isinstance(p_residence, str): 
+            instance.photoResidence = p_residence
+        if a_naissance and not isinstance(a_naissance, str): 
+            instance.acteNaissance = a_naissance
+        if c_judiciaire and not isinstance(c_judiciaire, str): 
+            instance.casierjudiciaire = c_judiciaire
         instance.save()
 
-        from api.models import Contrat # Importe ton modèle de contrat
-        
+                # ==================== CHAMPS FONCTION + RELATIONS ====================
+        date_embauche = validated_data.pop('date_embauche', None)
+        date_sortie = validated_data.pop('date_sortie', None)
+        fonction_nom = validated_data.pop('fonction', None)
+
+        # Service, Poste, Financement, Type Contrat → on récupère l'ID et on le transforme en objet
+        service_id = validated_data.pop('service_actuel', None)
+        poste_id = validated_data.pop('poste_superieur', None)
+        financement_id = validated_data.pop('financement_actuel', None)
+        type_contrat_id = validated_data.pop('type_contrat', None) or validated_data.pop('contrat_type', None)
+
+        # Mise à jour de la Fonction
+        f = Fonctions.objects.filter(personnelle=instance).last()
+        if not f:
+            f = Fonctions.objects.create(personnelle=instance)
+
+        if fonction_nom:
+            f.nom = fonction_nom
+
+        if service_id:
+            try:
+                f.service = Services.objects.get(id=int(service_id))
+            except:
+                pass
+
+        if poste_id:
+            try:
+                f.poste = Postes.objects.get(id=int(poste_id))
+            except:
+                pass
+
+        if financement_id:
+            try:
+                f.financement = ModeFinancement.objects.get(id=int(financement_id))
+            except:
+                pass
+
+        if date_embauche:
+            f.dateDebut = date_embauche
+        if date_sortie:
+            f.dateFin = date_sortie
+
+        f.save()
+
+        # ==================== CONTRAT (déjà corrigé précédemment) ====================
         contrat_obj, _ = Contrat.objects.get_or_create(personnelle=instance)
+
+        if 'contrat_numero' in validated_data or 'num_contrat' in validated_data:
+            contrat_obj.NumeroContrat = validated_data.pop('contrat_numero', None) or validated_data.pop('num_contrat', None)
+
+        if type_contrat_id:
+            try:
+                tc = TypeContrats.objects.get(id=int(type_contrat_id))
+                contrat_obj.typeContrat = tc
+            except:
+                pass
+
+        # Salaire, période, date fin essai...
+        salaire = validated_data.pop('contrat_salaire', validated_data.pop('salaire', None))
+        if salaire not in [None, '', 'null', 'None']:
+            try:
+                contrat_obj.salaire = Decimal(str(salaire))
+            except:
+                pass
+
+        contrat_obj.periodeEssai = validated_data.pop('contrat_periodeEssai', validated_data.pop('periodeEssai', contrat_obj.periodeEssai))
         
-        if 'num_contrat' in validated_data: contrat_obj.numero = validated_data.get('num_contrat')
-        if 'type_contrat' in validated_data: contrat_obj.type = validated_data.get('type_contrat')
-        
-        p_contrat = validated_data.pop('photoContrat', None)
-        if p_contrat and not isinstance(p_contrat, str):
-            contrat_obj.photo = p_contrat
-            
+        date_fin = validated_data.pop('contrat_dateFinEssai', validated_data.pop('dateFinEssai', None))
+        if date_fin not in [None, '', 'null', 'None']:
+            contrat_obj.dateFinEssai = date_fin
+
+        # Photo contrat
+        photo = validated_data.pop('photoContrat', None)
+        if photo and not isinstance(photo, str):
+            contrat_obj.photoContrat = photo
+
         contrat_obj.save()
+
+        
 
         return instance
