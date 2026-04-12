@@ -11,7 +11,8 @@ from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser,JSONParser
 import json
 from api.dto import PersonnellesDTO
-from api.dto.fullpersonnelDto import PersonnelFullSerializer, PersonnelUpdateSerializer
+from api.dto.fullpersonnelDto import PersonnelFullSerializer
+from api.dto.fullUpdatePersonnelDto import PersonnelUpdateSerializer
 from api.models.propos.enfant import Enfant
 from api.models.propos.propos import Propos
 from api.services.personnelles.propos import (
