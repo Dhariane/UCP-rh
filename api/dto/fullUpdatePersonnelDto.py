@@ -252,9 +252,6 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
         cin_data            = validated_data.pop('cin', None)
         validated_data.pop('photoCin', None)
 
-        # ── EXTRACTION PHOTO ────────────────────────────────
-        photo_url = validated_data.pop('photoUrl', None)
-
         # ── EXTRACTION LISTES ───────────────────────────────
         add_enf = self._parse_json(validated_data.pop('ajouter_enfants', []))
         upd_enf = self._parse_json(validated_data.pop('mettre_a_jour_enfants', []))
@@ -296,6 +293,7 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
         date_fin_essai  = self._safe_date(validated_data.pop('dateFinEssai', None))
         photo_contrat   = validated_data.pop('photoContrat', None)
         validated_data.pop('contrat', None)
+        photo_url = validated_data.pop('photoUrl', None)
 
         # etatCivil : lu avant la boucle setattr
         etat_civil_id = validated_data.get('etatCivil')
@@ -311,15 +309,22 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
             except Exception:
                 pass
 
-        # ── CHAMPS SIMPLES ──────────────────────────────────
+        # ── CHAMPS SIMPLES ────────────────────────────────────
         for attr, value in validated_data.items():
             if not isinstance(value, (list, dict)):
                 setattr(instance, attr, value)
 
-        if photo_url and not isinstance(photo_url, str):
-            instance.photo = photo_url
-
         instance.save()
+
+        # ── PHOTO PROFIL ──────────────────────────────────────
+        if photo_url and not isinstance(photo_url, str):
+            from api.models.propos.photos import Photos
+            photo_obj = instance.photos.first()
+            if photo_obj:
+                photo_obj.data = photo_url
+                photo_obj.save()
+            else:
+                Photos.objects.create(personnelle=instance, data=photo_url)
 
         # ── BANQUE ──────────────────────────────────────────
         bank_obj, _ = CoordonneesBancaires.objects.get_or_create(personnelle=instance)
@@ -370,6 +375,31 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
                 Enfant.objects.create(personnelle=instance, sexe_id=s_id, **item)
             except Exception as e:
                 print(f"Erreur création enfant: {e}")
+        # ── CERTIFICATS DE VIE ENFANTS ──────────────────────────
+            request = self.context.get('request')
+            if request:
+                for key, file in request.FILES.items():
+                    # Front envoie certificatVie_0, certificatVie_1, ...
+                    if not key.startswith('certificatVie_'):
+                        continue
+                    suffix = key.replace('certificatVie_', '')
+                    # Ignorer certificatVie_index_X
+                    if suffix.startswith('index_'):
+                        continue
+                    try:
+                        index = int(suffix)
+                    except ValueError:
+                        continue
+                    # Récupérer l'ID enfant associé
+                    enfant_id_str = request.data.get(f'certificatVie_index_{index}', '')
+                    try:
+                        enfant_id = int(enfant_id_str)
+                        enfant = Enfant.objects.filter(id=enfant_id, personnelle=instance).first()
+                        if enfant:
+                            enfant.certificatVie = file
+                            enfant.save(update_fields=['certificatVie'])
+                    except (ValueError, TypeError):
+                        pass
 
         for item in upd_enf:
             item = dict(item)
@@ -516,48 +546,87 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
                     id__in=[self._safe_int(i) for i in del_exp], personnelle=instance
                 ).delete()
 
+            # ── DIPLÔMES ─────────────────────────────────────────
+            request = self.context.get('request')
+
             for item in add_dip:
-                item = dict(item); item.pop('id', None); item.pop('fichier', None)
-                try: Diplome.objects.create(personnelle=instance, **item)
-                except Exception as e: print(f"Erreur création diplôme: {e}")
+                item = dict(item)
+                item.pop('id', None)
+                item.pop('fichier', None)  # "fichier" est le nom frontend, pas le champ modèle
+                try:
+                    Diplome.objects.create(personnelle=instance, **item)
+                except Exception as e:
+                    print(f"Erreur création diplôme: {e}")
+
+            # ✅ Après création, associer les photos envoyées en fichier
+            if request:
+                for key, file in request.FILES.items():
+                    if not key.startswith('diplome_photo_'):
+                        continue
+                    try:
+                        index = int(key.replace('diplome_photo_', ''))
+                        diplome_id_str = request.data.get(f'diplome_id_{index}', '')
+                        diplome_id = int(diplome_id_str)
+                        dip = Diplome.objects.filter(id=diplome_id, personnelle=instance).first()
+                        if dip:
+                            dip.photo = file  # ← "photo" est le vrai nom du champ
+                            dip.save(update_fields=['photo'])
+                    except (ValueError, TypeError):
+                        pass
 
             for item in upd_dip:
                 item = dict(item)
-                did = self._safe_int(item.pop('id', None)); item.pop('fichier', None)
+                did = self._safe_int(item.pop('id', None))
+                item.pop('fichier', None)  # retirer le nom frontend
                 if did:
-                    try: Diplome.objects.filter(id=did, personnelle=instance).update(**item)
-                    except Exception as e: print(f"Erreur MAJ diplôme {did}: {e}")
-
-            if del_dip:
-                Diplome.objects.filter(
-                    id__in=[self._safe_int(i) for i in del_dip], personnelle=instance
-                ).delete()
+                    try:
+                        Diplome.objects.filter(id=did, personnelle=instance).update(**item)
+                    except Exception as e:
+                        print(f"Erreur MAJ diplôme {did}: {e}")
 
             for item in add_for:
-                item = dict(item); item.pop('id', None); item.pop('certificat', None)
-                try: Formation.objects.create(personnelle=instance, **item)
-                except Exception as e: print(f"Erreur création formation: {e}")
+                item = dict(item)
+                item.pop('id', None)
+                item.pop('certificat', None)  # "certificat" est le nom frontend, pas le champ modèle
+                try:
+                    Formation.objects.create(personnelle=instance, **item)
+                except Exception as e:
+                    print(f"Erreur création formation: {e}")
+
+            # ✅ Associer les attestations
+            if request:
+                for key, file in request.FILES.items():
+                    if not key.startswith('formation_attestation_'):
+                        continue
+                    try:
+                        index = int(key.replace('formation_attestation_', ''))
+                        formation_id_str = request.data.get(f'formation_id_{index}', '')
+                        formation_id = int(formation_id_str)
+                        form = Formation.objects.filter(id=formation_id, personnelle=instance).first()
+                        if form:
+                            form.attestation = file  # ← "attestation" est le vrai nom du champ
+                            form.save(update_fields=['attestation'])
+                    except (ValueError, TypeError):
+                        pass
 
             for item in upd_for:
                 item = dict(item)
-                fid = self._safe_int(item.pop('id', None)); item.pop('certificat', None)
+                fid = self._safe_int(item.pop('id', None))
+                item.pop('certificat', None)
                 if fid:
-                    try: Formation.objects.filter(id=fid, personnelle=instance).update(**item)
-                    except Exception as e: print(f"Erreur MAJ formation {fid}: {e}")
-
-            if del_for:
-                Formation.objects.filter(
-                    id__in=[self._safe_int(i) for i in del_for], personnelle=instance
-                ).delete()
-        # ── NIF / STAT / CNAPS — stockés dans Propos ────────────
-            p_obj, _ = Propos.objects.get_or_create(personnelle=instance)
-            nif_val  = validated_data.get('nif')
-            stat_val = validated_data.get('stat')
-            cnaps_val= validated_data.get('cnaps')
-            if nif_val  is not None: p_obj.nif  = nif_val
-            if stat_val is not None: p_obj.stat = stat_val
-            if cnaps_val is not None: p_obj.cnaps = cnaps_val
-            p_obj.save()
+                    try:
+                        Formation.objects.filter(id=fid, personnelle=instance).update(**item)
+                    except Exception as e:
+                        print(f"Erreur MAJ formation {fid}: {e}")
+                    # ── NIF / STAT / CNAPS — stockés dans Propos ────────────
+                        p_obj, _ = Propos.objects.get_or_create(personnelle=instance)
+                        nif_val  = validated_data.get('nif')
+                        stat_val = validated_data.get('stat')
+                        cnaps_val= validated_data.get('cnaps')
+                        if nif_val  is not None: p_obj.nif  = nif_val
+                        if stat_val is not None: p_obj.stat = stat_val
+                        if cnaps_val is not None: p_obj.cnaps = cnaps_val
+                        p_obj.save()
         print(f"DEBUG validated_data restant: {list(validated_data.keys())}")
         print(f"DEBUG nif: {validated_data.get('nif')}")
         print(f"DEBUG stat: {validated_data.get('stat')}")

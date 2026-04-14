@@ -11,6 +11,28 @@ from api.dto.admin.loginadDto import LoginadminDTO
 
 class LoginadminController(APIView):
     
+    def get(self, request):
+        """
+        Récupère la liste de tous les comptes administrateurs
+        """
+        try:
+            # Récupérer tous les comptes administrateurs
+            admin_accounts = Loginadmin.objects.all()
+            
+            # Sérialiser les données
+            admin_data = [LoginadminDTO(account).data for account in admin_accounts]
+            
+            return Response({
+                "status": "success",
+                "data": admin_data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "status": "error",
+                "message": f"Erreur lors de la récupération : {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
     def post(self, request):
         email_saisi = request.data.get('email')
         password_saisi = request.data.get('password')

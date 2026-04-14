@@ -406,20 +406,24 @@ class PersonnelFullController(APIView):
             return Response({"error": f"Erreur critique: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
         
     def patch(self, request, pk):
-            try:
-                # Récupérer l'instance du personnel
-                personne = Personnelles.objects.get(pk=pk)
-                serializer = PersonnelUpdateSerializer(personne, data=request.data, partial=True)
-                
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response({"status": "success", "message": "Mise à jour partielle réussie"}, status=status.HTTP_200_OK)
-                else:
-                    return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-            except Personnelles.DoesNotExist:
-                return Response({"error": "Personnel non trouvé"}, status=status.HTTP_404_NOT_FOUND)
-            except Exception as e:
-                return Response({"error": f"Erreur critique: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            personne = Personnelles.objects.get(pk=pk)
+            serializer = PersonnelUpdateSerializer(
+                personne,
+                data=request.data,
+                partial=True,
+                context={'request': request}  # ✅ AJOUTER CECI
+            )
+            
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"status": "success", "message": "Mise à jour partielle réussie"}, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        except Personnelles.DoesNotExist:
+            return Response({"error": "Personnel non trouvé"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": f"Erreur critique: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
     def delete(self, request, pk):
         try:
             personne = Personnelles.objects.get(pk=pk)
