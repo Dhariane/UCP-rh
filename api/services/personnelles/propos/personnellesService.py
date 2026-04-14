@@ -38,10 +38,11 @@ class PersonnelleServices:
     @staticmethod
     def update(id: int, data) -> Personnelles:
         personne = Personnelles.objects.get(id=id)
-    
+
         for field, value in data.items():
-            if value is not None:
+            # 🔥 sécurité importante
+            if value is not None and hasattr(personne, field):
                 setattr(personne, field, value)
-                
+
         personne.save()
         return personne

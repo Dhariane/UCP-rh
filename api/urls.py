@@ -7,7 +7,7 @@ urlpatterns = [
     path('login', LoginController.as_view(), name='login'),
     path('personnelle', PersonnelleController.as_view(), name='personnelle'),
     path('etat-civils', EtatCivilController.as_view(), name='etat-civils'),
-    path("etat-civils/<int:id>/", EtatCivilController.as_view(), name="etatcivil-detail"),
+    path('etat-civils/<int:id>/', EtatCivilController.as_view(), name="etatcivil-detail"),
     path('propos', ProposController.as_view(), name='propos'),
     path("propos/<int:id>/", ProposController.as_view(), name="propos-detail"),
     path("sexes", SexeController.as_view(), name="sexes"),
@@ -57,5 +57,21 @@ urlpatterns = [
     path('logins/<int:id>/', LoginController.as_view(), name='login-detail'),
     path('roles', RoleController.as_view(), name='roles'),
     path('roles/<int:id>/', RoleController.as_view(), name='role-detail'),
+    path('permission', PermissionController.as_view(), name='permission'),
+    path('permission/<int:id>/', PermissionController.as_view(), name='permission-detail'),
+    path('admin', LoginadminController.as_view(), name='admin'),
+    path('admin/<int:id>/', LoginadminController.as_view(), name='admin-detail'),
+    path('conge',CongeController.as_view(), name='conge'),
+    path('conge/<int:id>/',CongeController.as_view(),name='conge-detail'),
+    path('statut',StatutController.as_view(),name='statut'),
+    path('statut/<int:id>/',StatutController.as_view(),name='statut-detail'),
+    path('solde_conge',SoldeCongeController.as_view(),name='solde-conge'),
+    path('solde_conge/<int:id>/',SoldeCongeController.as_view(),name='solde_conge-detail'),
+    path('type_conge',TypeCongeController.as_view(), name='type_conge'),
+    path('type_conge/<int:id>/',TypeCongeController.as_view(),name='type_conge-detail'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

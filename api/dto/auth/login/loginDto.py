@@ -15,7 +15,8 @@ class LoginDTO(serializers.ModelSerializer):
             'personnel_id',
             'role', 
             'password', 
-            'created_at'
+            'created_at',
+            'personnelles'
         ]
         
         extra_kwargs = {

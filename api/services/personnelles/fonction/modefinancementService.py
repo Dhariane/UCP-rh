@@ -1,10 +1,11 @@
+# Ajoutez cet import en haut du fichier
 from api.models.fonction.modefinancement import ModeFinancement
 # Importez votre DTO si vous en avez un pour ModeFinancement
-# from api.dto.votre_chemin.ModeFinancementDto import ModeFinancementDTO
 from api.dto.personnelles.fonction.modefinancementDto import ModefinancementDto
+
 class ModeFinancementService:
     @staticmethod
-    def create(data) -> ModeFinancement:
+    def create(data: dict) -> ModeFinancement:
         return ModeFinancement.objects.create(
             nom=data['nom']
         )
@@ -29,9 +30,14 @@ class ModeFinancementService:
         return mode
     
     @staticmethod
+    def delete(id: int) -> None:
+        mode = ModeFinancement.objects.get(id=id)
+        mode.delete()
+    
+    @staticmethod
     def getByIdDto(id: int) -> ModefinancementDto:  
-         mode = ModeFinancementService.getById(id)
-         return ModefinancementDto(mode)
+        mode = ModeFinancementService.getById(id)
+        return ModefinancementDto(mode)
     
     @staticmethod
     def getAllDto():        

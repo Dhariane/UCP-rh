@@ -49,9 +49,8 @@ class ModeFinancementController(APIView):
             }
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
         
-        mode = ModeFinancementService.create(
-            nom=valiny.validated_data['nom']
-        )
+        mode = ModeFinancementService.create(valiny.validated_data)
+        
         response = {
             "status": "success",
             "message": "Mode de financement créé avec succès",
@@ -85,6 +84,22 @@ class ModeFinancementController(APIView):
                 "status": "success",
                 "message": "Mode de financement mis à jour avec succès",
                 "data": ModefinancementDto(mode).data
+            }
+            return Response(response, status=status.HTTP_200_OK)
+        except ModeFinancement.DoesNotExist:
+            response = {
+                "status": "error",
+                "message": f"Mode de financement introuvable pour l'id = {id}"
+            }
+            return Response(response, status=status.HTTP_404_NOT_FOUND)
+    
+    # AJOUTER CETTE MÉTHODE DELETE
+    def delete(self, request, id):
+        try:
+            ModeFinancementService.delete(id)
+            response = {
+                "status": "success",
+                "message": "Mode de financement supprimé avec succès"
             }
             return Response(response, status=status.HTTP_200_OK)
         except ModeFinancement.DoesNotExist:
