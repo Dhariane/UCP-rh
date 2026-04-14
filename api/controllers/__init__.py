@@ -25,6 +25,10 @@ from .personnelles.fonction.modefinancementController import ModeFinancementCont
 from .role.roleController import RoleController
 from .permission.permissionController import PermissionController    
 from .admin.loginadController import LoginadminController
+from .conge.congeController import CongeController
+from .conge.soldeCongeController import SoldeCongeController
+from .conge.statutController import StatutController
+from .conge.typeCongeController import TypeCongeController
 __all__ = [
     "EtatCivilController",
     "ProposController",
@@ -53,5 +57,9 @@ __all__ = [
     "LoginController",
     "RoleController",
     "PermissionController",
-    "LoginadminController"
+    "LoginadminController",
+    "CongeController",
+    "SoldeCongeController",
+    "StatutController",
+    "TypeCongeController"
 ]
