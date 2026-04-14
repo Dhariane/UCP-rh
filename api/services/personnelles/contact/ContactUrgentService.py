@@ -23,20 +23,25 @@ class ContactUrgencesService:
         return ContactUrgences.objects.get(id=id)
     
     @staticmethod
-    def update(id: int,nom: str, telephone: str, adresse: str, personnelle: int, relation: int) -> ContactUrgences:
-        # On récupère l'instance existante
-        contactUrgence = ContactUrgences.objects.get(id=id)
-        
-        contactUrgence.nom = nom
-        contactUrgence.telephone = telephone
-        contactUrgence.adresse = adresse
-        
-        # Utilisation de _id pour accepter l'identifiant numérique (ex: 57)
-        contactUrgence.personnelle_id = personnelle 
-        contactUrgence.relation_id = relation
-        
-        contactUrgence.save()
-        return contactUrgence
+    def update(id: int, data: dict) -> ContactUrgences:
+        try:
+            contactUrgence = ContactUrgences.objects.get(id=id)
+            
+            for key, value in data.items():
+                if value is not None:
+                    # Si la clé est 'relation' ou 'personnelle', Django REST 
+                    # envoie souvent l'objet ou l'ID. On utilise _id pour être sûr.
+                    if key in ['relation', 'personnelle']:
+                        # Si 'value' est un objet, on prend son ID, sinon on prend la valeur directe
+                        val_id = getattr(value, 'id', value)
+                        setattr(contactUrgence, f"{key}_id", val_id)
+                    else:
+                        setattr(contactUrgence, key, value)
+            
+            contactUrgence.save()
+            return contactUrgence
+        except ContactUrgences.DoesNotExist:
+            raise Exception("Contact d'urgence non trouvé")
     
     @staticmethod
     def getByIdDto(id: int) -> ContactUrgentsDto:

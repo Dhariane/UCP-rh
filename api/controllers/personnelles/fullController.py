@@ -1,3 +1,5 @@
+from argparse import Action
+
 from api.models.diplome.diplome import Diplome
 from api.models.diplome.experience import Experience
 from api.models.fonction.typeContrat import TypeContrats
@@ -10,6 +12,7 @@ from rest_framework.parsers import MultiPartParser, FormParser,JSONParser
 import json
 from api.dto import PersonnellesDTO
 from api.dto.fullpersonnelDto import PersonnelFullSerializer
+from api.dto.fullUpdatePersonnelDto import PersonnelUpdateSerializer
 from api.models.propos.enfant import Enfant
 from api.models.propos.propos import Propos
 from api.services.personnelles.propos import (
@@ -274,29 +277,42 @@ class PersonnelFullController(APIView):
     def get(self, request, pk=None):
         try:
             if pk:
-                # --- RÉCUPÉRATION D'UN SEUL PERSONNEL (POUR SON COMPTE) ---
-                # On utilise prefetch_related pour charger toutes les listes en une seule fois
+                # On récupère l'individu avec TOUTES ses relations pour éviter le "N+1 problem"
                 personne = Personnelles.objects.prefetch_related(
-                    'sexe', 'cins','propos_list','propos_list__etatCivil',
-                    'Diplome', 'Experience', 'Enfant', 'contrat', 
-                    'contrat__typeContrat', 'fonctions', 'fonctions__service', 
-                    'fonctions__poste', 'contactUrgence', 'photos'
+                    'sexe', 
+                    'cins', 
+                    'propos_list', 
+                    'propos_list__etatCivil',
+                    'Diplome', 
+                    'Experience', 
+                    'Enfant', 
+                    'contrat', 
+                    'contrat__typeContrat', 
+                    'fonctions',  # <--- Vérifie bien que le related_name est 'fonctions' dans ton modèle
+                    'fonctions__service', 
+                    'fonctions__poste', 
+                    'contactUrgence', 
+                    'photos'
                 ).get(pk=pk)
                 
-                # context={'request': request} permet d'avoir l'URL complète pour les images (http://...)
                 serializer = PersonnelFullSerializer(personne, context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
             else:
-                # --- RÉCUPÉRATION DE TOUT LE PERSONNEL (POUR LA LISTE) ---
-                personnes = Personnelles.objects.all().prefetch_related('sexe', 'fonctions__poste', 'fonctions__service')
+                # Pour la liste globale, on reste léger pour ne pas saturer la RAM
+                personnes = Personnelles.objects.all().prefetch_related(
+                    'sexe', 
+                    'fonctions__poste', 
+                    'fonctions__service',
+                    'fonctions__financement' # Ajoute le financement ici aussi !
+                )
                 serializer = PersonnelFullSerializer(personnes, many=True, context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
         except Personnelles.DoesNotExist:
             return Response({"error": "Le personnel demandé n'existe pas."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": f"Erreur serveur: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
     @transaction.atomic
     def put(self, request, pk):
@@ -384,6 +400,26 @@ class PersonnelFullController(APIView):
             # On recharge pour renvoyer la donnée propre
             return Response({"status": "success", "message": "Mise à jour réussie"}, status=status.HTTP_200_OK)
 
+        except Personnelles.DoesNotExist:
+            return Response({"error": "Personnel non trouvé"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": f"Erreur critique: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        
+    def patch(self, request, pk):
+        try:
+            personne = Personnelles.objects.get(pk=pk)
+            serializer = PersonnelUpdateSerializer(
+                personne,
+                data=request.data,
+                partial=True,
+                context={'request': request}  # ✅ AJOUTER CECI
+            )
+            
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"status": "success", "message": "Mise à jour partielle réussie"}, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         except Personnelles.DoesNotExist:
             return Response({"error": "Personnel non trouvé"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:

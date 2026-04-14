@@ -37,15 +37,12 @@ class PersonnelleServices:
 
     @staticmethod
     def update(id: int, data) -> Personnelles:
-        """
-        Met à jour une instance existante.
-        Si photoResidence n'est pas fourni dans 'data', l'ancienne est conservée.
-        """
         personne = Personnelles.objects.get(id=id)
-        
-        # On boucle sur les données validées pour mettre à jour les champs
+
         for field, value in data.items():
-            setattr(personne, field, value)
-            
+            # 🔥 sécurité importante
+            if value is not None and hasattr(personne, field):
+                setattr(personne, field, value)
+
         personne.save()
         return personne

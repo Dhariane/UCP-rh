@@ -5,6 +5,13 @@ Django settings for config project.
 from pathlib import Path
 import os
 
+# 1. D'ABORD, on définit BASE_DIR
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# 2. ENSUITE, on peut utiliser BASE_DIR pour les médias
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -78,9 +85,12 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PARSER_CLASSES': (
         'rest_framework.parsers.JSONParser',
-        'rest_framework.parsers.MultiPartParser', # Pour accepter les fichiers
+        'rest_framework.parsers.MultiPartParser',
         'rest_framework.parsers.FormParser',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ),
 }
 

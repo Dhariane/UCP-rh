@@ -24,20 +24,13 @@ class CinsService:
         )
 
     @staticmethod
-    def update(id, numeroCin, dateCin, lieuCin, numeroDuplicata=None, dateDuplicata=None, lieuDuplicata=None):
+    def update(id, data):
         try:
-            instance = Cins.objects.get(id=id)
-            instance.numeroCin = numeroCin
-            instance.dateCin = dateCin
-            instance.lieuCin = lieuCin
-            # Ajout du numeroDuplicata ici pour être complet
-            instance.numeroDuplicata = numeroDuplicata 
-            instance.dateDuplicata = dateDuplicata
-            instance.lieuDuplicata = lieuDuplicata
-            instance.save()
-            return instance
-        except Cins.DoesNotExist:
-            raise Exception("CIN non trouvé")
+            Cins.objects.filter(id=id).update(**data)
+            return Cins.objects.get(id=id)
+        except Exception as e:
+            print(f"Erreur Service CIN: {e}")
+            raise e
 
     @staticmethod
     def getByIdDto(id: int) -> CinsDTO:
@@ -46,7 +39,5 @@ class CinsService:
 
     @staticmethod
     def getAllDto():
-        # Optionnel : Ajout de la récupération de la liste complète en DTO 
-        # pour rester cohérent avec ProposService
         cins_list = CinsService.getAll()
         return CinsDTO(cins_list, many=True)
