@@ -79,3 +79,11 @@ Update role test:
  UPDATE api_login
  SET role_id = 1
  WHERE email_id = 'misaharitsoa@gmail.com';
+
+pour creation admin login json {
+    {
+    "email": "admin@mail.com",
+    "password": "admin",
+    "role": 1
+}
+}

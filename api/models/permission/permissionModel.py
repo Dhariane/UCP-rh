@@ -10,8 +10,8 @@ class Permissions(models.Model):
     )
     
     # Dates de l'absence
-    date_debut = models.DateField()
-    date_fin = models.DateField()
+    date_debut = models.DateTimeField()
+    date_fin = models.DateTimeField()
     
     # Détails de la demande
     motif = models.TextField()
