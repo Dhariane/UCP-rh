@@ -6,7 +6,7 @@ class Loginadmin(models.Model):
     role = models.ForeignKey(
         Role, 
         on_delete=models.CASCADE, 
-        related_name="admin_logins"
+        related_name="admin_login"
     )
     
     email = models.EmailField(

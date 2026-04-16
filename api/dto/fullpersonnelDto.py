@@ -8,6 +8,7 @@ from api.services.personnelles.diplome.experienceService import ExperienceServic
 from api.services.personnelles.fonction import ServiceService
 from api.services.personnelles.fonction.fonctionService import FonctionService
 from api.services.personnelles.propos.enfantService import EnfantService
+from api.models.propos.personnelles import Personnelles
 
 # ==========================================
 # HELPER GLOBAL (hors de toute classe)
@@ -125,10 +126,49 @@ class TypeContratSerializer(serializers.ModelSerializer):
         model = TypeContrats
         fields = ['id', 'nom']
 
+# ==========================================
+# SERIALIZERS CONGE + SOLDE CONGE
+# ==========================================
 
-# ==========================================
-# 3. SERIALIZER DE LECTURE (GET FULL)
-# ==========================================
+class CongeSerializer(serializers.ModelSerializer):
+    type_conge   = serializers.SerializerMethodField()
+    statut       = serializers.SerializerMethodField()
+    validated_by = serializers.SerializerMethodField()
+
+    def get_type_conge(self, obj):
+        return {
+            "id": obj.type_conge.id,
+            "nom": getattr(obj.type_conge, 'nom', str(obj.type_conge))
+        }
+
+    def get_statut(self, obj):
+        return {
+            "id": obj.statut.id,
+            "nom": getattr(obj.statut, 'nom', str(obj.statut))
+        }
+
+    def get_validated_by(self, obj):
+        if obj.validated_by:
+            return {
+                "id": obj.validated_by.id,
+                "username": obj.validated_by.username,
+                "full_name": f"{obj.validated_by.first_name or ''} {obj.validated_by.last_name or ''}".strip()
+            }
+        return None
+
+    class Meta:
+        model = Conge
+        fields = [
+            'id', 'type_conge', 'solde_conge', 'date_debut', 'date_fin',
+            'nombre_jours', 'description', 'statut', 'validated_by',
+            'created_at', 'updated_at'
+        ]
+
+
+class SoldeCongeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SoldeConge
+        fields = ['id', 'annee', 'total', 'utilise', 'reste']
 
 class PersonnelFullSerializer(serializers.ModelSerializer):
     # --- Alias et Relations ---
@@ -139,6 +179,8 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
     experiences        = ExperienceSerializer(many=True, read_only=True, source='Experience')
     formations         = FormationSerializer(many=True, read_only=True, source='Formation')
     enfants            = EnfantSerializer(many=True, read_only=True, source='Enfant')
+    conges             = CongeSerializer(many=True, read_only=True)
+    
 
     # --- Champs SerializerMethodField ---
     cin                  = serializers.SerializerMethodField()
@@ -167,12 +209,14 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
     contactProfessionnel = serializers.SerializerMethodField()
     etatCivil            = serializers.SerializerMethodField()
     nombreEnfants        = serializers.SerializerMethodField()
+    soldes_conge       = serializers.SerializerMethodField()
 
     # Champs fichiers directs sur Personnelles → URL propre
     photoResidence   = serializers.SerializerMethodField()
     cinphoto         = serializers.SerializerMethodField()
     acteNaissance    = serializers.SerializerMethodField()
     casierjudiciaire = serializers.SerializerMethodField()
+    
 
     class Meta:
         model = Personnelles
@@ -186,11 +230,11 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
             'nomPere', 'nomMere',
             'emailProfessionnel', 'contactProfessionnel', 'nif', 'stat', 'cnaps',
             'rib', 'banque', 'agence', 'villeAgence', 'photoRib',
-            'enfants', 'contactsUrgence', 'diplomes', 'experiences', 'formations',
+            'enfants', 'contactsUrgence', 'diplomes', 'experiences', 'formations', 'conges','soldes_conge',
             'photoResidence', 'cinphoto', 'acteNaissance', 'casierjudiciaire',
         ]
-
     # ── Cache ──────────────────────────────────────────────
+    
     def _get_related_data(self, obj):
         if not hasattr(self, '_cached_dict'):
             self._cached_dict = {}
@@ -207,7 +251,10 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
     # ── Fichiers directs sur Personnelles ──────────────────
     def get_photoResidence(self, obj):
         return clean_file_url(obj.photoResidence)
-
+    
+    def get_soldes_conge(self, obj):
+        soldes = SoldeConge.objects.filter(personnel=obj).order_by('-annee')  # ← personnel, pas personnelle
+        return SoldeCongeSerializer(soldes, many=True).data
     def get_cinphoto(self, obj):
         return clean_file_url(obj.cinphoto)
 
@@ -337,6 +384,7 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
                 "lieuDuplicata":   getattr(c, 'lieuDuplicata', ""),
             }
         return None
+        
 
     def get_dateDelivranceCin(self, obj):
         c = self._get_related_data(obj)['cin']
@@ -359,3 +407,5 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
                 "photo":        clean_file_url(c.photoContrat) if getattr(c, 'photoContrat', None) else None,
             }
         return None
+    
+    

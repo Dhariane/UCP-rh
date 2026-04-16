@@ -23,7 +23,7 @@ from .fonction.modefinancement import ModeFinancement
 from .auth.login.loginModel import Login
 from .role.roleModel import Role
 from .conge.conge import Conge
-from .conge.soldeConge import models
+from .conge.soldeConge import SoldeConge
 from .conge.statut import Statut
 from .conge.typeConges import TypeConge
 
