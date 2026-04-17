@@ -61,6 +61,8 @@ class Personnelles(BaseNom):
     casierjudiciaire=models.FileField(
         upload_to='Casierjudiciaire/'
     )
+
+
     def __str__(self):
         return f"{self.prenom} {self.nom}"
     
