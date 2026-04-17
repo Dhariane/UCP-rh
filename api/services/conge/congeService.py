@@ -27,9 +27,6 @@ class CongeServices:
     @staticmethod
     def create(data) -> Conge:
         """Créer une nouvelle demande de congé"""
-        
-        # On récupère le statut par son ID (puisque 'code' n'existe pas)
-        # Remplacez 1 par l'ID correct de votre statut "En attente"
         statut_en_attente = Statut.objects.get(id=1)
 
         conge = Conge.objects.create(
@@ -54,6 +51,13 @@ class CongeServices:
 
         conge.save()
         return conge
+
+    @staticmethod
+    def delete(id: int) -> bool:
+        """Supprimer une demande de congé"""
+        conge = Conge.objects.get(id=id)
+        conge.delete()
+        return True
 
     @staticmethod
     def approve(conge_id: int, validated_by) -> Conge:

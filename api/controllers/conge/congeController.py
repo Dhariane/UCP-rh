@@ -85,3 +85,16 @@ class CongeController(APIView):
     def patch(self, request, id):
         """Support explicite de la méthode PATCH"""
         return self.put(request, id)
+    
+    def delete(self, request, id):
+        try:
+            CongeServices.delete(id)
+            return Response({
+                    "status": "success",
+                    "message": "Demande supprimée avec succès",
+            },status=status.HTTP_204_NO_CONTENT)
+        except Conge.DoesNotExist:
+            return Response({
+                "status": "error",
+                "message": f"Demande de congé non trouvée (ID: {id})"
+            }, status=status.HTTP_404_NOT_FOUND)
