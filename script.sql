@@ -39,7 +39,8 @@ VALUES
     ('Cousine', 2),
     ('Conjoint(e)', 1),
     ('Frère', 2),
-    ('Sœur', 2);   
+    ('Sœur', 2),
+    ('Autre', 3);   
 
 
 SET client_encoding TO 'UTF8';
