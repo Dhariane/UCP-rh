@@ -87,3 +87,20 @@ pour creation admin login json {
     "role": 1
 }
 }
+
+DROP TABLE IF EXISTS api_statut, api_typeconge, api_loginadmin, api_soldeconge, api_conge CASCADE;
+
+INSERT INTO api_statut (id, statut) VALUES
+ (1, 'En attente'),
+ (2, 'Approuvé'),
+ (3, 'Refusé');
+
+
+INSERT INTO api_typeconge (id, libelle, code, duree_max) VALUES
+ (1, 'Congé annuel', 'CA', 30),
+ (2, 'Congé maladie', 'CM', 90),
+ (3, 'Congé maternité', 'MAT', 120),
+ (4, 'Congé paternité', 'PAT', 14),
+ (5, 'Congé sans solde', 'CSS', 180),
+ (6, 'Congé exceptionnel', 'CE', 5),
+ (7, 'RTT', 'RTT', 12);
