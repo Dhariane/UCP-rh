@@ -14,7 +14,7 @@ class SoldeCongeServices:
     @staticmethod
     def create(data) -> SoldeConge:
         return SoldeConge.objects.create(
-            Personnelles=data.get("Personnelles"),
+            personnel=data.get("personnel"),
             annee=data.get("annee"),
             total=data.get("total"),
             reste=data.get("reste")
