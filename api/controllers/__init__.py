@@ -29,6 +29,7 @@ from .conge.congeController import CongeController
 from .conge.soldeCongeController import SoldeCongeController
 from .conge.statutController import StatutController
 from .conge.typeCongeController import TypeCongeController
+from .usermanage.usermanageController import UserManagementController
 __all__ = [
     "EtatCivilController",
     "ProposController",
@@ -61,5 +62,6 @@ __all__ = [
     "CongeController",
     "SoldeCongeController",
     "StatutController",
-    "TypeCongeController"
+    "TypeCongeController",
+    "UserManagementController"
 ]
