@@ -14,5 +14,6 @@ class SoldeCongeDTO(serializers.ModelSerializer):
             'annee',
             'total',
             'utilise',
-            'reste'
+            'reste',
+            'is_manual'
         ]

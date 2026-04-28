@@ -12,6 +12,9 @@ class SoldeConge(models.Model):
     total = models.PositiveIntegerField(default=0)
     utilise = models.PositiveIntegerField(default=0)
     reste = models.PositiveIntegerField(default=0)
+    is_manual = models.BooleanField(default=False)  # ← nouveau champ
+
+    MAX_SOLDE = 72  # ← plafond global
 
     class Meta:
         unique_together = ('personnel', 'annee')
@@ -19,28 +22,36 @@ class SoldeConge(models.Model):
     def __str__(self):
         return f"{self.personnel} - {self.annee}"
 
-    # 🔥 +2 jours par mois
     def calcul_total(self):
         today = date.today()
 
         if self.annee < today.year:
-            return 24
+            total_calcule = 24
         elif self.annee == today.year:
-            return today.month * 2
+            total_calcule = today.month * 2
         else:
             return 0
 
+        return min(total_calcule, self.MAX_SOLDE)  # ← plafond appliqué
+
     def save(self, *args, **kwargs):
+        update_fields = kwargs.get('update_fields', None)
 
-        self.total = self.calcul_total()
+        if update_fields is None:
+            # ✅ Recalcul automatique SEULEMENT si pas de saisie manuelle
+            if not self.is_manual:
+                self.total = self.calcul_total()
 
-        # 🔥 sécurité anti négatif
-        if self.utilise < 0:
-            self.utilise = 0
+            # Plafond sur le total dans tous les cas
+            if self.total > self.MAX_SOLDE:
+                self.total = self.MAX_SOLDE
 
-        if self.utilise > self.total:
-            self.utilise = self.total
+            if self.utilise < 0:
+                self.utilise = 0
 
-        self.reste = self.total - self.utilise
+            if self.utilise > self.total:
+                self.utilise = self.total
+
+            self.reste = self.total - self.utilise
 
         super().save(*args, **kwargs)
