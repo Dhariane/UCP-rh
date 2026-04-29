@@ -6,13 +6,13 @@ class PassationServices:
     @staticmethod
     def getAll():
         return PassationService.objects.select_related(
-            'titulaire', 'fonction', 'remplacant'
+            'titulaire', 'statut', 'remplacant'
         ).all()
 
     @staticmethod
     def getById(id: int):
         return PassationService.objects.select_related(
-            'titulaire', 'fonction', 'remplacant'
+            'titulaire', 'statut', 'remplacant'
         ).get(pk=id)
 
     @staticmethod

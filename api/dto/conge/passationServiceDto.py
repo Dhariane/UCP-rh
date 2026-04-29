@@ -14,6 +14,7 @@ class PassationServiceDTO(serializers.ModelSerializer):
             'date',
             'titulaire',
             'fonction',
+            'statut',
             'remplacant',
             'duree_absence',
             'created_at',
