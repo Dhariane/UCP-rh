@@ -14,13 +14,6 @@ class PassationService(models.Model):
         Personnelles,
         on_delete=models.CASCADE,
         related_name='passations_en_tant_que_titulaire'
-    )
-    
-    # La Fonction (liée à ton modèle Fonctions)
-    fonction = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True
     )  
     
     remplacant = models.ForeignKey(
@@ -43,9 +36,31 @@ class PassationService(models.Model):
         blank=True
     )
     
+    # Champ fonction stocké en base, rempli automatiquement
+    fonction = models.ForeignKey(
+        Fonctions,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='passations_services'
+    )
+
     def save(self, *args, **kwargs):
-        if not self.pk and not self.statut_id:  # Nouvelle instance sans statut défini
-            self.statut = Statut.objects.get(libelle="En attente")
+        if not self.pk:  # Seulement à la création
+            
+            # ✅ CORRECTION — récupérer la fonction depuis le modèle Fonctions
+            if self.titulaire:
+                f = Fonctions.objects.filter(personnelle=self.titulaire).last()
+                if f:
+                    self.fonction = f  # ForeignKey vers Fonctions, pas .nom
+
+            # Statut par défaut
+            if not self.statut_id:
+                try:
+                    self.statut = Statut.objects.get(statut="En attente")
+                except Statut.DoesNotExist:
+                    raise ValueError("Le statut 'En attente' n'existe pas en base de données.")
+
         super().save(*args, **kwargs)
 
     class Meta:

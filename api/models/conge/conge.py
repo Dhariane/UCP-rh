@@ -49,7 +49,7 @@ class Conge(models.Model):
         related_name='conges_validated'
     )
     passation_service = models.ForeignKey(
-        'PassationService',
+        PassationService,          
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

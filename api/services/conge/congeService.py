@@ -36,6 +36,7 @@ class CongeServices:
             date_debut=data.get('date_debut'),
             date_fin=data.get('date_fin'),
             description=data.get('description'),
+            passation_service=data.get('passation_service'),
             statut=statut_en_attente,
         )
         return conge
