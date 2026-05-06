@@ -29,7 +29,7 @@ VALUES
     ('Fond Mondial'), 
     ('Alliance Gavi'), 
     ('Banque Mondiale/PPSB'), 
-    ('Banque Mondiale/PARL');
+    ('Banque Mondiale/PARN');
 
 INSERT INTO api_relations (nom, grade) 
 VALUES 
@@ -39,7 +39,8 @@ VALUES
     ('Cousine', 2),
     ('Conjoint(e)', 1),
     ('Frère', 2),
-    ('Sœur', 2);   
+    ('Sœur', 2),
+    ('Autre', 3);   
 
 
 SET client_encoding TO 'UTF8';
@@ -69,7 +70,8 @@ VALUES
 INSERT INTO api_role  (name,created_at)  
 VALUES
      ('admin',NOW()),
-     ('User',NOW());
+     ('User',NOW()),
+     ('Superadmin',NOW());
 
 ajout pour admin direct // ça marche pas:
  SET session_replication_role = 'replica'; 
@@ -79,3 +81,28 @@ Update role test:
  UPDATE api_login
  SET role_id = 1
  WHERE email_id = 'misaharitsoa@gmail.com';
+
+pour creation admin login json {
+    {
+    "email": "admin@mail.com",
+    "password": "admin",
+    "role": 1
+}
+}
+
+DROP TABLE IF EXISTS api_statut, api_typeconge, api_loginadmin, api_soldeconge, api_conge CASCADE;
+
+INSERT INTO api_statut (id, statut) VALUES
+ (1, 'En attente'),
+ (2, 'Approuvé'),
+ (3, 'Refusé');
+
+
+INSERT INTO api_typeconge (id, libelle, code, duree_max) VALUES
+ (1, 'Congé annuel', 'CA', 30),
+ (2, 'Congé maladie', 'CM', 90),
+ (3, 'Congé maternité', 'MAT', 120),
+ (4, 'Congé paternité', 'PAT', 14),
+ (5, 'Congé sans solde', 'CSS', 180),
+ (6, 'Congé exceptionnel', 'CE', 5),
+ (7, 'RTT', 'RTT', 12);

@@ -3,50 +3,46 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
-from api.models.conge.conge import Conge
-from api.services.conge.congeService import CongeServices   # Ajuste le chemin selon ton architecture
-from api.dto.conge.congeDto import CongeDTO                # Ajuste le chemin
+from api.models.conge.passationservice import PassationService
+from api.services.conge.passationServiceService import PassationServices
+from api.dto.conge.passationServiceDto import PassationServiceDTO
 
 
-class CongeController(APIView):
-    # Parser pour supporter JSON + éventuels fichiers (si tu ajoutes des justificatifs plus tard)
+class PassationServiceController(APIView):
     parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get(self, request, id=None):
         if id:
             try:
-                conge = CongeServices.getById(id)
-                serializer = CongeDTO(conge)
+                passation = PassationServices.getById(id)
+                serializer = PassationServiceDTO(passation)
                 return Response({
                     "status": "success",
                     "data": serializer.data
                 }, status=status.HTTP_200_OK)
-            except Conge.DoesNotExist:
+            except PassationService.DoesNotExist:
                 return Response({
                     "status": "error",
-                    "message": f"Demande de congé non trouvée (ID: {id})"
+                    "message": f"Passation de service non trouvée (ID: {id})"
                 }, status=status.HTTP_404_NOT_FOUND)
         else:
-            # Liste toutes les demandes
-            conges = CongeServices.getAll()
-            serializer = CongeDTO(conges, many=True)
+            passations = PassationServices.getAll()
+            serializer = PassationServiceDTO(passations, many=True)
             return Response({
                 "status": "success",
                 "data": serializer.data
             }, status=status.HTTP_200_OK)
 
     def post(self, request):
-        """Créer une nouvelle demande de congé"""
-        serializer = CongeDTO(data=request.data)
+        serializer = PassationServiceDTO(data=request.data)
 
         if serializer.is_valid():
             try:
-                conge = CongeServices.create(serializer.validated_data)
-                
+                passation = PassationServices.create(serializer.validated_data)
                 return Response({
                     "status": "success",
-                    "message": "Demande de congé créée avec succès",
-                    "data": CongeDTO(conge).data
+                    "message": "Passation de service créée avec succès",
+                    "data": PassationServiceDTO(passation).data
                 }, status=status.HTTP_201_CREATED)
             except Exception as e:
                 return Response({
@@ -60,41 +56,40 @@ class CongeController(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, id):
-        """Mettre à jour une demande de congé"""
         try:
-            serializer = CongeDTO(data=request.data, partial=True)
-            
+            serializer = PassationServiceDTO(data=request.data, partial=True)
+
             if serializer.is_valid():
-                conge = CongeServices.update(id, serializer.validated_data)
+                passation = PassationServices.update(id, serializer.validated_data)
                 return Response({
                     "status": "success",
-                    "message": "Demande mise à jour avec succès",
-                    "data": CongeDTO(conge).data
+                    "message": "Passation de service mise à jour avec succès",
+                    "data": PassationServiceDTO(passation).data
                 }, status=status.HTTP_200_OK)
-            
+
             return Response({
                 "status": "error",
                 "errors": serializer.errors
             }, status=status.HTTP_400_BAD_REQUEST)
-        except Conge.DoesNotExist:
+
+        except PassationService.DoesNotExist:
             return Response({
                 "status": "error",
-                "message": "Demande de congé non trouvée"
+                "message": f"Passation de service non trouvée (ID: {id})"
             }, status=status.HTTP_404_NOT_FOUND)
 
     def patch(self, request, id):
-        """Support explicite de la méthode PATCH"""
         return self.put(request, id)
-    
+
     def delete(self, request, id):
         try:
-            CongeServices.delete(id)
+            PassationServices.delete(id)
             return Response({
-                    "status": "success",
-                    "message": "Demande supprimée avec succès",
-            },status=status.HTTP_204_NO_CONTENT)
-        except Conge.DoesNotExist:
+                "status": "success",
+                "message": "Passation de service supprimée avec succès"
+            }, status=status.HTTP_204_NO_CONTENT)
+        except PassationService.DoesNotExist:
             return Response({
                 "status": "error",
-                "message": f"Demande de congé non trouvée (ID: {id})"
+                "message": f"Passation de service non trouvée (ID: {id})"
             }, status=status.HTTP_404_NOT_FOUND)
