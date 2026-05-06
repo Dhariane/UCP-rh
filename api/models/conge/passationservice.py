@@ -4,12 +4,12 @@ from api.models.fonction.fonctions import Fonctions
 from api.models.conge.statut import Statut
 
 class PassationService(models.Model):
-    # Dates : Utilise DateField (ou DateTimeField) sans auto_now pour garder le contrôle
+    
     date_absence = models.DateField()
     date_reprise = models.DateField()
     date = models.DateField()
     
-    # Le Titulaire (lié à Personnelles)
+    
     titulaire = models.ForeignKey(
         Personnelles,
         on_delete=models.CASCADE,
@@ -24,19 +24,19 @@ class PassationService(models.Model):
         related_name='passations_en_tant_que_remplacant'
     )
 
-    # Champs de suivi automatiques
+    
     created_at = models.DateTimeField(auto_now_add=True)
 
     statut = models.ForeignKey(
         Statut,
         on_delete=models.PROTECT,
         related_name='passations_services_statut',
-        default=None,  # Ou mettre l'ID par défaut si connu
+        default=None,  
         null=True,
         blank=True
     )
     
-    # Champ fonction stocké en base, rempli automatiquement
+    
     fonction = models.ForeignKey(
         Fonctions,
         on_delete=models.SET_NULL,

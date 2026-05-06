@@ -12,9 +12,9 @@ class SoldeConge(models.Model):
     total = models.PositiveIntegerField(default=0)
     utilise = models.PositiveIntegerField(default=0)
     reste = models.PositiveIntegerField(default=0)
-    is_manual = models.BooleanField(default=False)  # ← nouveau champ
+    is_manual = models.BooleanField(default=False)
 
-    MAX_SOLDE = 72  # ← plafond global
+    MAX_SOLDE = 72
 
     class Meta:
         unique_together = ('personnel', 'annee')
@@ -25,24 +25,53 @@ class SoldeConge(models.Model):
     def calcul_total(self):
         today = date.today()
 
-        if self.annee < today.year:
-            total_calcule = 24
-        elif self.annee == today.year:
-            total_calcule = today.month * 2
-        else:
+        if self.annee > today.year:
             return 0
 
-        return min(total_calcule, self.MAX_SOLDE)  # ← plafond appliqué
+        # Récupérer la date d'embauche depuis Fonctions
+        from api.models.fonction.fonctions import Fonctions
+        fonction = Fonctions.objects.filter(
+            personnelle=self.personnel
+        ).order_by('dateDebut').first()
+
+        # Si pas de fonction → 0
+        if not fonction or not fonction.dateDebut:
+            return 0
+
+        date_debut = fonction.dateDebut
+
+        # Avant l'embauche → 0
+        if self.annee < date_debut.year:
+            return 0
+
+        # Année courante
+        if self.annee == today.year:
+            if date_debut.year == today.year:
+                # Embauché cette année → compter depuis le mois d'embauche
+                mois_travailles = today.month - date_debut.month + 1
+            else:
+                # Embauché avant → tous les mois jusqu'à aujourd'hui
+                mois_travailles = today.month
+
+        # Année passée complète
+        else:
+            if self.annee == date_debut.year:
+                # Année d'embauche → mois partiels
+                mois_travailles = 12 - date_debut.month + 1
+            else:
+                mois_travailles = 12
+
+        return min(max(mois_travailles, 0) * 2, self.MAX_SOLDE)
 
     def save(self, *args, **kwargs):
         update_fields = kwargs.get('update_fields', None)
 
         if update_fields is None:
-            # ✅ Recalcul automatique SEULEMENT si pas de saisie manuelle
+            # Recalcul automatique seulement si pas manuel
             if not self.is_manual:
                 self.total = self.calcul_total()
 
-            # Plafond sur le total dans tous les cas
+            # Plafond 72j
             if self.total > self.MAX_SOLDE:
                 self.total = self.MAX_SOLDE
 
