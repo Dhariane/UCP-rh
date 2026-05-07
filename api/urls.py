@@ -69,8 +69,11 @@ urlpatterns = [
     path('solde_conge/<int:id>/',SoldeCongeController.as_view(),name='solde_conge-detail'),
     path('type_conge',TypeCongeController.as_view(), name='type_conge'),
     path('type_conge/<int:id>/',TypeCongeController.as_view(),name='type_conge-detail'),
+    path('passation_service', PassationServiceController.as_view(), name='passation_service'),
+    path('passation_service/<int:id>/', PassationServiceController.as_view(), name='passation_service-detail'),
     path('user',UserManagementController.as_view(), name='user'),
     path('user/<int:id>/',UserManagementController.as_view(),name='usermanage'),
+
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

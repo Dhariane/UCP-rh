@@ -29,7 +29,11 @@ from .conge.congeController import CongeController
 from .conge.soldeCongeController import SoldeCongeController
 from .conge.statutController import StatutController
 from .conge.typeCongeController import TypeCongeController
+<<<<<<< HEAD
+from .conge.passationServiceController import PassationServiceController
+=======
 from .usermanage.usermanageController import UserManagementController
+>>>>>>> a0183b2e4a13356b4860f0b768f80218f4c13cd4
 __all__ = [
     "EtatCivilController",
     "ProposController",
@@ -63,5 +67,9 @@ __all__ = [
     "SoldeCongeController",
     "StatutController",
     "TypeCongeController",
+<<<<<<< HEAD
+    "PassationServiceController"
+=======
     "UserManagementController"
+>>>>>>> a0183b2e4a13356b4860f0b768f80218f4c13cd4
 ]

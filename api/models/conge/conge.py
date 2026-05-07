@@ -4,6 +4,7 @@ from api.models.propos.personnelles import Personnelles
 from .typeConges import TypeConge
 from .statut import Statut
 from .soldeConge import SoldeConge
+from .passationservice import PassationService
 
 class Conge(models.Model):
 
@@ -46,6 +47,13 @@ class Conge(models.Model):
         null=True,
         blank=True,
         related_name='conges_validated'
+    )
+    passation_service = models.ForeignKey(
+        PassationService,          
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='conges_passation'
     )
 
     class Meta:

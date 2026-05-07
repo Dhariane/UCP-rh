@@ -1,23 +1,17 @@
 from api.models.fonction.fonctions import Fonctions
 from api.dto.personnelles.fonction.fonctionDto import FonctionDto
+from api.models.conge.soldeConge import SoldeConge  # ✅ ajouter cet import
+from django.utils import timezone    
 
 class FonctionService:
 
     @staticmethod
     def create(data) -> Fonctions:
-        """
-        Crée un objet Fonction de manière sécurisée.
-        data doit être un dict avec les clés :
-        - nom, dateDebut, dateFin, personnelle, service, poste, superieur
-        - financement est optionnel
-        """
-        # Assurer que data est un dict (au cas où on reçoit du JSON en string)
         if isinstance(data, str):
             import json
             data = json.loads(data)
 
-        # Créer la fonction en sécurisant les clés optionnelles
-        return Fonctions.objects.create(
+        fonction = Fonctions.objects.create(
             nom=data['nom'],
             dateDebut=data['dateDebut'],
             dateFin=data['dateFin'],
@@ -26,6 +20,15 @@ class FonctionService:
             service=data['service'],
             poste=data['poste'],
         )
+
+        # ✅ Créer automatiquement le solde congé pour ce personnel
+        SoldeConge.objects.get_or_create(
+            personnel=fonction.personnelle,
+            annee=timezone.now().year,
+            defaults={'is_manual': False, 'utilise': 0}
+        )
+
+        return fonction
 
     @staticmethod
     def getAll():

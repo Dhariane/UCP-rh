@@ -26,4 +26,4 @@ from .conge.conge import Conge
 from .conge.soldeConge import SoldeConge
 from .conge.statut import Statut
 from .conge.typeConges import TypeConge
-
+from .conge.passationservice import PassationService

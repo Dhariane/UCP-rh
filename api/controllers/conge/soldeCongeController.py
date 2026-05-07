@@ -36,10 +36,11 @@ class SoldeCongeController(APIView):
 
     def put(self, request, id):
         try:
-            serializer = SoldeCongeDTO(data=request.data, partial=True)
+            instance = SoldeCongeServices.getById(id)  # ← récupérer l'instance
+            serializer = SoldeCongeDTO(instance, data=request.data, partial=True)  # ← passer l'instance
             if serializer.is_valid():
                 obj = SoldeCongeServices.update(id, serializer.validated_data)
-                return Response({"status": "success", "data": soldeCongeDto(obj).data})
+                return Response({"status": "success", "data": SoldeCongeDTO(obj).data})
             return Response(serializer.errors, status=400)
         except SoldeConge.DoesNotExist:
             return Response({"message": "Non trouvé"}, status=404)
