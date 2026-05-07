@@ -71,7 +71,11 @@ INSERT INTO api_role  (name,created_at)
 VALUES
      ('admin',NOW()),
      ('User',NOW()),
-     ('Superadmin',NOW());
+     ('Superadmin',NOW()),
+     ('Chef',NOW()),
+     ('GP',NOW()),
+     ('RF',NOW());
+
 
 ajout pour admin direct // ça marche pas:
  SET session_replication_role = 'replica'; 
