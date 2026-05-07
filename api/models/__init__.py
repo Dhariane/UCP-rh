@@ -27,3 +27,5 @@ from .conge.soldeConge import SoldeConge
 from .conge.statut import Statut
 from .conge.typeConges import TypeConge
 from .conge.passationservice import PassationService
+from .conge.validationConge import ValidationConge
+from .permission.permissionModel import Permissions

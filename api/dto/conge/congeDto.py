@@ -20,6 +20,11 @@ class CongeDTO(serializers.ModelSerializer):
         required=False,
         allow_null=True
     )
+    statut       = serializers.PrimaryKeyRelatedField(
+        queryset=Statut.objects.all(),
+        required=False,    # ← plus obligatoire
+        allow_null=True    # ← peut être null
+    )
 
     class Meta:
         model = Conge
