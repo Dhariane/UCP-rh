@@ -47,6 +47,7 @@ python manage.py migrate --fake-initial users
 
 <<<<<<< HEAD
 
+<<<<<<< HEAD
 =======
 >>>>>>> 19f96240 (email)
 cd rh-back-end
@@ -161,3 +162,8 @@ commande gmail: https://myaccount.google.com/ validation en deux etape actiber /
 =======
 commande gmail: https://myaccount.google.com/ validation en deux etape actiber / => mots de passe application
 >>>>>>> 19f96240 (email)
+=======
+commande gmail: https://myaccount.google.com/ validation en deux etape actiber / => mots de passe application
+
+grep -rl "from nt import error" . | xargs sed -i '/from nt import error/d'
+>>>>>>> 6e20d7d3 (clone)
