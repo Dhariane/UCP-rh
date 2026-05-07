@@ -43,3 +43,5 @@ python manage.py migrate --fake-initial users
 
 
 commande gmail: https://myaccount.google.com/ validation en deux etape actiber / => mots de passe application
+
+grep -rl "from nt import error" . | xargs sed -i '/from nt import error/d'

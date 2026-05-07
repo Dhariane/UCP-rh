@@ -1,4 +1,3 @@
-from nt import error
 from urllib import response 
 from rest_framework.views import APIView
 from rest_framework.response import Response
