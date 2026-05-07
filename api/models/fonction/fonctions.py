@@ -40,5 +40,11 @@ class Fonctions(models.Model):
         related_name="financement"
     )
 
+    superieurs = models.ManyToManyField(
+        'api.Login',
+        blank=True,
+        related_name='subordonnes'
+    )
+
     def __str__(self):
         return f"{self.personnelle} | {self.poste} | {self.dateDebut}"
