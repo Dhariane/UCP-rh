@@ -1,87 +1,3 @@
-<<<<<<< HEAD
-from django.db import models
-from api.models.utils.baseNom import BaseNom
-from api.models.propos.sexe import Sexes
-
-
-class Personnelles(BaseNom):
-    # Define fields for the Personnelles model here
-    prenom = models.CharField(
-        max_length=200
-    )
-    
-    dateNaissance = models.DateField()
-
-    lieuNaissance = models.CharField(
-        max_length=200
-    )
-
-    matricule = models.CharField(
-        max_length=20, 
-        unique=True, 
-        null=True, 
-        blank=True
-    )
-    sexe = models.ForeignKey(
-        Sexes, 
-        on_delete=models.PROTECT,
-        related_name="personnelles"
-    )
-    adresse = models.CharField(
-        max_length=255, 
-        null=True, 
-        blank=True
-    )
-    quartier = models.CharField(
-        max_length=255, 
-        null=True, 
-        blank=True
-    )
-    ville = models.CharField(
-        max_length=255, 
-        null=True, 
-        blank=True
-    )
-    photoResidence = models.ImageField(
-        upload_to='residences/',
-        null=True,
-        blank=True
-    )
-    telPerso = models.CharField(
-        max_length=50,
-        null=True,
-        blank=True
-    )
-    emailPerso = models.EmailField(
-        max_length=100,
-        null=True,
-        blank=True,
-    )
-    cinphoto=models.FileField(
-        upload_to='photocin/'
-    )
-
-    acteNaissance=models.FileField(
-        upload_to='acteNaissance/'
-    )
-
-    casierjudiciaire=models.FileField(
-        upload_to='Casierjudiciaire/'
-    )
-
-    is_active=models.BooleanField(default=True)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['emailPerso'],
-                condition=models.Q(emailPerso__isnull=False),
-                name='unique_emailPerso_not_null'
-            )
-        ]
-    def __str__(self):
-        return f"{self.prenom} {self.nom}"
-=======
 from django.db import models
 from api.models.utils.baseNom import BaseNom
 from api.models.propos.sexe import Sexes
@@ -146,8 +62,9 @@ class Personnelles(BaseNom):
         upload_to='Casierjudiciaire/'
     )
 
+    is_active=models.BooleanField(default=True)
+
 
     def __str__(self):
         return f"{self.prenom} {self.nom}"
->>>>>>> 23088e43 (mon enregistrement local)
     

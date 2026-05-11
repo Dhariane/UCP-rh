@@ -79,8 +79,9 @@ urlpatterns = [
     path('conge/<int:conge_id>/valider/', ValidationCongeController.as_view()),
     path('superieurs', SuperieurController.as_view()),
     path('superieurs/<int:fonction_id>/', SuperieurController.as_view()),
-    path('rh/soldes/',              SoldeCongeRHController.as_view()),
-    path('rh/soldes/<int:solde_id>/', SoldeCongeRHController.as_view()),
+    path('rh/soldes/', SoldeCongeRHController.as_view()),
+    path('rh/soldes/<int:solde_id>/',SoldeCongeRHController.as_view()),
+    path('personnelles/<int:id>/toggle-status/', PersonnelleController.as_view(), name='toggle-status'),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
