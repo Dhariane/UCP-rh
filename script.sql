@@ -17,7 +17,8 @@ VALUES
 INSERT INTO api_typecontrats ("TypeContrat") 
 VALUES 
     ('Salarié'), 
-    ('Consultant');
+    ('Consultant'),
+    ('Stage');
 
 INSERT INTO api_sexes (nom) 
 VALUES 
@@ -103,10 +104,6 @@ INSERT INTO api_statut (id, statut) VALUES
 
 
 INSERT INTO api_typeconge (id, libelle, code, duree_max) VALUES
- (1, 'Congé annuel', 'CA', 30),
- (2, 'Congé maladie', 'CM', 90),
- (3, 'Congé maternité', 'MAT', 120),
- (4, 'Congé paternité', 'PAT', 14),
- (5, 'Congé sans solde', 'CSS', 180),
- (6, 'Congé exceptionnel', 'CE', 5),
- (7, 'RTT', 'RTT', 12);
+ (1, 'Conge', 'CO', 30),
+ (2, 'Permission', 'PE', 90),
+ (3, 'Recuperation', 'RE', 90);

@@ -29,7 +29,7 @@ from api.services.personnelles.diplome.formationService import FormationService
 from api.services.personnelles.fonction.contratService import ContratService
 from api.services.personnelles.fonction.typeContrantService import TypeContratService
 from api.services.personnelles.fonction.modefinancementService import ModeFinancementService
-from api.models import EtatCivil,Sexes,Relations,Postes,Personnelles,Services,ModeFinancement,Cins
+from api.models import EtatCivil,Sexes,Relations,Postes,Personnelles,Services,ModeFinancement,Cins, fonction
 from api.services.auth.login.loginService import  LoginService
 
 class PersonnelFullController(APIView):
@@ -45,12 +45,20 @@ class PersonnelFullController(APIView):
 
         # Parsing JSON
         try:
-            experiences = json.loads(data.get("experiences", "[]"))
-            diplomes = json.loads(data.get("diplomes", "[]"))
-            formations = json.loads(data.get("formations", "[]"))
-            enfants = json.loads(data.get("enfants", "[]"))
+            import json as json_module  # ← renommer pour éviter le conflit
+            
+            raw_exp  = data.get("experiences", "[]")
+            raw_dip  = data.get("diplomes", "[]")
+            raw_form = data.get("formations", "[]")
+            raw_enf  = data.get("enfants", "[]")
+
+            experiences = raw_exp  if isinstance(raw_exp,  list) else json_module.loads(raw_exp  or "[]")
+            diplomes    = raw_dip  if isinstance(raw_dip,  list) else json_module.loads(raw_dip  or "[]")
+            formations  = raw_form if isinstance(raw_form, list) else json_module.loads(raw_form or "[]")
+            enfants     = raw_enf  if isinstance(raw_enf,  list) else json_module.loads(raw_enf  or "[]")
+
         except Exception as e:
-            return Response({"error": "Format JSON invalide"}, status=400)
+            return Response({"error": f"Format JSON invalide : {str(e)}"}, status=400)
 
         try:
             with transaction.atomic():
@@ -198,6 +206,19 @@ class PersonnelFullController(APIView):
                     "poste": poste,
                     "service": service,
                 })
+                superieurs_ids = data.get("superieurs", "[]")
+                if isinstance(superieurs_ids, str):
+                    import json
+                    superieurs_ids = json.loads(superieurs_ids)
+
+                if superieurs_ids:
+                    from api.models.auth.login.loginModel import Login
+                    for login_id in superieurs_ids:
+                        try:
+                            login_superieur = Login.objects.get(id=login_id)
+                            fonction.superieurs.add(login_superieur)
+                        except Login.DoesNotExist:
+                            pass
 
                 # 9. Famille
                 if data.get("nomPere") or data.get("nomMere"):
