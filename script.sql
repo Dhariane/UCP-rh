@@ -18,7 +18,8 @@ VALUES
 INSERT INTO api_typecontrats ("TypeContrat") 
 VALUES 
     ('Salarié'), 
-    ('Consultant');
+    ('Consultant'),
+    ('Stage');
 
 INSERT INTO api_sexes (nom) 
 VALUES 
@@ -213,6 +214,7 @@ INSERT INTO api_statut (id, statut) VALUES
 
 
 INSERT INTO api_typeconge (id, libelle, code, duree_max) VALUES
+<<<<<<< HEAD
  (1, 'Conge Planifié', 'CP', 30),
  (2, 'Permission', 'PE', 90),
  (3, 'Conge Annuel', 'CA', 30),
@@ -327,3 +329,8 @@ INSERT INTO api_typeconge (id, libelle, code, duree_max) VALUES
  (6, 'Congé exceptionnel', 'CE', 5),
  (7, 'RTT', 'RTT', 12);
 
+=======
+ (1, 'Conge', 'CO', 30),
+ (2, 'Permission', 'PE', 90),
+ (3, 'Recuperation', 'RE', 90);
+>>>>>>> 580fc430 (superieur 11/05/26 09:38)

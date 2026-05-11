@@ -3,6 +3,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from api.controllers import *
+from api.controllers.conge.validationController import ValidationCongeController
+from api.controllers.personnelles.fonction.superieurController import SuperieurController
 urlpatterns = [
     path('login', LoginController.as_view(), name='login'),
     path('personnelle', PersonnelleController.as_view(), name='personnelle'),
@@ -73,6 +75,9 @@ urlpatterns = [
     path('passation_service/<int:id>/', PassationServiceController.as_view(), name='passation_service-detail'),
     path('user',UserManagementController.as_view(), name='user'),
     path('user/<int:id>/',UserManagementController.as_view(),name='usermanage'),
+    path('conge/<int:conge_id>/valider/', ValidationCongeController.as_view()),
+    path('superieurs', SuperieurController.as_view()),
+    path('superieurs/<int:fonction_id>/', SuperieurController.as_view()),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
