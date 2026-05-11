@@ -26,7 +26,7 @@ class CongeServices:
 
     @staticmethod
     def create(data) -> Conge:
-        statut_attente = Statut.objects.get(id=4)  # ← attente_chef
+        statut_attente = Statut.objects.get(id=1)  # ← attente_chef
 
         conge = Conge.objects.create(
             personnel         = data.get('personnel'),
