@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 from api.controllers import *
 from api.controllers.conge.validationController import ValidationCongeController
 from api.controllers.personnelles.fonction.superieurController import SuperieurController
+from api.controllers.conge.soldeCongeController import SoldeCongeRHController
 urlpatterns = [
     path('login', LoginController.as_view(), name='login'),
     path('personnelle', PersonnelleController.as_view(), name='personnelle'),
@@ -78,6 +79,8 @@ urlpatterns = [
     path('conge/<int:conge_id>/valider/', ValidationCongeController.as_view()),
     path('superieurs', SuperieurController.as_view()),
     path('superieurs/<int:fonction_id>/', SuperieurController.as_view()),
+    path('rh/soldes/',              SoldeCongeRHController.as_view()),
+    path('rh/soldes/<int:solde_id>/', SoldeCongeRHController.as_view()),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
