@@ -209,8 +209,12 @@ class CongeServices:
 
     @staticmethod
     def create(data) -> Conge:
+<<<<<<< HEAD
         """Créer une nouvelle demande de congé"""
         statut_en_attente = Statut.objects.get(id=1)
+=======
+        statut_attente = Statut.objects.get(id=1)  # ← attente_chef
+>>>>>>> 61fec2fc (validation conge back--ok 11/05/26)
 
         conge = Conge.objects.create(
             personnel=data.get('personnel'),
