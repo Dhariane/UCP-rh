@@ -6,6 +6,8 @@ from api.controllers import *
 from api.controllers.conge.validationController import ValidationCongeController
 from api.controllers.personnelles.fonction.superieurController import SuperieurController
 from api.controllers.conge.soldeCongeController import SoldeCongeRHController
+from api.controllers.conge.congePlanifieController import CongePlanifieController, CongePlanifieDetailController
+from .controllers import ConfigPlanningController
 urlpatterns = [
     path('login', LoginController.as_view(), name='login'),
     path('personnelle', PersonnelleController.as_view(), name='personnelle'),
@@ -82,7 +84,9 @@ urlpatterns = [
     path('rh/soldes/', SoldeCongeRHController.as_view()),
     path('rh/soldes/<int:solde_id>/',SoldeCongeRHController.as_view()),
     path('personnelles/<int:id>/toggle-status/', PersonnelleController.as_view(), name='toggle-status'),
-
+    path('conges-planifies/<int:personnel_id>/', CongePlanifieController.as_view(), name='conges-planifies-personnel'),
+    path('conges-planifies/detail/<int:id>/', CongePlanifieDetailController.as_view(), name='conge-planifie-detail'),
+    path('conges-planifies/', ConfigPlanningController.as_view(), name='config-planification'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
