@@ -31,7 +31,6 @@ from .conge.statutController import StatutController
 from .conge.typeCongeController import TypeCongeController
 from .conge.passationServiceController import PassationServiceController
 from .usermanage.usermanageController import UserManagementController
-
 __all__ = [
     "EtatCivilController",
     "ProposController",
