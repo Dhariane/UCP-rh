@@ -215,6 +215,7 @@ INSERT INTO api_statut (id, statut) VALUES
 
 INSERT INTO api_typeconge (id, libelle, code, duree_max) VALUES
 <<<<<<< HEAD
+<<<<<<< HEAD
  (1, 'Conge Planifié', 'CP', 30),
  (2, 'Permission', 'PE', 90),
  (3, 'Conge Annuel', 'CA', 30),
@@ -334,3 +335,9 @@ INSERT INTO api_typeconge (id, libelle, code, duree_max) VALUES
  (2, 'Permission', 'PE', 90),
  (3, 'Recuperation', 'RE', 90);
 >>>>>>> 580fc430 (superieur 11/05/26 09:38)
+=======
+ (1, 'Conge Planifié', 'CP', 30),
+ (2, 'Permission', 'PE', 90),
+ (3, 'Conge Annuel', 'CA', 30),
+ (4, 'Recuperation', 'RE', 90);
+>>>>>>> 69adc076 (sql planifié)
