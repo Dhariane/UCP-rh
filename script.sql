@@ -104,6 +104,7 @@ INSERT INTO api_statut (id, statut) VALUES
 
 
 INSERT INTO api_typeconge (id, libelle, code, duree_max) VALUES
- (1, 'Conge', 'CO', 30),
+ (1, 'Conge Planifié', 'CP', 30),
  (2, 'Permission', 'PE', 90),
- (3, 'Recuperation', 'RE', 90);
+ (3, 'Conge Annuel', 'CA', 30),
+ (4, 'Recuperation', 'RE', 90);
