@@ -5,6 +5,9 @@ Django settings for config project.
 from pathlib import Path
 import os
 
+from dotenv import load_dotenv
+load_dotenv() 
+
 # 1. D'ABORD, on définit BASE_DIR
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -16,10 +19,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-)6xzyxey8&$9pjt9qc#+tn536qdta8-#+67=3s+*&_uo25rb(5'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG') == 'True'
 
 ALLOWED_HOSTS = ['*'] # Autorise les connexions en local
 
@@ -98,11 +101,11 @@ REST_FRAMEWORK = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'rh',
-        'USER': 'postgres',
-        'PASSWORD': '1234',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
         'OPTIONS': {
             'client_encoding': 'UTF8',
         },
