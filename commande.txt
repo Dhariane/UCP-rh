@@ -2,6 +2,8 @@
 cd rh-back-end
 # Créer un environnement virtuel
 python -m venv venv
+ #linux 
+    python3 -m venv venv
 
 # Activer l'environnement virtuel
 # Windows :
@@ -42,6 +44,11 @@ pip install Pillow
 
 python manage.py migrate --fake-initial users
 
+#Avant de cree .env 
+    pip install python-dotenv
+
+#Pour voir votre SECRET_KEY 
+    python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
 
 cd rh-back-end
 # Créer un environnement virtuel

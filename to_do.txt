@@ -59,6 +59,7 @@ Enfant(idEnfant,nom,prenom,dateNaissance) ----- OK
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 2b8eb512 (deploie)
 -gestion d'authentification avec role
@@ -182,3 +183,7 @@ Enfant(idEnfant,nom,prenom,dateNaissance) ----- OK
 
 
 
+=======
+si le host du supabase change 
+ nslookup aws-0-eu-central-1.pooler.supabase.com (terminal linux)
+>>>>>>> ab7b19d7 (21/05 15:26)
