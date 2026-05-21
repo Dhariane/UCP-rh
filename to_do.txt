@@ -57,3 +57,5 @@ HistoriquePoste(idpersonnelle,poste,entite / société,datedebut,datefin,descrip
 Enfant(idEnfant,nom,prenom,dateNaissance) ----- OK
 
 
+si le host du supabase change 
+ nslookup aws-0-eu-central-1.pooler.supabase.com (terminal linux)
