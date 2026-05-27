@@ -8,10 +8,15 @@ class ContratService:
             NumeroContrat=data['NumeroContrat'],
             photoContrat=data.get('photoContrat'),
             typeContrat=data['typeContrat'],
-            periodeEssai=data['periodeEssai'],
-            dateFinEssai=data['dateFinEssai'],
+            periodeEssai=data.get('periodeEssai'),
+            dateFinEssai=data.get('dateFinEssai'),
             salaire=data['salaire'],
-            personnelle=data['personnelle']
+            personnelle=data['personnelle'],
+            service=data['service'],
+            fonction=data.get('fonction'),
+            dateDebut=data.get('dateDebut'),
+            dateFin=data.get('dateFin'),
+            financement=data.get('financement')
         )
 
     @staticmethod
