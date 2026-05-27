@@ -31,6 +31,7 @@ from .conge.statutController import StatutController
 from .conge.typeCongeController import TypeCongeController
 from .conge.passationServiceController import PassationServiceController
 from .usermanage.usermanageController import UserManagementController
+from .personnelles.fonction.listFonctionController import FonctionListController
 __all__ = [
     "EtatCivilController",
     "ProposController",
@@ -65,6 +66,11 @@ __all__ = [
     "StatutController",
     "TypeCongeController",
     "PassationServiceController",
+<<<<<<< HEAD
     "UserManagementController"
 
+=======
+    "UserManagementController",
+    "FonctionListController",
+>>>>>>> 5672fea1 (modif pas encore terminée)
 ]

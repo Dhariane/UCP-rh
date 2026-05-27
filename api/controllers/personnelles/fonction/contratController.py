@@ -6,7 +6,6 @@ from api.models.fonction.contrat import Contrat
 from api.services.personnelles.fonction.contratService import ContratService
 from api.dto.personnelles.fonction.contratDto import ContratDto
 
-
 class ContratController(APIView):
     def get(self, request, id=None):
         if id:
@@ -57,7 +56,7 @@ class ContratController(APIView):
         return Response(response, status=status.HTTP_201_CREATED)
 
     def put(self, request, id):
-        valiny = ContratDto(data=request.data)
+        valiny = ContratDto(data=request.data, partial=True)
         if not valiny.is_valid():
             return Response(valiny.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -68,7 +67,14 @@ class ContratController(APIView):
                 NumeroContrat=validated.get("NumeroContrat"),
                 photoContrat=validated.get("photoContrat"),
                 typeContrat=validated.get("typeContrat"),
-                personnelle=validated.get("personnelle")
+                personnelle=validated.get("personnelle"),
+                fonction=validated.get("fonction"),
+                dateDebut=validated.get("dateDebut"),
+                dateFin=validated.get("dateFin"),
+                financement=validated.get("financement"),
+                periodeEssai=validated.get("periodeEssai"),
+                dateFinEssai=validated.get("dateFinEssai"),
+                salaire=validated.get("salaire")
             )
             return Response(ContratDto(contrat).data, status=status.HTTP_200_OK)
         except Contrat.DoesNotExist:

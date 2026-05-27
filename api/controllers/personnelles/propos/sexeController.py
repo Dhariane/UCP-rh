@@ -20,7 +20,7 @@ class SexeController(APIView):
                     "data": data
                 }
                 return  Response(response, status=status.HTTP_200_OK)
-            except Sexe.DoesNotExist:
+            except Sexes.DoesNotExist:
                 response = {
                     "status": "error",
                     "message": f"Sexe non trouvé pour l'id = {id}",
@@ -50,8 +50,7 @@ class SexeController(APIView):
                 "errors": valiny.errors
             }
 
-
-        etat = SexeService.create(valiny.validated_data["nom"])
+        etat = SexeService.create(valiny.validated_data)
         response = {
                 "status": "success",
                 "message": "Insertion reussis avec succes",

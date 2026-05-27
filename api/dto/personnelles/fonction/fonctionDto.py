@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from rest_framework import serializers
 from api.models.fonction.fonctions import Fonctions
 class FonctionDto(serializers.ModelSerializer):
@@ -15,4 +16,14 @@ class FonctionDto(serializers.ModelSerializer):
             "poste",
             "financement"
 >>>>>>> 23088e43 (mon enregistrement local)
+=======
+from rest_framework import serializers
+from api.models.fonction.fonctions import Fonctions
+class FonctionDto(serializers.ModelSerializer):
+    class Meta:
+        model = Fonctions
+        fields = [
+            "id",
+            "nom",
+>>>>>>> 5672fea1 (modif pas encore terminée)
         ]
