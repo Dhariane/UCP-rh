@@ -175,7 +175,7 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
     emailPersonnel     = serializers.CharField(source='emailPerso', default="")
     telephonePersonnel = serializers.CharField(source='telPerso', default="")
     contactsUrgence    = ContactUrgenceSerializer(many=True, read_only=True, source='contactUrgence')
-    diplomes           = DiplomeSerializer(many=True, read_only=True, source='Diplome')
+    diplomes           = DiplomeSerializer(many=True, read_only=True)
     experiences        = ExperienceSerializer(many=True, read_only=True, source='Experience')
     formations         = FormationSerializer(many=True, read_only=True, source='Formation')
     enfants            = EnfantSerializer(many=True, read_only=True, source='Enfant')
@@ -239,12 +239,15 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
         if not hasattr(self, '_cached_dict'):
             self._cached_dict = {}
         if obj.id not in self._cached_dict:
+            # ✅ Contrat au lieu de Fonctions
+            from api.models.fonction.contrat import Contrat as ContratModel
+            contrat = ContratModel.objects.filter(personnelle=obj).order_by('-dateDebut').first()
             self._cached_dict[obj.id] = {
-                'fonction': Fonctions.objects.filter(personnelle=obj).last(),
-                'propos':   Propos.objects.filter(personnelle=obj).last(),
-                'famille':  Famille.objects.filter(personnelle=obj).first(),
-                'banque':   CoordonneesBancaires.objects.filter(personnelle=obj).first(),
-                'cin':      obj.cins.first(),
+                'contrat': contrat,
+                'propos':  Propos.objects.filter(personnelle=obj).last(),
+                'famille': Famille.objects.filter(personnelle=obj).first(),
+                'banque':  CoordonneesBancaires.objects.filter(personnelle=obj).first(),
+                'cin':     obj.cins.first(),
             }
         return self._cached_dict[obj.id]
 
@@ -276,28 +279,57 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
 
     # ── Fonction ───────────────────────────────────────────
     def get_fonction(self, obj):
-        f = self._get_related_data(obj)['fonction']
-        return f.nom if f else ""
+        c = self._get_related_data(obj)['contrat']
+        return c.fonction.nom if c and c.fonction else ""
 
     def get_date_embauche(self, obj):
-        f = self._get_related_data(obj)['fonction']
-        return str(f.dateDebut) if f and f.dateDebut else None
+        c = self._get_related_data(obj)['contrat']
+        return str(c.dateDebut) if c and c.dateDebut else None
 
     def get_date_sortie(self, obj):
-        f = self._get_related_data(obj)['fonction']
-        return str(f.dateFin) if f and f.dateFin else None
+        c = self._get_related_data(obj)['contrat']
+        return str(c.dateFin) if c and c.dateFin else None
 
     def get_financement_actuel(self, obj):
-        f = self._get_related_data(obj)['fonction']
-        return f.financement.nom if f and f.financement else "Non défini"
+        c = self._get_related_data(obj)['contrat']
+        return c.financement.nom if c and c.financement else "Non défini"
 
     def get_service_actuel(self, obj):
-        f = self._get_related_data(obj)['fonction']
-        return f.service.nom if f and f.service else "Non défini"
+        c = self._get_related_data(obj)['contrat']
+        return c.service.nom if c and c.service else "Non défini"
 
     def get_poste_superieur(self, obj):
-        f = self._get_related_data(obj)['fonction']
-        return f.poste.nom if f and f.poste else "Non défini"
+        # ✅ Plus de poste — on retourne la fonction du chef
+        c = self._get_related_data(obj)['contrat']
+        if not c or not c.service:
+            return "Non défini"
+        from api.models.fonction.contrat import Contrat as ContratModel
+        contrat_chef = ContratModel.objects.filter(
+            service=c.service,
+            fonction__is_chef=True,
+            dateFin__isnull=True
+        ).exclude(personnelle=obj).first()
+        return contrat_chef.fonction.nom if contrat_chef else "Non défini"
+
+    # ── Contrat ────────────────────────────────────────────
+    def get_contrat(self, obj):
+        c = self._get_related_data(obj)['contrat']
+        if c:
+            return {
+                "numero":       getattr(c, 'NumeroContrat', ""),
+                "type":         c.typeContrat.TypeContrat if getattr(c, 'typeContrat', None) else None,
+                "salaire":      str(getattr(c, 'salaire', 0) or 0),
+                "periodeEssai": getattr(c, 'periodeEssai', ""),
+                "dateFinEssai": str(c.dateFinEssai) if getattr(c, 'dateFinEssai', None) else "",
+                "photo":        clean_file_url(c.photoContrat) if getattr(c, 'photoContrat', None) else None,
+                "fonction":     c.fonction.nom if c.fonction else "",      # ✅ nouveau
+                "service":      c.service.nom if c.service else "",        # ✅ nouveau
+                "financement":  c.financement.nom if c.financement else "", # ✅ nouveau
+                "dateDebut":    str(c.dateDebut) if c.dateDebut else "",   # ✅ nouveau
+                "dateFin":      str(c.dateFin) if c.dateFin else "",       # ✅ nouveau
+            }
+        return None
+        
 
     # ── Propos ─────────────────────────────────────────────
     def get_nif(self, obj):
@@ -393,19 +425,5 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
     def get_lieuDelivranceCin(self, obj):
         c = self._get_related_data(obj)['cin']
         return c.lieuCin if c else ""
-
-    # ── Contrat ────────────────────────────────────────────
-    def get_contrat(self, obj):
-        c = Contrat.objects.filter(personnelle=obj).last()
-        if c:
-            return {
-                "numero":       getattr(c, 'NumeroContrat', ""),
-                "type":         c.typeContrat.TypeContrat if getattr(c, 'typeContrat', None) else None,
-                "salaire":      getattr(c, 'salaire', 0),
-                "periodeEssai": getattr(c, 'periodeEssai', ""),
-                "dateFinEssai": str(c.dateFinEssai) if getattr(c, 'dateFinEssai', None) else "",
-                "photo":        clean_file_url(c.photoContrat) if getattr(c, 'photoContrat', None) else None,
-            }
-        return None
     
     

@@ -32,6 +32,7 @@ from .conge.statutController import StatutController
 from .conge.typeCongeController import TypeCongeController
 from .conge.passationServiceController import PassationServiceController
 from .usermanage.usermanageController import UserManagementController
+<<<<<<< HEAD
 from .conge.ConfigPlanningController import ConfigPlanningController
 __all__ = [
     "EtatCivilController",
@@ -104,6 +105,9 @@ from .conge.typeCongeController import TypeCongeController
 from .conge.passationServiceController import PassationServiceController
 from .usermanage.usermanageController import UserManagementController
 
+=======
+from .personnelles.fonction.listFonctionController import FonctionListController
+>>>>>>> 5672fea1 (modif pas encore terminée)
 __all__ = [
     "EtatCivilController",
     "ProposController",
@@ -138,6 +142,7 @@ __all__ = [
     "StatutController",
     "TypeCongeController",
     "PassationServiceController",
+<<<<<<< HEAD
     "UserManagementController"
 
 >>>>>>> 23088e43 (mon enregistrement local)
@@ -145,4 +150,8 @@ __all__ = [
     "UserManagementController",
     "ConfigPlanningController"
 >>>>>>> 79235924 (conge planifier)
+=======
+    "UserManagementController",
+    "FonctionListController",
+>>>>>>> 5672fea1 (modif pas encore terminée)
 ]

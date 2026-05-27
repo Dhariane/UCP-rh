@@ -3,6 +3,7 @@ from api.models.conge.conge import Conge
 from api.models.conge.validationConge import ValidationConge
 from api.models.conge.statut import Statut
 from api.models.conge.passationservice import PassationService
+from api.models.fonction.contrat import Contrat
 from api.models.fonction.fonctions import Fonctions
 from api.models.auth.login.loginModel import Login
 
@@ -56,12 +57,33 @@ class ValidationService:
 
     @staticmethod
     def get_chefs(conge):
-        fonction = Fonctions.objects.filter(
+        """Trouve le chef du même service que le personnel"""
+        # Récupérer le contrat actuel du personnel
+        from api.models.fonction.typeContrat import TypeContrats
+        contrat = Contrat.objects.filter(
             personnelle=conge.personnel
-        ).last()
-        if not fonction:
+        ).order_by('-dateDebut').first()
+
+        if not contrat:
             return []
-        return list(fonction.superieurs.all())
+
+        # Trouver le chef du même service avec is_chef=True
+        contrat_chef = Contrat.objects.filter(
+            service        = contrat.service,
+            fonction__is_chef = True,
+            dateFin__isnull   = True  # contrat actif
+        ).exclude(
+            personnelle = conge.personnel  # pas lui-même
+        ).first()
+
+        if not contrat_chef:
+            return []
+
+        login_chef = Login.objects.filter(
+            personnelle=contrat_chef.personnelle
+        ).first()
+
+        return [login_chef] if login_chef else []
 
     @staticmethod
     def cn_est_chef_direct(conge) -> bool:

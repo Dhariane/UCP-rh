@@ -467,42 +467,49 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
         if a_naissance  and not isinstance(a_naissance,  str): instance.acteNaissance   = a_naissance
         if c_judiciaire and not isinstance(c_judiciaire, str): instance.casierjudiciaire= c_judiciaire
         instance.save()
+        # ── FONCTIONS & CONTRAT ───────────────────────────────────────
+        # ✅ Tout passe par Contrat maintenant
+        from api.models.fonction.contrat import Contrat as ContratModel
+        from api.models.fonction.fonctions import Fonctions as FonctionsModel
 
-        # ── FONCTIONS ───────────────────────────────────────
-        f = Fonctions.objects.filter(personnelle=instance).last()
-        if not f:
-            f = Fonctions.objects.create(personnelle=instance)
+        contrat_obj, _ = ContratModel.objects.get_or_create(personnelle=instance)
 
-        if fonction_nom:  f.nom       = fonction_nom
-        if date_embauche: f.dateDebut = date_embauche
-        if date_sortie:   f.dateFin   = date_sortie
+        # Fonction
+        if fonction_nom:
+            fid = self._safe_int(fonction_nom)
+            if fid:
+                fonction_inst = FonctionsModel.objects.filter(id=fid).first()
+            else:
+                fonction_inst = FonctionsModel.objects.filter(
+                    nom__iexact=str(fonction_nom).strip()
+                ).first()
+            if fonction_inst:
+                contrat_obj.fonction = fonction_inst
 
+        # Service
         if service_nom:
             sid = self._safe_int(service_nom)
             obj = Services.objects.filter(id=sid).first() if sid else \
-                  Services.objects.filter(nom__iexact=str(service_nom).strip()).first()
-            if obj: f.service = obj
+                Services.objects.filter(nom__iexact=str(service_nom).strip()).first()
+            if obj:
+                contrat_obj.service = obj
 
-        if poste_nom:
-            pid = self._safe_int(poste_nom)
-            obj = Postes.objects.filter(id=pid).first() if pid else \
-                  Postes.objects.filter(nom__iexact=str(poste_nom).strip()).first()
-            if obj: f.poste = obj
-
+        # Financement
         if financement_nom:
             fid = self._safe_int(financement_nom)
             obj = ModeFinancement.objects.filter(id=fid).first() if fid else \
-                  ModeFinancement.objects.filter(nom__iexact=str(financement_nom).strip()).first()
-            if obj: f.financement = obj
+                ModeFinancement.objects.filter(nom__iexact=str(financement_nom).strip()).first()
+            if obj:
+                contrat_obj.financement = obj
 
-        f.save()
+        # Dates
+        if date_embauche: contrat_obj.dateDebut = date_embauche
+        if date_sortie:   contrat_obj.dateFin   = date_sortie
 
-        # ── CONTRAT ─────────────────────────────────────────
-        contrat_obj, _ = Contrat.objects.get_or_create(personnelle=instance)
-
-        if num_contrat:   contrat_obj.NumeroContrat = num_contrat
-        if periode_essai: contrat_obj.periodeEssai  = periode_essai
-        if date_fin_essai: contrat_obj.dateFinEssai = date_fin_essai
+        # Autres champs contrat
+        if num_contrat:    contrat_obj.NumeroContrat = num_contrat
+        if periode_essai:  contrat_obj.periodeEssai  = periode_essai
+        if date_fin_essai: contrat_obj.dateFinEssai  = date_fin_essai
 
         if type_contrat_id:
             tc_id = self._safe_int(type_contrat_id)
@@ -511,10 +518,9 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
             else:
                 tc = TypeContrats.objects.filter(
                     TypeContrat__iexact=str(type_contrat_id).strip()
-                ).first() or TypeContrats.objects.filter(
-                    nom__iexact=str(type_contrat_id).strip()
                 ).first()
-            if tc: contrat_obj.typeContrat = tc
+            if tc:
+                contrat_obj.typeContrat = tc
 
         if salaire not in [None, '', 'null', 'None']:
             try:
