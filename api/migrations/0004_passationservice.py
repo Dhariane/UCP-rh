@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0003_soldeconge_is_manual'),
+        ('api', '0003_fonctions_service'),
     ]
 
     operations = [

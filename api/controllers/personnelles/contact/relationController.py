@@ -53,7 +53,7 @@ class RelationController(APIView):
             }
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
-        relation = RelationService.create(valiny.validated_data["nom"], valiny.validated_data["grade"])
+        relation = RelationService.create(valiny.validated_data)
         response = {
             "status": "success",
             "message": "Relation créée avec succès",
@@ -68,7 +68,7 @@ class RelationController(APIView):
         
         try:
             etat = RelationService.update(id, valiny.validated_data["nom"], valiny.validated_data["grade"])
-            return Response(RelationDTO(etat).data, status=status.HTTP_200_OK)
+            return Response(RelationDto(etat).data, status=status.HTTP_200_OK)
         except Relations.DoesNotExist:
             response = {
                 "status": "error",

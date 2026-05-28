@@ -7,7 +7,14 @@ from .soldeConge import SoldeConge
 from .passationservice import PassationService
 
 class Conge(models.Model):
-
+    ETAPES = [
+                ('chef',    'En attente chef'),
+                ('gp_rf',   'En attente GP/RF'),
+                ('cn',      'En attente CN'),
+                ('rh',      'En attente RH'),
+                ('termine', 'Terminé'),
+        ]
+    
     personnel = models.ForeignKey(
         Personnelles,
         on_delete=models.CASCADE,
@@ -54,6 +61,14 @@ class Conge(models.Model):
         null=True,
         blank=True,
         related_name='conges_passation'
+    )
+    # ✅ AJOUTER JUSTE CE CHAMP
+    etape_validation = models.CharField(
+        max_length=20,
+        choices=ETAPES,
+        default='chef',
+        null=True,
+        blank=True
     )
 
     class Meta:

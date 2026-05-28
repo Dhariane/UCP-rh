@@ -11,7 +11,6 @@ class CongeDTO(serializers.ModelSerializer):
     personnel = serializers.PrimaryKeyRelatedField(queryset=Personnelles.objects.all())
     type_conge = serializers.PrimaryKeyRelatedField(queryset=TypeConge.objects.all())
     solde_conge = serializers.PrimaryKeyRelatedField(queryset=SoldeConge.objects.all())
-    statut = serializers.PrimaryKeyRelatedField(queryset=Statut.objects.all())
     nombre_jours = serializers.IntegerField(read_only=True)
 
     # ✅ AJOUTER CECI
@@ -19,6 +18,11 @@ class CongeDTO(serializers.ModelSerializer):
         queryset=PassationService.objects.all(),
         required=False,
         allow_null=True
+    )
+    statut       = serializers.PrimaryKeyRelatedField(
+        queryset=Statut.objects.all(),
+        required=False,    # ← plus obligatoire
+        allow_null=True    # ← peut être null
     )
 
     class Meta:

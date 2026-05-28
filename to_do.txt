@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 -gestion d'authentification avec role
     -fonction
         -validate token
@@ -57,3 +58,66 @@ HistoriquePoste(idpersonnelle,poste,entite / société,datedebut,datefin,descrip
 Enfant(idEnfant,nom,prenom,dateNaissance) ----- OK
 
 
+=======
+-gestion d'authentification avec role
+    -fonction
+        -validate token
+        -validate role
+-fiche de renseignement personnel
+    -insertFicheRenseignement
+        -affichage
+            -insertFicheRenseignement()
+        -entite
+            ---banque
+                -Agences(idAgence,nom) -- Naly OK
+                -Banques(idBanque,nom)-- Naly  OK  
+                -CoordonneesBancaires(idCoordonnees,idBanque,idAgence,rib,photoRib)--Naly --OK
+            ---propos
+                -EtatCivils(idEtatCivil,nom) --- Naly --1 --Ok
+                -Propos(idPropo,nifStat,numerosCnaps,idEtatCivil,tel,email,nombreEnfant,adresse) --Dode
+                -Cins(idCin,numeroCin,dateCin,lieuCin) --Naly -- 1 --Ok
+                -Sexes(idSexe,nom) --Naly -- 1 --Ok
+                -Personnelles(idPersonnelle,nom,prenom,dateNaissance,lieuNaissance,idSexe,adresse,photoResidence) --Naly --3 --ok
+                -Photos(idPhoto,idPersonnelle,nom,data)-- Naly --OK
+            ---contact
+                -Relations(idRelation,nom,grade) --Naly -- 1 --Ok
+                -ContacteUrgences(idContacteUrgence,idPersonnelle,nom,idRelation,telephone,adresse) --Naly --3  OK
+            ---fonction
+                -Superieur(idSuperieur,nom)
+                -Poste(idNom,nom,grade) --Naly -- 2 Ok
+                -Service(idService,nom) ---Naly -- 1 Ok
+                -Fonction(idFonction,dateDebut,dateFin,idPersonnelle,idSuperieur,idPoste,idService) --Naly --OK
+        -fonction
+            -getAllAgences()
+            -getAllEtatCivils()
+            -getAllBanques()
+            -getAllSexes()
+            -getAllRelations()
+            -getAllPostes()
+            -getAllServices()
+            -getAllFonctions()
+            -insertFicheRenseignement()
+                ----transactionnel
+                    -insertPropos()
+                    -insertCin()
+                    -insertPersonnelle()
+
+                    -insertContactUrgence()
+                    -insertCoordonneesBancaires()
+                    -insertPersonnelle()
+                    -insertFonction()
+                    -insertPhotos()
+                ----transactionnel
+                    
+table 
+famille ("id","nomPere","prenomPere","nomMere","prenomMere","nomConjoint","prenomConjoint","nombreEnfant","personnelle") --Ok
+diplome(idDiplome,nom,photo,dpersonnelle,etablissement,dateObtention)----ok
+formation(idpersonnelle,titre,organisme,datedebut, datefin,attestation)---ok
+Experiences(idpersonnelle,entreprise,poste,datedebut, datefin,description) ------ok
+HistoriquePoste(idpersonnelle,poste,entite / société,datedebut,datefin,description)------- ok
+Enfant(idEnfant,nom,prenom,dateNaissance) ----- OK
+
+
+si le host du supabase change 
+ nslookup aws-0-eu-central-1.pooler.supabase.com (terminal linux)
+>>>>>>> cb65f867728df1dc0fb2754ea892270f8c03e70e

@@ -47,3 +47,91 @@ class SoldeCongeController(APIView):
 
     def patch(self, request, id):
         return self.put(request, id)
+    
+
+# api/controllers/conge/soldeController.py
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from api.models.conge.soldeConge import SoldeConge
+from api.models.propos.personnelles import Personnelles
+from django.utils import timezone
+
+class SoldeCongeRHController(APIView):
+
+    def get(self, request):
+        """Liste tous les soldes avec infos personnel"""
+        annee  = request.query_params.get('annee', timezone.now().year)
+        soldes = SoldeConge.objects.filter(
+            annee=annee
+        ).select_related('personnel')
+
+        data = [
+            {
+                "id":           s.id,
+                "personnel_id": s.personnel.id,
+                "nom":          s.personnel.nom,
+                "prenom":       s.personnel.prenom,
+                "annee":        s.annee,
+                "total":        s.total,
+                "utilise":      s.utilise,
+                "reste":        s.reste,
+                "is_manual":    s.is_manual,
+            }
+            for s in soldes
+        ]
+        return Response({"status": "success", "data": data})
+
+    def patch(self, request, solde_id):
+        """Modifier ou ajouter des jours au solde"""
+        try:
+            solde  = SoldeConge.objects.get(id=solde_id)
+            action = request.data.get('action')  # 'modifier' ou 'ajouter'
+            jours  = int(request.data.get('jours', 0))
+
+            if jours <= 0:
+                return Response({
+                    "status":  "error",
+                    "message": "Le nombre de jours doit être positif"
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            if action == 'modifier':
+                # ✅ Remplacer le total
+                solde.total     = min(jours, 72)
+                solde.is_manual = True
+
+            elif action == 'ajouter':
+                # ✅ Ajouter au total existant
+                solde.total     = min(solde.total + jours, 72)
+                solde.is_manual = True
+
+            else:
+                return Response({
+                    "status":  "error",
+                    "message": "Action invalide — utilisez 'modifier' ou 'ajouter'"
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            solde.save()
+
+            return Response({
+                "status":  "success",
+                "message": f"Solde mis à jour → {solde.total}j",
+                "data": {
+                    "id":        solde.id,
+                    "total":     solde.total,
+                    "utilise":   solde.utilise,
+                    "reste":     solde.reste,
+                    "is_manual": solde.is_manual,
+                }
+            })
+
+        except SoldeConge.DoesNotExist:
+            return Response({
+                "status":  "error",
+                "message": "Solde introuvable"
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                "status":  "error",
+                "message": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
