@@ -553,54 +553,52 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
                 ).delete()
 
             # ── DIPLÔMES ─────────────────────────────────────────
-        from api.models.diplome.typeDiplome import DiplomeType  # ✅ ajouter cet import
+            from api.models.diplome.typeDiplome import DiplomeType
 
-        request = self.context.get('request')
+            request = self.context.get('request')
 
-        for item in add_dip:
-            item = dict(item)
-            item.pop('id', None)
-            item.pop('fichier', None)
+            for item in add_dip:
+                item = dict(item)
+                item.pop('id', None)
+                item.pop('fichier', None)
 
-            # ✅ Extraire et résoudre type_diplome
-            type_dip_id = item.pop('type_diplome', None)
-            type_dip = None
-            if type_dip_id:
+                type_dip_id = item.pop('type_diplome', None)
+                type_dip = None
+                if type_dip_id:
+                    try:
+                        type_dip = DiplomeType.objects.get(id=int(type_dip_id))
+                    except (DiplomeType.DoesNotExist, ValueError, TypeError):
+                        pass
+
+                annee_raw = item.pop('annee', None) or item.pop('annebtention', None)
+                annee_int = None
+                if annee_raw:
+                    try:
+                        annee_int = int(str(annee_raw)[:4])
+                    except (ValueError, TypeError):
+                        pass
+
                 try:
-                    type_dip = DiplomeType.objects.get(id=int(type_dip_id))
-                except (DiplomeType.DoesNotExist, ValueError, TypeError):
-                    pass
+                    Diplome.objects.create(
+                        personnelle    = instance,
+                        type_diplome   = type_dip,
+                        filiere        = item.get('filiere', ''),
+                        lieu           = item.get('lieu', ''),
+                        etablissement  = item.get('etablissement', ''),
+                        anneeObtention = annee_int,
+                    )
+                except Exception as e:
+                    print(f"Erreur création diplôme: {e}")
 
-            # ✅ Extraire et convertir annee → anneeObtention
-            annee_raw = item.pop('annee', None) or item.pop('dateObtention', None)
-            annee_int = None
-            if annee_raw:
-                try:
-                    annee_int = int(str(annee_raw)[:4])
-                except (ValueError, TypeError):
-                    pass
-
-            try:
-                Diplome.objects.create(
-                    personnelle    = instance,
-                    type_diplome   = type_dip,
-                    filiere        = item.get('filiere', ''),
-                    lieu           = item.get('lieu', ''),
-                    etablissement  = item.get('etablissement', ''),
-                    anneeObtention = annee_int,
-                )
-            except Exception as e:
-                print(f"Erreur création diplôme: {e}")
-
-            # ✅ Photos diplômes
+            # ✅ Photos diplômes — EN DEHORS du for add_dip
             if request:
                 for key, file in request.FILES.items():
                     if not key.startswith('diplome_photo_'):
                         continue
                     try:
-                        index = int(key.replace('diplome_photo_', ''))
+                        index          = int(key.replace('diplome_photo_', ''))
                         diplome_id_str = request.data.get(f'diplome_id_{index}', '')
-                        diplome_id = int(diplome_id_str)
+                        diplome_id     = int(diplome_id_str)
                         dip = Diplome.objects.filter(id=diplome_id, personnelle=instance).first()
                         if dip:
                             dip.photo = file
@@ -613,7 +611,6 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
                 did = self._safe_int(item.pop('id', None))
                 item.pop('fichier', None)
 
-                # ✅ Résoudre type_diplome
                 type_dip_id = item.pop('type_diplome', None)
                 if type_dip_id:
                     try:
@@ -621,65 +618,85 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
                     except (ValueError, TypeError):
                         pass
 
-        # ✅ Convertir annee → anneeObtention
-        annee_raw = item.pop('annee', None) or item.pop('dateObtention', None)
-        if annee_raw:
-            try:
-                item['anneeObtention'] = int(str(annee_raw)[:4])
-            except (ValueError, TypeError):
-                pass
+                annee_raw = item.pop('annee', None) or item.pop('dateObtention', None)
+                if annee_raw:
+                    try:
+                        item['anneeObtention'] = int(str(annee_raw)[:4])
+                    except (ValueError, TypeError):
+                        pass
 
-        if did:
-            try:
-                Diplome.objects.filter(id=did, personnelle=instance).update(**item)
-            except Exception as e:
-                print(f"Erreur MAJ diplôme {did}: {e}")
+                if did:
+                    try:
+                        Diplome.objects.filter(id=did, personnelle=instance).update(**item)
+                    except Exception as e:
+                        print(f"Erreur MAJ diplôme {did}: {e}")
 
+            if del_dip:
+                Diplome.objects.filter(
+                    id__in=[self._safe_int(i) for i in del_dip],
+                    personnelle=instance
+                ).delete()
+
+            # ── FORMATIONS ───────────────────────────────────────
             for item in add_for:
                 item = dict(item)
                 item.pop('id', None)
-                item.pop('certificat', None)  # "certificat" est le nom frontend, pas le champ modèle
+                item.pop('certificat', None)
                 try:
                     Formation.objects.create(personnelle=instance, **item)
                 except Exception as e:
                     print(f"Erreur création formation: {e}")
 
-            # ✅ Associer les attestations
             if request:
                 for key, file in request.FILES.items():
                     if not key.startswith('formation_attestation_'):
                         continue
                     try:
-                        index = int(key.replace('formation_attestation_', ''))
+                        index            = int(key.replace('formation_attestation_', ''))
                         formation_id_str = request.data.get(f'formation_id_{index}', '')
-                        formation_id = int(formation_id_str)
+                        formation_id     = int(formation_id_str)
                         form = Formation.objects.filter(id=formation_id, personnelle=instance).first()
                         if form:
-                            form.attestation = file  # ← "attestation" est le vrai nom du champ
+                            form.attestation = file
                             form.save(update_fields=['attestation'])
                     except (ValueError, TypeError):
                         pass
 
-            for item in upd_for:
+            for i, item in enumerate(add_for):  # ✅ ajouter enumerate
                 item = dict(item)
-                fid = self._safe_int(item.pop('id', None))
+                item.pop('id', None)
                 item.pop('certificat', None)
-                if fid:
-                    try:
-                        Formation.objects.filter(id=fid, personnelle=instance).update(**item)
-                    except Exception as e:
-                        print(f"Erreur MAJ formation {fid}: {e}")
-                    # ── NIF / STAT / CNAPS — stockés dans Propos ────────────
-                        p_obj, _ = Propos.objects.get_or_create(personnelle=instance)
-                        nif_val  = validated_data.get('nif')
-                        stat_val = validated_data.get('stat')
-                        cnaps_val= validated_data.get('cnaps')
-                        if nif_val  is not None: p_obj.nif  = nif_val
-                        if stat_val is not None: p_obj.stat = stat_val
-                        if cnaps_val is not None: p_obj.cnaps = cnaps_val
-                        p_obj.save()
-        print(f"DEBUG validated_data restant: {list(validated_data.keys())}")
-        print(f"DEBUG nif: {validated_data.get('nif')}")
-        print(f"DEBUG stat: {validated_data.get('stat')}")
+                try:
+                    # ✅ Garder la référence à l'objet créé
+                    new_form = Formation.objects.create(personnelle=instance, **item)
 
-        return instance
+                    # ✅ Associer le certificat immédiatement après création
+                    if request:
+                        cert_file = request.FILES.get(f'formation_file_{i}')
+                        if cert_file:
+                            new_form.attestation = cert_file
+                            new_form.save(update_fields=['attestation'])
+
+                except Exception as e:
+                    print(f"Erreur création formation: {e}")
+            if del_for:
+                Formation.objects.filter(
+                    id__in=[self._safe_int(i) for i in del_for],
+                    personnelle=instance
+                ).delete()
+
+            # ── NIF / STAT / CNAPS ────────────────────────────────
+            p_obj, _ = Propos.objects.get_or_create(personnelle=instance)
+            nif_val   = validated_data.get('nif')
+            stat_val  = validated_data.get('stat')
+            cnaps_val = validated_data.get('cnaps')
+            if nif_val   is not None: p_obj.nif         = nif_val
+            if stat_val  is not None: p_obj.stat        = stat_val
+            if cnaps_val is not None: p_obj.numeroCnaps = cnaps_val
+            p_obj.save()
+
+            print(f"DEBUG validated_data restant: {list(validated_data.keys())}")
+            print(f"DEBUG nif: {validated_data.get('nif')}")
+            print(f"DEBUG stat: {validated_data.get('stat')}")
+
+            return instance
