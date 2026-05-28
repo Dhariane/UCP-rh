@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0003_merge_20260511_1335'),
+        ('api', '0003_fonctions_service'),
     ]
 
     operations = [

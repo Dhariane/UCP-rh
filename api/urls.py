@@ -4,6 +4,7 @@ from django.conf.urls.static import static
 
 from api.controllers import *
 from api.controllers.conge.validationController import ValidationCongeController
+from api.controllers.personnelles.diplome.typeDiplomeController import DiplomeTypeController
 from api.controllers.personnelles.fonction.superieurController import SuperieurController
 from api.controllers.conge.soldeCongeController import SoldeCongeRHController
 from api.controllers.conge.congePlanifieController import CongePlanifieController, CongePlanifieDetailController
@@ -87,6 +88,10 @@ urlpatterns = [
     path('conges-planifies/<int:personnel_id>/', CongePlanifieController.as_view(), name='conges-planifies-personnel'),
     path('conges-planifies/detail/<int:id>/', CongePlanifieDetailController.as_view(), name='conge-planifie-detail'),
     path('conges-planifies/', ConfigPlanningController.as_view(), name='config-planification'),
+    path('fonctions_list', FonctionListController.as_view()),
+    path('type_diplomes', DiplomeTypeController.as_view()),
+    path('type_diplomes/<int:id>/', DiplomeTypeController.as_view()),
+
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

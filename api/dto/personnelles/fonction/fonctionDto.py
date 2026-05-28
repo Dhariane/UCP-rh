@@ -6,10 +6,4 @@ class FonctionDto(serializers.ModelSerializer):
         fields = [
             "id",
             "nom",
-            "dateDebut",
-            "dateFin",
-            "personnelle",
-            "service",
-            "poste",
-            "financement"
         ]

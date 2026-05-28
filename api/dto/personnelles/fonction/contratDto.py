@@ -12,4 +12,9 @@ class ContratDto(serializers.ModelSerializer):
             "typeContrat",
             "salaire",
             "personnelle",
+            "fonction",      
+            "dateDebut",  
+            "service",   
+            "dateFin",       
+            "financement",   
         ]
