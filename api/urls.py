@@ -7,8 +7,8 @@ from api.controllers.conge.validationController import ValidationCongeController
 from api.controllers.personnelles.diplome.typeDiplomeController import DiplomeTypeController
 from api.controllers.personnelles.fonction.superieurController import SuperieurController
 from api.controllers.conge.soldeCongeController import SoldeCongeRHController
-from api.controllers.conge.congePlanifieController import CongePlanifieController, CongePlanifieDetailController
-from .controllers import ConfigPlanningController
+from api.controllers.personnelles.fonction.fonctionController import FonctionCRUDController
+from api.controllers.personnelles.fonction.ServiceController import ServiceCRUDController
 urlpatterns = [
     path('login', LoginController.as_view(), name='login'),
     path('personnelle', PersonnelleController.as_view(), name='personnelle'),
@@ -93,6 +93,10 @@ urlpatterns = [
     path('fonctions_list', FonctionListController.as_view()),
     path('type_diplomes', DiplomeTypeController.as_view()),
     path('type_diplomes/<int:id>/', DiplomeTypeController.as_view()),
+    path('rh/fonctions/',          FonctionCRUDController.as_view()),
+    path('rh/fonctions/<int:id>/', FonctionCRUDController.as_view()),
+    path('rh/services/',           ServiceCRUDController.as_view()),
+    path('rh/services/<int:id>/',  ServiceCRUDController.as_view()),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

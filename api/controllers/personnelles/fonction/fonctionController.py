@@ -70,3 +70,67 @@ class FonctionController(APIView):
                 "status": "error",
                 "message": f"Fonction not found for id = {id}"
             }, status=status.HTTP_404_NOT_FOUND)
+
+class FonctionCRUDController(APIView):
+
+    def get(self, request):
+        fonctions = Fonctions.objects.select_related('service').all().order_by('service__nom', 'nom')
+        data = [
+            {
+                "id":       f.id,
+                "nom":      f.nom,
+                "is_chef":  f.is_chef,
+                "service":  f.service_id,
+                "service_nom": f.service.nom if f.service else "—",
+            }
+            for f in fonctions
+        ]
+        return Response({"data": data})
+
+    def post(self, request):
+        nom        = request.data.get('nom')
+        is_chef    = request.data.get('is_chef', False)
+        service_id = request.data.get('service')
+
+        if not nom:
+            return Response({"error": "Nom obligatoire"}, status=400)
+
+        service = None
+        if service_id:
+            try:
+                service = Services.objects.get(id=service_id)
+            except Services.DoesNotExist:
+                return Response({"error": "Service introuvable"}, status=400)
+
+        f = Fonctions.objects.create(
+            nom     = nom,
+            is_chef = is_chef,
+            service = service
+        )
+        return Response({
+            "status": "success",
+            "data": {"id": f.id, "nom": f.nom, "is_chef": f.is_chef}
+        }, status=201)
+
+    def patch(self, request, id):
+        try:
+            f          = Fonctions.objects.get(id=id)
+            f.nom      = request.data.get('nom', f.nom)
+            f.is_chef  = request.data.get('is_chef', f.is_chef)
+            service_id = request.data.get('service')
+            if service_id:
+                try:
+                    f.service = Services.objects.get(id=service_id)
+                except Services.DoesNotExist:
+                    pass
+            f.save()
+            return Response({"status": "success", "message": "Fonction mise à jour"})
+        except Fonctions.DoesNotExist:
+            return Response({"error": "Fonction introuvable"}, status=404)
+
+    def delete(self, request, id):
+        try:
+            Fonctions.objects.get(id=id).delete()
+            return Response({"status": "success", "message": "Fonction supprimée"})
+        except Fonctions.DoesNotExist:
+            return Response({"error": "Fonction introuvable"}, status=404)
