@@ -32,4 +32,23 @@ class SuperieurService:
     def getAllDto()-> list[SuperieurDto]:
         
         superieurs = SuperieurService.getAll()
-        return SuperieurDto(superieurs, many=True)
+from api.models.fonction.fonctions import Fonctions
+from api.models.auth.login.loginModel import Login
+
+class SuperieurService:
+    @staticmethod
+    def create(data)-> Superieur:
+        return Superieur.objects.create(nom=data['nom'])
+
+    @staticmethod
+    def getAll()-> list[Superieur]:
+        return Superieur.objects.all().order_by("id")
+    @staticmethod
+    def update(fonction_id: int, superieurs_ids: list):
+        """Mettre à jour les supérieurs d'une fonction"""
+        fonction = Fonctions.objects.get(id=fonction_id)
+        logins   = Login.objects.filter(id__in=superieurs_ids)
+        fonction.superieurs.set(logins)
+        return fonction
+
+

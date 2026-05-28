@@ -176,4 +176,4 @@ class ValidationService:
             conge.refresh_from_db()
             return conge
 
-        raise ValueError(f"Étape de validation invalide ou inconnue : {etape}")
+        raise ValueError(f"Étape inconnue : {etape}")

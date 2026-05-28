@@ -1,184 +1,95 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.shortcuts import get_object_or_404
-
+from api.services.conge.validationService import ValidationService
 from api.models.conge.conge import Conge
-from api.models.conge.statut import Statut
-from api.models.conge.validationConge import ValidationConge
-from api.models.auth.login.loginModel import Login
-from api.models.propos.personnelles import Personnelles
-from api.models.admin.loginadModel import Loginadmin
-from api.signal.conge_signal import envoi_notification_suivante, envoi_notification_refus
 
+class ValidationCongeController(APIView):
 
-# ─────────────────────────────────────────────
-# HELPERS
-# ─────────────────────────────────────────────
-
-def get_etape_suivante(conge: Conge) -> str:
-    from api.models.fonction.contrat import Contrat
-    ordre = ['passation', 'chef', 'gp_pf', 'cn', 'rh', 'termine']
-
-    try:
-        contrat = Contrat.objects.filter(
-            personnelle=conge.personnel, is_actif=True
-        ).first()
-        if contrat and contrat.fonction and contrat.fonction.chef_direct:
-            cn_est_chef = Login.objects.filter(
-                personnelle__contrats__fonction=contrat.fonction.chef_direct,
-                personnelle__contrats__is_actif=True,
-                role__name='CN'
-            ).exists()
-            if cn_est_chef and 'gp_pf' in ordre:
-                ordre.remove('gp_pf')
-    except Exception:
-        pass
-
-    try:
-        idx = ordre.index(conge.etape_validation)
-        return ordre[idx + 1] if idx + 1 < len(ordre) else 'termine'
-    except ValueError:
-        return 'termine'
-
-
-def get_login_from_id(login_id):
-    """Retourne (login_obj, is_admin)"""
-    if not login_id:
-        return None, False
-
-    login = Login.objects.filter(id=login_id).first()
-    if login:
-        return login, False
-
-    personnel = Personnelles.objects.filter(id=login_id).first()
-    if personnel:
-        login = Login.objects.filter(personnelle=personnel).first()
-        if login:
-            return login, False
-
-    admin = Loginadmin.objects.filter(id=login_id).first()
-    if admin:
-        return None, True
-
-    return None, False
-
-
-def _sauvegarder_validation(conge, etape, decision, login_obj, motif):
-    """Sauvegarde l'historique de validation avec motif."""
-    try:
-        ValidationConge.objects.create(
-            conge=conge,
-            etape=etape,
-            decision=decision,
-            valideur=login_obj,
-            motif=motif or None
-        )
-    except Exception as e:
-        print(f"[VALIDATION] Erreur sauvegarde : {e}")
-
-
-# ─────────────────────────────────────────────
-# CONTROLLER
-# ─────────────────────────────────────────────
-
-class CongeValidationController(APIView):
-
-    def post(self, request, id=None, conge_id=None):
-        pk = id or conge_id
+    def post(self, request, conge_id):
+        """Valider ou refuser une étape du congé"""
         try:
-            decision = request.data.get('decision')
-            motif    = request.data.get('motif', '')
             login_id = request.data.get('login_id')
+            decision = request.data.get('decision')  # 'approuve' ou 'refuse'
+            motif    = request.data.get('motif', None)
 
-            if decision not in ('approuve', 'refuse'):
+            # Vérifications basiques
+            if not login_id:
+                return Response({
+                    "status": "error",
+                    "message": "login_id est obligatoire"
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            if decision not in ['approuve', 'refuse']:
                 return Response({
                     "status": "error",
                     "message": "decision doit être 'approuve' ou 'refuse'"
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            conge = get_object_or_404(Conge, id=pk)
-            login_obj, is_admin = get_login_from_id(login_id)
-
-            # ── REFUS ──────────────────────────────────────────────
-            if decision == 'refuse':
-                etape_courante = conge.etape_validation  # ✅ avant modification
-                conge.statut           = Statut.objects.get(id=3)
-                conge.etape_validation = 'termine'
-                conge.validated_by     = login_obj
-                conge.save()
-
-                _sauvegarder_validation(conge, etape_courante, 'refuse', login_obj, motif)
-                envoi_notification_refus(conge, login_obj, motif)
-
+            if decision == 'refuse' and not motif:
                 return Response({
-                    "status":  "success",
-                    "message": "Demande refusée",
-                    "data":    {"etape_validation": "termine", "statut": "Refusé"}
-                })
+                    "status": "error",
+                    "message": "motif est obligatoire en cas de refus"
+                }, status=status.HTTP_400_BAD_REQUEST)
 
-            # ── APPROBATION ────────────────────────────────────────
-            etape_courante = conge.etape_validation  # ✅ avant modification
-
-            if conge.etape_validation == 'passation':
-                if conge.passation_service:
-                    conge.passation_service.statut = Statut.objects.get(id=2)
-                    conge.passation_service.save()
-
-            prochaine_etape        = get_etape_suivante(conge)
-            conge.etape_validation = prochaine_etape
-            conge.validated_by     = login_obj
-
-            if prochaine_etape == 'termine':
-                conge.statut = Statut.objects.get(id=2)
-
-            conge.save()
-
-            _sauvegarder_validation(conge, etape_courante, 'approuve', login_obj, motif)
-            envoi_notification_suivante(conge)
+            conge = ValidationService.valider(
+                conge_id = conge_id,
+                login_id = login_id,
+                decision = decision,
+                motif    = motif,
+            )
 
             return Response({
                 "status":  "success",
-                "message": f"Étape validée → {prochaine_etape}",
+                "message": "Validation enregistrée",
                 "data": {
-                    "etape_validation": prochaine_etape,
-                    "statut": conge.statut.statut
+                    "conge_id": conge.id,
+                    "statut":   conge.statut.statut,
                 }
-            })
+            }, status=status.HTTP_200_OK)
 
-        except Statut.DoesNotExist as e:
+        except Conge.DoesNotExist:
             return Response({
                 "status":  "error",
-                "message": f"Statut introuvable : {e}"
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                "message": f"Congé introuvable (ID: {conge_id})"
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        except ValueError as e:
+            return Response({
+                "status":  "error",
+                "message": str(e)
+            }, status=status.HTTP_403_FORBIDDEN)
+
         except Exception as e:
             return Response({
                 "status":  "error",
                 "message": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    def get(self, request, id=None, conge_id=None):
-        """Historique des validations d'un congé"""
-        pk = id or conge_id
+    def get(self, request, conge_id):
+        """Voir l'historique des validations d'un congé"""
         try:
-            conge = Conge.objects.get(id=pk)
+            conge       = Conge.objects.get(id=conge_id)
             validations = conge.validations.all()
+
             data = [
                 {
                     "etape":    v.etape,
                     "decision": v.decision,
-                    "valideur": (
-                        f"{v.valideur.personnelle.prenom} {v.valideur.personnelle.nom}"
-                        if v.valideur and v.valideur.personnelle else "—"
-                    ),
-                    "motif": v.motif,
-                    "date":  str(v.date),
+                    "valideur": f"{v.valideur.personnelle.prenom} {v.valideur.personnelle.nom}" if v.valideur and v.valideur.personnelle else "—",
+                    "motif":    v.motif,
+                    "date":     v.date,
                 }
                 for v in validations
             ]
-            return Response({"status": "success", "data": data})
+
+            return Response({
+                "status": "success",
+                "data":   data
+            }, status=status.HTTP_200_OK)
+
         except Conge.DoesNotExist:
             return Response({
                 "status":  "error",
-                "message": f"Congé introuvable (ID: {pk})"
+                "message": f"Congé introuvable (ID: {conge_id})"
             }, status=status.HTTP_404_NOT_FOUND)

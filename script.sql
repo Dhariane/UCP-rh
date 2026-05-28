@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 -- creer la base de donnee
 CREATE DATABASE rh;
@@ -108,6 +109,122 @@ INSERT INTO api_typeconge (id, libelle, code, duree_max) VALUES
  (5, 'Congé sans solde', 'CSS', 180),
  (6, 'Congé exceptionnel', 'CE', 5),
  (7, 'RTT', 'RTT', 12);
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> dcc45aed (linux)
+-- creer la base de donnee
+CREATE DATABASE rh;
+
+-- se connecter a la base de donnee
+\c rh
+
+--Pour lister les tables dans la base de donnee
+\dt
+
+INSERT INTO api_etatcivil (nom) 
+VALUES 
+    ('Célibataire'), 
+    ('Marié(e)'), 
+    ('Divorcé(e)'), 
+    ('Veuf/Veuve');
+
+INSERT INTO api_typecontrats ("TypeContrat") 
+VALUES 
+    ('Salarié'), 
+    ('Consultant');
+
+INSERT INTO api_sexes (nom) 
+VALUES 
+    ('Masculin'), 
+    ('Féminin');
+
+INSERT INTO api_modefinancement (nom) 
+VALUES 
+    ('Fond Mondial'), 
+    ('Alliance Gavi'), 
+    ('Banque Mondiale/PPSB'), 
+    ('Banque Mondiale/PARN');
+
+INSERT INTO api_relations (nom, grade) 
+VALUES 
+    ('Père', 1), 
+    ('Mère', 1), 
+    ('Cousin', 2), 
+    ('Cousine', 2),
+    ('Conjoint(e)', 1),
+    ('Frère', 2),
+    ('Sœur', 2),
+    ('Autre', 3);   
+
+
+SET client_encoding TO 'UTF8';
+SET client_encoding TO 'WIN1252';
+SET client_encoding TO 'LATIN1';
+
+INSERT INTO api_services (nom) 
+VALUES 
+    ('Direction'),
+    ('Ressources Humaines'),
+    ('Comptabilité et Finances'),
+    ('Logistique'),
+    ('Informatique / IT'),
+    ('Passation de Marchés'),
+    ('Suivi et Évaluation'),
+    ('Technique / Opérationnel');
+
+INSERT INTO api_postes (nom, grade) 
+VALUES 
+    ('Coordonnateur de Projet', 1),
+    ('Responsable Administratif et Financier', 1),
+    ('Chef de Service', 2),
+    ('Responsable des Ressources Humaines', 2),
+    ('Expert Technique Senior', 2),
+    ('Specialiste en Passation de Marches', 2);
+
+INSERT INTO api_role  (name,created_at)  
+VALUES
+     ('admin',NOW()),
+     ('User',NOW()),
+     ('Superadmin',NOW());
+
+ajout pour admin direct // ça marche pas:
+ SET session_replication_role = 'replica'; 
+ SET session_replication_role = 'origin';     
+
+Update role test:
+ UPDATE api_login
+ SET role_id = 1
+ WHERE email_id = 'misaharitsoa@gmail.com';
+
+pour creation admin login json {
+    {
+    "email": "admin@mail.com",
+    "password": "admin",
+    "role": 1
+}
+}
+
+DROP TABLE IF EXISTS api_statut, api_typeconge, api_loginadmin, api_soldeconge, api_conge CASCADE;
+
+INSERT INTO api_statut (id, statut) VALUES
+ (1, 'En attente'),
+ (2, 'Approuvé'),
+ (3, 'Refusé');
+
+
+INSERT INTO api_typeconge (id, libelle, code, duree_max) VALUES
+ (1, 'Congé annuel', 'CA', 30),
+ (2, 'Congé maladie', 'CM', 90),
+ (3, 'Congé maternité', 'MAT', 120),
+ (4, 'Congé paternité', 'PAT', 14),
+ (5, 'Congé sans solde', 'CSS', 180),
+ (6, 'Congé exceptionnel', 'CE', 5),
+ (7, 'RTT', 'RTT', 12);
+<<<<<<< HEAD
+=======
+>>>>>>> 2b8eb512 (deploie)
 -- creer la base de donnee
 CREATE DATABASE rh;
 
@@ -214,7 +331,6 @@ INSERT INTO api_statut (id, statut) VALUES
 
 
 INSERT INTO api_typeconge (id, libelle, code, duree_max) VALUES
-<<<<<<< HEAD
 <<<<<<< HEAD
  (1, 'Conge Planifié', 'CP', 30),
  (2, 'Permission', 'PE', 90),
@@ -329,15 +445,15 @@ INSERT INTO api_typeconge (id, libelle, code, duree_max) VALUES
  (5, 'Congé sans solde', 'CSS', 180),
  (6, 'Congé exceptionnel', 'CE', 5),
  (7, 'RTT', 'RTT', 12);
-
-=======
  (1, 'Conge', 'CO', 30),
  (2, 'Permission', 'PE', 90),
  (3, 'Recuperation', 'RE', 90);
->>>>>>> 580fc430 (superieur 11/05/26 09:38)
-=======
+
  (1, 'Conge Planifié', 'CP', 30),
  (2, 'Permission', 'PE', 90),
  (3, 'Conge Annuel', 'CA', 30),
  (4, 'Recuperation', 'RE', 90);
->>>>>>> 69adc076 (sql planifié)
+
+>>>>>>> cb65f867728df1dc0fb2754ea892270f8c03e70e
+=======
+
