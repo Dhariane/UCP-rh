@@ -1,4 +1,5 @@
 from rest_framework.views import APIView
+from rest_framework.views import    APIView
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -22,6 +23,11 @@ class FonctionController(APIView):
                     "status": "error",
                     "message": f"Fonction not found for id = {id}"
                 }, status=status.HTTP_404_NOT_FOUND)
+                response = {
+                    "status": "error",
+                    "message": f"Fonction not found for id = {id}"
+                }
+                return Response(response, status=status.HTTP_404_NOT_FOUND)
         else:
             data = FonctionService.getAllDto().data
             response = {

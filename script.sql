@@ -1,4 +1,7 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> dcc45aed (linux)
 -- creer la base de donnee
 CREATE DATABASE rh;
 
@@ -107,6 +110,7 @@ INSERT INTO api_typeconge (id, libelle, code, duree_max) VALUES
  (5, 'Congé sans solde', 'CSS', 180),
  (6, 'Congé exceptionnel', 'CE', 5),
  (7, 'RTT', 'RTT', 12);
+<<<<<<< HEAD
 =======
 -- creer la base de donnee
 CREATE DATABASE rh;
@@ -219,3 +223,5 @@ INSERT INTO api_typeconge (id, libelle, code, duree_max) VALUES
  (3, 'Conge Annuel', 'CA', 30),
  (4, 'Recuperation', 'RE', 90);
 >>>>>>> cb65f867728df1dc0fb2754ea892270f8c03e70e
+=======
+>>>>>>> dcc45aed (linux)
