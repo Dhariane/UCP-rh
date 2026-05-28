@@ -50,7 +50,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='diplome',
             name='type_diplome',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.PROTECT, related_name='diplomes', to='api.diplometype', verbose_name='Type de diplôme'),
-            preserve_default=False,
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='diplomes', to='api.diplometype', verbose_name='Type de diplôme'),
         ),
     ]
