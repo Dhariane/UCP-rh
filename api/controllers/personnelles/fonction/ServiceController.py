@@ -58,3 +58,34 @@ class ServiceController(APIView):
                 "data": ServiceDto(etat).data     
             }
         return Response(response, status=status.HTTP_201_CREATED)
+
+
+class ServiceCRUDController(APIView):
+
+    def get(self, request):
+        services = Services.objects.all().order_by('nom')
+        data = [{"id": s.id, "nom": s.nom} for s in services]
+        return Response({"data": data})
+
+    def post(self, request):
+        nom = request.data.get('nom')
+        if not nom:
+            return Response({"error": "Nom obligatoire"}, status=400)
+        s = Services.objects.create(nom=nom)
+        return Response({"status": "success", "data": {"id": s.id, "nom": s.nom}}, status=201)
+
+    def patch(self, request, id):
+        try:
+            s     = Services.objects.get(id=id)
+            s.nom = request.data.get('nom', s.nom)
+            s.save()
+            return Response({"status": "success", "message": "Service mis à jour"})
+        except Services.DoesNotExist:
+            return Response({"error": "Service introuvable"}, status=404)
+
+    def delete(self, request, id):
+        try:
+            Services.objects.get(id=id).delete()
+            return Response({"status": "success", "message": "Service supprimé"})
+        except Services.DoesNotExist:
+            return Response({"error": "Service introuvable"}, status=404)

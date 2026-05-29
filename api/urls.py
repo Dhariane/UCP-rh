@@ -7,8 +7,8 @@ from api.controllers.conge.validationController import ValidationCongeController
 from api.controllers.personnelles.diplome.typeDiplomeController import DiplomeTypeController
 from api.controllers.personnelles.fonction.superieurController import SuperieurController
 from api.controllers.conge.soldeCongeController import SoldeCongeRHController
-from api.controllers.conge.congePlanifieController import CongePlanifieController, CongePlanifieDetailController
-from .controllers import ConfigPlanningController
+from api.controllers.personnelles.fonction.fonctionController import FonctionCRUDController
+from api.controllers.personnelles.fonction.ServiceController import ServiceCRUDController
 urlpatterns = [
     path('login', LoginController.as_view(), name='login'),
     path('personnelle', PersonnelleController.as_view(), name='personnelle'),
@@ -82,15 +82,15 @@ urlpatterns = [
     path('conge/<int:conge_id>/valider/', ValidationCongeController.as_view()),
     path('superieurs', SuperieurController.as_view()),
     path('superieurs/<int:fonction_id>/', SuperieurController.as_view()),
-    path('rh/soldes/', SoldeCongeRHController.as_view()),
-    path('rh/soldes/<int:solde_id>/',SoldeCongeRHController.as_view()),
-    path('personnelles/<int:id>/toggle-status/', PersonnelleController.as_view(), name='toggle-status'),
-    path('conges-planifies/<int:personnel_id>/', CongePlanifieController.as_view(), name='conges-planifies-personnel'),
-    path('conges-planifies/detail/<int:id>/', CongePlanifieDetailController.as_view(), name='conge-planifie-detail'),
-    path('conges-planifies/', ConfigPlanningController.as_view(), name='config-planification'),
-    path('fonctions_list', FonctionListController.as_view()),
+    path('rh/soldes/',              SoldeCongeRHController.as_view()),
+    path('rh/soldes/<int:solde_id>/', SoldeCongeRHController.as_view()),
+    path('fonctions_list', FonctionCRUDController.as_view()),
     path('type_diplomes', DiplomeTypeController.as_view()),
     path('type_diplomes/<int:id>/', DiplomeTypeController.as_view()),
+    path('rh/fonctions/',          FonctionCRUDController.as_view()),
+    path('rh/fonctions/<int:id>/', FonctionCRUDController.as_view()),
+    path('rh/services/',           ServiceCRUDController.as_view()),
+    path('rh/services/<int:id>/',  ServiceCRUDController.as_view()),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

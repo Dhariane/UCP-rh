@@ -2,9 +2,9 @@ from django.db import models
 from api.models.fonction.service import Services
 
 class Fonctions(models.Model):
-    nom = models.CharField()
+    nom     = models.CharField()
     is_chef = models.BooleanField(default=False)
-    service = models.ForeignKey(      
+    service = models.ForeignKey(
         Services,
         on_delete=models.SET_NULL,
         null=True,
@@ -12,5 +12,13 @@ class Fonctions(models.Model):
         related_name='fonctions'
     )
 
+    chef_direct = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='subordonnes'
+    )
+
     def __str__(self):
-        return f"{self.nom} "
+        return f"{self.nom}"
