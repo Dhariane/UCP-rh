@@ -12,12 +12,11 @@ class FonctionController(APIView):
         if id:
             try:
                 data = FonctionService.getByIdDto(id).data
-                response = {
+                return Response({
                     "status": "success",
                     "message": "Fonction retrieved successfully",
                     "data": data
-                }
-                return Response(response, status=status.HTTP_200_OK)
+                }, status=status.HTTP_200_OK)
             except Fonctions.DoesNotExist:
                 return Response({
                     "status": "error",
@@ -25,35 +24,29 @@ class FonctionController(APIView):
                 }, status=status.HTTP_404_NOT_FOUND)
         else:
             data = FonctionService.getAllDto().data
-            response = {
+            return Response({
                 "status": "success",
                 "message": "List of Fonctions retrieved successfully",
                 "data": data
-            }
-            return Response(response, status=status.HTTP_200_OK)
+            }, status=status.HTTP_200_OK)
 
     def post(self, request):
-        # On ne traite plus que le champ "nom"
         valiny = FonctionDto(data=request.data)
         if not valiny.is_valid():
             return Response({"status": "error", "errors": valiny.errors}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Le service doit maintenant être simplifié pour ne créer qu'un "nom"
+
         fonction = FonctionService.create(valiny.validated_data)
-        
         return Response({
             "status": "success",
             "message": "Fonction created successfully",
             "data": FonctionDto(fonction).data
         }, status=status.HTTP_201_CREATED)
-    
+
     def put(self, request, id):
         valiny = FonctionDto(data=request.data, partial=True)
         if not valiny.is_valid():
             return Response({"status": "error", "errors": valiny.errors}, status=status.HTTP_400_BAD_REQUEST)
-        
         try:
-            # On met à jour uniquement le champ "nom"
             fonction = FonctionService.update(id, **valiny.validated_data)
             return Response({
                 "status": "success",
@@ -65,6 +58,7 @@ class FonctionController(APIView):
                 "status": "error",
                 "message": f"Fonction not found for id = {id}"
             }, status=status.HTTP_404_NOT_FOUND)
+
 
 class FonctionCRUDController(APIView):
 
@@ -93,37 +87,63 @@ class FonctionCRUDController(APIView):
 
     def patch(self, request, id):
         try:
-            f         = Fonctions.objects.get(id=id)
-            f.nom     = request.data.get('nom', f.nom)
+            f = Fonctions.objects.get(id=id)
+
+            # ── Champs simples ───────────────────────────────────
+            f.nom     = request.data.get('nom',     f.nom)
             f.is_chef = request.data.get('is_chef', f.is_chef)
 
+            # ── Service ──────────────────────────────────────────
             service_id = request.data.get('service')
             if service_id:
                 try:
                     f.service = Services.objects.get(id=service_id)
                 except Services.DoesNotExist:
                     pass
+            elif service_id == '' or service_id is None and 'service' in request.data:
+                f.service = None
 
-            # ✅ Modifier le chef direct
-            chef_id = request.data.get('chef_direct')
-            if chef_id:
-                try:
-                    f.chef_direct = Fonctions.objects.get(id=chef_id)
-                except Fonctions.DoesNotExist:
-                    pass
-            elif chef_id == '' or chef_id is None:
-                f.chef_direct = None
+            # ── Chef direct ──────────────────────────────────────
+            # ✅ On ne touche à chef_direct QUE si le champ est
+            #    explicitement présent dans la requête
+            if 'chef_direct' in request.data:
+                chef_id = request.data.get('chef_direct')
+                if chef_id:
+                    try:
+                        f.chef_direct = Fonctions.objects.get(id=chef_id)
+                    except Fonctions.DoesNotExist:
+                        return Response(
+                            {"error": f"Chef direct introuvable pour id={chef_id}"},
+                            status=400
+                        )
+                else:
+                    # chef_id vide ou null → sommet hiérarchique, pas de chef
+                    f.chef_direct = None
 
             f.save()
-            return Response({"status": "success", "message": "Fonction mise à jour"})
+
+            return Response({
+                "status":  "success",
+                "message": "Fonction mise à jour",
+                "data": {
+                    "id":              f.id,
+                    "nom":             f.nom,
+                    "is_chef":         f.is_chef,
+                    "service":         f.service_id,
+                    "service_nom":     f.service.nom if f.service else "—",
+                    "chef_direct":     f.chef_direct_id,
+                    "chef_direct_nom": f.chef_direct.nom if f.chef_direct else "—",
+                }
+            })
+
         except Fonctions.DoesNotExist:
             return Response({"error": "Fonction introuvable"}, status=404)
-    
 
     def post(self, request):
         nom        = request.data.get('nom')
         is_chef    = request.data.get('is_chef', False)
         service_id = request.data.get('service')
+        chef_id    = request.data.get('chef_direct')
 
         if not nom:
             return Response({"error": "Nom obligatoire"}, status=400)
@@ -135,14 +155,29 @@ class FonctionCRUDController(APIView):
             except Services.DoesNotExist:
                 return Response({"error": "Service introuvable"}, status=400)
 
+        chef_direct = None
+        if chef_id:
+            try:
+                chef_direct = Fonctions.objects.get(id=chef_id)
+            except Fonctions.DoesNotExist:
+                return Response({"error": "Chef direct introuvable"}, status=400)
+
         f = Fonctions.objects.create(
-            nom     = nom,
-            is_chef = is_chef,
-            service = service
+            nom         = nom,
+            is_chef     = is_chef,
+            service     = service,
+            chef_direct = chef_direct,   # ✅ inclus à la création aussi
         )
         return Response({
             "status": "success",
-            "data": {"id": f.id, "nom": f.nom, "is_chef": f.is_chef}
+            "data": {
+                "id":              f.id,
+                "nom":             f.nom,
+                "is_chef":         f.is_chef,
+                "service":         f.service_id,
+                "chef_direct":     f.chef_direct_id,
+                "chef_direct_nom": f.chef_direct.nom if f.chef_direct else "—",
+            }
         }, status=201)
 
     def delete(self, request, id):
