@@ -10,15 +10,6 @@ from api.models.fonction.modefinancement import ModeFinancement
 class Fonctions(models.Model):
     nom     = models.CharField()
     is_chef = models.BooleanField(default=False)
-
-    poste = models.ForeignKey(
-        Postes,
-        blank=True,
-        null=True,
-        on_delete=models.CASCADE,
-        related_name="fonctions"
-    )
-
     service = models.ForeignKey(
         Services,
         on_delete=models.CASCADE,
@@ -29,6 +20,14 @@ class Fonctions(models.Model):
         ModeFinancement,
         on_delete=models.CASCADE,null=True,
         related_name="financement"
+    )
+
+    chef_direct = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='subordonnes'
     )
 
     chef_direct = models.ForeignKey(

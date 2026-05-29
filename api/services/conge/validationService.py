@@ -114,22 +114,42 @@ class ValidationService:
         login = Login.objects.get(id=login_id)
         etape = conge.etape_validation
 
-        # ── ÉTAPE CHEF DIRECT ─────────────────
-        if etape == 'chef':
-            chefs = ValidationService.get_chefs(conge)
-            if not chefs:
-                raise ValueError("Aucun chef direct assigné à votre fonction.")
-                
-            chef_attendu = ValidationService.get_login_disponible(chefs[0])
-            if login.id != chef_attendu.id:
-                raise ValueError("Vous n'êtes pas autorisé à valider cette étape hiérarchique.")
+        statut_approuve = Statut.objects.get(id=2)
+        statut_refuse   = Statut.objects.get(id=3)
 
-            ValidationConge.objects.create(
-                conge=conge, etape='chef',
-                decision=decision, valideur=login, motif=motif
-            )
-            conge.refresh_from_db()
-            return conge
+        # ── Étape CHEFS ──────────────────────────
+        @staticmethod
+        def get_chefs(conge):
+            """Trouve le chef direct via la fonction du personnel"""
+            from api.models.fonction.contrat import Contrat
+
+            contrat = Contrat.objects.filter(
+                personnelle=conge.personnel
+            ).order_by('-dateDebut').first()
+
+            if not contrat or not contrat.fonction:
+                return []
+
+            # ✅ Chef direct via chef_direct dans Fonctions
+            chef_fonction = contrat.fonction.chef_direct
+
+            if not chef_fonction:
+                return []  # CN ou pas de chef → flux direct GP/RF
+
+            # Trouver le login du chef
+            contrat_chef = Contrat.objects.filter(
+                fonction  = chef_fonction,
+                dateFin__isnull = True
+            ).first()
+
+            if not contrat_chef:
+                return []
+
+            login_chef = Login.objects.filter(
+                personnelle=contrat_chef.personnelle
+            ).first()
+
+            return [login_chef] if login_chef else []
 
         # ── ÉTAPE GP / RF (FINANCEMENT) ───────
         elif etape == 'gp_rf':
