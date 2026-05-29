@@ -85,7 +85,7 @@ urlpatterns = [
     path('superieurs/<int:fonction_id>/', SuperieurController.as_view()),
     path('rh/soldes/',              SoldeCongeRHController.as_view()),
     path('rh/soldes/<int:solde_id>/', SoldeCongeRHController.as_view()),
-    path('fonctions_list', FonctionListController.as_view()),
+    path('fonctions_list', FonctionCRUDController.as_view()),
     path('type_diplomes', DiplomeTypeController.as_view()),
     path('type_diplomes/<int:id>/', DiplomeTypeController.as_view()),
     path('rh/fonctions/',          FonctionCRUDController.as_view()),
