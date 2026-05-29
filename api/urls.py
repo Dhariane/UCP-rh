@@ -9,6 +9,8 @@ from api.controllers.personnelles.fonction.superieurController import SuperieurC
 from api.controllers.conge.soldeCongeController import SoldeCongeRHController
 from api.controllers.personnelles.fonction.fonctionController import FonctionCRUDController
 from api.controllers.personnelles.fonction.ServiceController import ServiceCRUDController
+from api.controllers.conge.congePlanifieController import CongePlanifieController, CongePlanifieDetailController
+from .controllers import ConfigPlanningController
 urlpatterns = [
     path('login', LoginController.as_view(), name='login'),
     path('personnelle', PersonnelleController.as_view(), name='personnelle'),
