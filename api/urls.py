@@ -10,6 +10,8 @@ from api.controllers.personnelles.fonction.superieurController import SuperieurC
 from api.controllers.conge.soldeCongeController import SoldeCongeRHController
 from api.controllers.personnelles.fonction.fonctionController import FonctionCRUDController
 from api.controllers.personnelles.fonction.ServiceController import ServiceCRUDController
+from api.controllers.conge.congePlanifieController import CongePlanifieController, CongePlanifieDetailController
+from .controllers import ConfigPlanningController
 urlpatterns = [
     path('login', LoginController.as_view(), name='login'),
     path('personnelle', PersonnelleController.as_view(), name='personnelle'),
@@ -83,6 +85,9 @@ urlpatterns = [
     path('conge/<int:conge_id>/valider/', ValidationCongeController.as_view()),
     path('superieurs', SuperieurController.as_view()),
     path('superieurs/<int:fonction_id>/', SuperieurController.as_view()),
+    path('conges-planifies/<int:personnel_id>/', CongePlanifieController.as_view(), name='conges-planifies-personnel'),
+    path('conges-planifies/detail/<int:id>/', CongePlanifieDetailController.as_view(), name='conge-planifie-detail'),
+    path('conges-planifies/', ConfigPlanningController.as_view(), name='config-planification'),
     path('rh/soldes/',              SoldeCongeRHController.as_view()),
     path('rh/soldes/<int:solde_id>/', SoldeCongeRHController.as_view()),
     path('fonctions_list', FonctionCRUDController.as_view()),
