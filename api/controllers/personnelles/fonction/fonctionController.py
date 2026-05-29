@@ -10,13 +10,18 @@ from api.dto.personnelles.fonction.fonctionDto import FonctionDto
 
 class FonctionController(APIView):
     def get(self, request, id=None):
+        service_id = request.query_params.get('service', None)
+
         if id:
             try:
-                data = FonctionService.getByIdDto(id).data
+                # ✅ select_related pour éviter N+1 queries
+                f = Fonctions.objects.select_related(
+                    'service', 'chef_direct'
+                ).get(id=id)
                 return Response({
                     "status": "success",
                     "message": "Fonction retrieved successfully",
-                    "data": data
+                    "data": self._serialize(f),
                 }, status=status.HTTP_200_OK)
             except Fonctions.DoesNotExist:
                 return Response({
@@ -29,12 +34,32 @@ class FonctionController(APIView):
                 }
                 return Response(response, status=status.HTTP_404_NOT_FOUND)
         else:
-            data = FonctionService.getAllDto().data
+            # ✅ filtre optionnel par service + chef_direct_nom inclus
+            qs = Fonctions.objects.select_related(
+                'service', 'chef_direct'
+            ).all().order_by('nom')
+
+            if service_id:
+                qs = qs.filter(service_id=service_id)
+
             return Response({
                 "status": "success",
                 "message": "List of Fonctions retrieved successfully",
-                "data": data
+                "data": [self._serialize(f) for f in qs],
             }, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def _serialize(f: Fonctions) -> dict:
+        """Sérialisation uniforme incluant chef_direct_nom."""
+        return {
+            "id":              f.id,
+            "nom":             f.nom,
+            "is_chef":         f.is_chef,
+            "service":         f.service_id,
+            "service_nom":     f.service.nom if f.service else "—",
+            "chef_direct":     f.chef_direct_id,
+            "chef_direct_nom": f.chef_direct.nom if f.chef_direct else "—",
+        }
 
     def post(self, request):
         valiny = FonctionDto(data=request.data)
