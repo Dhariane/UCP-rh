@@ -10,29 +10,47 @@ from api.dto.conge.soldeCongeDto import SoldeCongeDTO
 
 class SoldeCongeController(APIView):
 
-    def get(self, request, id=None):
-        if id:
-            try:
-                obj = SoldeCongeServices.getById(id)
-                return Response({"status": "success", "data": SoldeCongeDTO(obj).data})
-            except SoldeConge.DoesNotExist:
-                return Response({"status": "error", "message": "Non trouvé"}, status=404)
-        else:
-            data = SoldeCongeServices.getAll()
-            return Response({
-                "status": "success",
-                "data": SoldeCongeDTO(data, many=True).data
-            })
+    # api/controllers/conge/soldeController.py
+    def get(self, request):
+        from api.models.propos.personnelles import Personnelles
+        annee = int(request.query_params.get('annee', timezone.now().year))
 
-    def post(self, request):
-        serializer = SoldeCongeDTO(data=request.data)
-        if serializer.is_valid():
-            obj = SoldeCongeServices.create(serializer.validated_data)
-            return Response({
-                "status": "success",
-                "data": SoldeCongeDTO(obj).data
-            }, status=201)
-        return Response(serializer.errors, status=400)
+        personnels = Personnelles.objects.all()
+        data = []
+
+        for p in personnels:
+            solde = SoldeConge.objects.filter(
+                personnel=p,
+                annee=annee
+            ).first()
+
+            if solde:
+                data.append({
+                    "id":           solde.id,
+                    "personnel_id": p.id,
+                    "nom":          p.nom,
+                    "prenom":       p.prenom,
+                    "annee":        solde.annee,
+                    "total":        solde.total,
+                    "utilise":      solde.utilise,
+                    "reste":        solde.reste,
+                    "is_manual":    solde.is_manual,
+                })
+            else:
+                # ✅ Personnel sans solde → afficher avec 0
+                data.append({
+                    "id":           None,
+                    "personnel_id": p.id,
+                    "nom":          p.nom,
+                    "prenom":       p.prenom,
+                    "annee":        annee,
+                    "total":        0,
+                    "utilise":      0,
+                    "reste":        0,
+                    "is_manual":    False,
+                })
+
+        return Response({"status": "success", "data": data})
 
     def put(self, request, id):
         try:
@@ -59,27 +77,46 @@ from django.utils import timezone
 
 class SoldeCongeRHController(APIView):
 
+    # api/controllers/conge/soldeController.py
     def get(self, request):
-        """Liste tous les soldes avec infos personnel"""
-        annee  = request.query_params.get('annee', timezone.now().year)
-        soldes = SoldeConge.objects.filter(
-            annee=annee
-        ).select_related('personnel')
+        from api.models.propos.personnelles import Personnelles
+        annee = int(request.query_params.get('annee', timezone.now().year))
 
-        data = [
-            {
-                "id":           s.id,
-                "personnel_id": s.personnel.id,
-                "nom":          s.personnel.nom,
-                "prenom":       s.personnel.prenom,
-                "annee":        s.annee,
-                "total":        s.total,
-                "utilise":      s.utilise,
-                "reste":        s.reste,
-                "is_manual":    s.is_manual,
-            }
-            for s in soldes
-        ]
+        personnels = Personnelles.objects.all()
+        data = []
+
+        for p in personnels:
+            solde = SoldeConge.objects.filter(
+                personnel=p,
+                annee=annee
+            ).first()
+
+            if solde:
+                data.append({
+                    "id":           solde.id,
+                    "personnel_id": p.id,
+                    "nom":          p.nom,
+                    "prenom":       p.prenom,
+                    "annee":        solde.annee,
+                    "total":        solde.total,
+                    "utilise":      solde.utilise,
+                    "reste":        solde.reste,
+                    "is_manual":    solde.is_manual,
+                })
+            else:
+                # ✅ Personnel sans solde → afficher avec 0
+                data.append({
+                    "id":           None,
+                    "personnel_id": p.id,
+                    "nom":          p.nom,
+                    "prenom":       p.prenom,
+                    "annee":        annee,
+                    "total":        0,
+                    "utilise":      0,
+                    "reste":        0,
+                    "is_manual":    False,
+                })
+
         return Response({"status": "success", "data": data})
 
     def patch(self, request, solde_id):
