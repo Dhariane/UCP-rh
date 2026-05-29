@@ -8,6 +8,7 @@ sqlparse==0.5.5
 tzdata==2025.3
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 python-dotenv
 gunicorn
 =======
@@ -15,3 +16,7 @@ gunicorn
 =======
 python-dotenv
 >>>>>>> a4223a67 (29/05/26)
+=======
+python-dotenv
+gunicorn
+>>>>>>> 6346679b (29/05/26)
