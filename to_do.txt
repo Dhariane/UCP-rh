@@ -1,4 +1,7 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> dcc45aed (linux)
 -gestion d'authentification avec role
     -fonction
         -validate token
@@ -58,6 +61,7 @@ HistoriquePoste(idpersonnelle,poste,entite / société,datedebut,datefin,descrip
 Enfant(idEnfant,nom,prenom,dateNaissance) ----- OK
 
 
+<<<<<<< HEAD
 =======
 -gestion d'authentification avec role
     -fonction
@@ -121,3 +125,5 @@ Enfant(idEnfant,nom,prenom,dateNaissance) ----- OK
 si le host du supabase change 
  nslookup aws-0-eu-central-1.pooler.supabase.com (terminal linux)
 >>>>>>> cb65f867728df1dc0fb2754ea892270f8c03e70e
+=======
+>>>>>>> dcc45aed (linux)

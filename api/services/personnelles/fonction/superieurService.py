@@ -1,4 +1,7 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> dcc45aed (linux)
 from api.models import Superieur
 from api.dto.personnelles.fonction.superieurDto import SuperieurDto
 
@@ -32,6 +35,7 @@ class SuperieurService:
     def getAllDto()-> list[SuperieurDto]:
         
         superieurs = SuperieurService.getAll()
+<<<<<<< HEAD
         return SuperieurDto(superieurs, many=True) 
 =======
 from api.models.fonction.fonctions import Fonctions
@@ -57,3 +61,6 @@ class SuperieurService:
         fonction.superieurs.set(logins)
         return fonction
 >>>>>>> cb65f867728df1dc0fb2754ea892270f8c03e70e
+=======
+        return SuperieurDto(superieurs, many=True) 
+>>>>>>> dcc45aed (linux)
