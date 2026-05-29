@@ -84,8 +84,6 @@ urlpatterns = [
     path('conge/<int:conge_id>/valider/', ValidationCongeController.as_view()),
     path('superieurs', SuperieurController.as_view()),
     path('superieurs/<int:fonction_id>/', SuperieurController.as_view()),
-    path('rh/soldes/', SoldeCongeRHController.as_view()),
-    path('rh/soldes/<int:solde_id>/',SoldeCongeRHController.as_view()),
     path('personnelles/<int:id>/toggle-status/', PersonnelleController.as_view(), name='toggle-status'),
     path('conges-planifies/<int:personnel_id>/', CongePlanifieController.as_view(), name='conges-planifies-personnel'),
     path('conges-planifies/detail/<int:id>/', CongePlanifieDetailController.as_view(), name='conge-planifie-detail'),
