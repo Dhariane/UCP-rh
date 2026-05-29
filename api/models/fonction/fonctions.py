@@ -7,11 +7,11 @@ from api.models.fonction.modefinancement import ModeFinancement
 
 
 class Fonctions(models.Model):
-    nom = models.CharField()
-
-    dateDebut = models.DateField()
-    
-    dateFin = models.DateField(
+    nom     = models.CharField()
+    is_chef = models.BooleanField(default=False)
+    service = models.ForeignKey(
+        Services,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True
     )
@@ -41,6 +41,13 @@ class Fonctions(models.Model):
         related_name="financement"
     )
 
-    def __str__(self):
-        return f"{self.personnelle} | {self.poste} | {self.dateDebut}"
+    chef_direct = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='subordonnes'
+    )
 
+    def __str__(self):
+        return f"{self.nom}"

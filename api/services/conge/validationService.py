@@ -110,38 +110,38 @@ class ValidationService:
         statut_refuse   = Statut.objects.get(id=3)
 
         # ── Étape CHEFS ──────────────────────────
-        if etape == 'chef':
-            chefs     = ValidationService.get_chefs(conge)
-            chefs_ids = [c.id for c in chefs]
+        @staticmethod
+        def get_chefs(conge):
+            """Trouve le chef direct via la fonction du personnel"""
+            from api.models.fonction.contrat import Contrat
 
-            if login.id not in chefs_ids:
-                raise ValueError("Vous n'êtes pas chef de ce personnel")
+            contrat = Contrat.objects.filter(
+                personnelle=conge.personnel
+            ).order_by('-dateDebut').first()
 
-            ValidationConge.objects.create(
-                conge=conge, etape='chef',
-                decision=decision, valideur=login, motif=motif
-            )
+            if not contrat or not contrat.fonction:
+                return []
 
-            if decision == 'refuse':
-                conge.statut          = statut_refuse
-                conge.etape_validation = 'termine'
-                conge.save()
-                return conge
+            # ✅ Chef direct via chef_direct dans Fonctions
+            chef_fonction = contrat.fonction.chef_direct
 
-            # Vérifier si tous les chefs ont validé
-            chefs_valides  = ValidationConge.objects.filter(
-                conge=conge, etape='chef', decision='approuve'
-            ).values_list('valideur_id', flat=True)
+            if not chef_fonction:
+                return []  # CN ou pas de chef → flux direct GP/RF
 
-            chefs_restants = [c for c in chefs_ids if c not in chefs_valides]
+            # Trouver le login du chef
+            contrat_chef = Contrat.objects.filter(
+                fonction  = chef_fonction,
+                dateFin__isnull = True
+            ).first()
 
-            if chefs_restants:
-                return conge  # on reste à l'étape chef
+            if not contrat_chef:
+                return []
 
-            # Tous validé → étape suivante
-            conge.etape_validation = ValidationService.determiner_prochaine_etape(conge)
-            conge.save()
-            return conge
+            login_chef = Login.objects.filter(
+                personnelle=contrat_chef.personnelle
+            ).first()
+
+            return [login_chef] if login_chef else []
 
         # ── Étape GP/RF ──────────────────────────
         if etape == 'gp_rf':

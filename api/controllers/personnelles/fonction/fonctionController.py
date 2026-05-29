@@ -69,18 +69,56 @@ class FonctionController(APIView):
 class FonctionCRUDController(APIView):
 
     def get(self, request):
-        fonctions = Fonctions.objects.select_related('service').all().order_by('service__nom', 'nom')
+        service_id = request.query_params.get('service', None)
+        fonctions  = Fonctions.objects.select_related(
+            'service', 'chef_direct'
+        ).all().order_by('service__nom', 'nom')
+
+        if service_id:
+            fonctions = fonctions.filter(service_id=service_id)
+
         data = [
             {
-                "id":       f.id,
-                "nom":      f.nom,
-                "is_chef":  f.is_chef,
-                "service":  f.service_id,
-                "service_nom": f.service.nom if f.service else "—",
+                "id":              f.id,
+                "nom":             f.nom,
+                "is_chef":         f.is_chef,
+                "service":         f.service_id,
+                "service_nom":     f.service.nom if f.service else "—",
+                "chef_direct":     f.chef_direct_id,
+                "chef_direct_nom": f.chef_direct.nom if f.chef_direct else "—",
             }
             for f in fonctions
         ]
         return Response({"data": data})
+
+    def patch(self, request, id):
+        try:
+            f         = Fonctions.objects.get(id=id)
+            f.nom     = request.data.get('nom', f.nom)
+            f.is_chef = request.data.get('is_chef', f.is_chef)
+
+            service_id = request.data.get('service')
+            if service_id:
+                try:
+                    f.service = Services.objects.get(id=service_id)
+                except Services.DoesNotExist:
+                    pass
+
+            # ✅ Modifier le chef direct
+            chef_id = request.data.get('chef_direct')
+            if chef_id:
+                try:
+                    f.chef_direct = Fonctions.objects.get(id=chef_id)
+                except Fonctions.DoesNotExist:
+                    pass
+            elif chef_id == '' or chef_id is None:
+                f.chef_direct = None
+
+            f.save()
+            return Response({"status": "success", "message": "Fonction mise à jour"})
+        except Fonctions.DoesNotExist:
+            return Response({"error": "Fonction introuvable"}, status=404)
+    
 
     def post(self, request):
         nom        = request.data.get('nom')
@@ -106,22 +144,6 @@ class FonctionCRUDController(APIView):
             "status": "success",
             "data": {"id": f.id, "nom": f.nom, "is_chef": f.is_chef}
         }, status=201)
-
-    def patch(self, request, id):
-        try:
-            f          = Fonctions.objects.get(id=id)
-            f.nom      = request.data.get('nom', f.nom)
-            f.is_chef  = request.data.get('is_chef', f.is_chef)
-            service_id = request.data.get('service')
-            if service_id:
-                try:
-                    f.service = Services.objects.get(id=service_id)
-                except Services.DoesNotExist:
-                    pass
-            f.save()
-            return Response({"status": "success", "message": "Fonction mise à jour"})
-        except Fonctions.DoesNotExist:
-            return Response({"error": "Fonction introuvable"}, status=404)
 
     def delete(self, request, id):
         try:
