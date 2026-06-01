@@ -29,11 +29,11 @@ from .conge.congeController import CongeController
 from .conge.soldeCongeController import SoldeCongeController
 from .conge.statutController import StatutController
 from .conge.typeCongeController import TypeCongeController
-from .conge.passationServiceController import PassationServiceController
+from .conge.passationServiceController import PassationController
 from .usermanage.usermanageController import UserManagementController
 from .conge.ConfigPlanningController import ConfigPlanningController
 from .personnelles.fonction.listFonctionController import FonctionListController
-
+from .conge.validationController import ValidationController
 __all__ = [
     "EtatCivilController",
     "ProposController",
@@ -67,9 +67,10 @@ __all__ = [
     "SoldeCongeController",
     "StatutController",
     "TypeCongeController",
-    "PassationServiceController",
+    "PassationController",
     "UserManagementController",
     "ConfigPlanningController",
     "FonctionListController",
+    "ValidationController"
 
 ]
