@@ -12,6 +12,7 @@ class Notification(models.Model):
 
     TYPE_CHOICES = [
         # Côté valideur : demande d'action
+<<<<<<< HEAD
         ('validation_requise',    ' Validation requise'),
         ('remplacement_requis',   ' Validation par remplacement'),
         # Côté demandeur : retour du circuit
@@ -22,6 +23,17 @@ class Notification(models.Model):
         ('rappel_validation',     ' Rappel de validation'),
         ('conge_annule',          ' Congé annulé'),
         ('rappel_conge', 'Rappel prise de congé'),
+=======
+        ('validation_requise',    '🔔 Validation requise'),
+        ('remplacement_requis',   '🔄 Validation par remplacement'),
+        # Côté demandeur : retour du circuit
+        ('conge_approuve',        '✅ Congé approuvé'),
+        ('conge_refuse',          '❌ Congé refusé'),
+        ('conge_en_cours',        '⏳ Congé en cours de validation'),
+        # Infos système
+        ('rappel_validation',     '⏰ Rappel de validation'),
+        ('conge_annule',          '🚫 Congé annulé'),
+>>>>>>> 0a11ed57 (validation congé)
     ]
 
     destinataire   = models.ForeignKey(

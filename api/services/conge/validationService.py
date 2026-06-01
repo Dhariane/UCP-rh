@@ -1,3 +1,9 @@
+"""
+ValidationService — version avec notifications intégrées
+=========================================================
+Seules les lignes qui changent par rapport à l'original sont marquées # [NOTIF].
+"""
+
 from django.utils import timezone
 from api.models.conge.conge import Conge
 from api.models.conge.validationConge import ValidationConge
@@ -5,6 +11,7 @@ from api.models.conge.statut import Statut
 from api.models.conge.passationservice import PassationService
 from api.models.fonction.contrat import Contrat
 from api.models.auth.login.loginModel import Login
+from api.services.conge.notificationService import NotificationServices   # [NOTIF]
 
 
 class ValidationService:
@@ -118,38 +125,30 @@ class ValidationService:
         statut_refuse   = Statut.objects.get(id=3)
 
         # ── Étape CHEFS ──────────────────────────
-        @staticmethod
-        def get_chefs(conge):
-            """Trouve le chef direct via la fonction du personnel"""
-            from api.models.fonction.contrat import Contrat
+        if etape == 'chefs':
+            chefs = ValidationService.get_chefs(conge)
+            chefs_disponibles = [
+                ValidationService.get_login_disponible(chef) for chef in chefs
+            ]
+            if login not in chefs_disponibles:
+                raise ValueError("Vous n'êtes pas autorisé à valider cette étape")
 
-            contrat = Contrat.objects.filter(
-                personnelle=conge.personnel
-            ).order_by('-dateDebut').first()
+            ValidationConge.objects.create(
+                conge=conge, etape='chefs',
+                decision=decision, valideur=login, motif=motif
+            )
 
-            if not contrat or not contrat.fonction:
-                return []
+            if decision == 'refuse':
+                conge.statut = statut_refuse
+                conge.etape_validation = 'termine'
+            else:
+                conge.etape_validation = ValidationService.determiner_prochaine_etape(conge)
 
-            # ✅ Chef direct via chef_direct dans Fonctions
-            chef_fonction = contrat.fonction.chef_direct
-
-            if not chef_fonction:
-                return []  # CN ou pas de chef → flux direct GP/RF
-
-            # Trouver le login du chef
-            contrat_chef = Contrat.objects.filter(
-                fonction  = chef_fonction,
-                dateFin__isnull = True
-            ).first()
-
-            if not contrat_chef:
-                return []
-
-            login_chef = Login.objects.filter(
-                personnelle=contrat_chef.personnelle
-            ).first()
-
-            return [login_chef] if login_chef else []
+            conge.save()
+            NotificationServices.notifier_apres_validation(   # [NOTIF]
+                conge, 'chefs', decision, motif, login
+            )
+            return conge
 
         # ── ÉTAPE GP / RF (FINANCEMENT) ───────
         elif etape == 'gp_rf':
@@ -170,7 +169,6 @@ class ValidationService:
         elif etape == 'cn':
             cn_login = Login.objects.filter(role__name='Superadmin').first()
             cn_login = ValidationService.get_login_disponible(cn_login)
-
             if not cn_login or login.id != cn_login.id:
                 raise ValueError("Seul le Coordinateur National (Superadmin) peut valider cette étape.")
 
@@ -185,7 +183,6 @@ class ValidationService:
         elif etape == 'rh':
             rh_login = Login.objects.filter(role__name='admin').first()
             rh_login = ValidationService.get_login_disponible(rh_login)
-
             if not rh_login or login.id != rh_login.id:
                 raise ValueError("Seul un administrateur des Ressources Humaines peut clore cette étape.")
 

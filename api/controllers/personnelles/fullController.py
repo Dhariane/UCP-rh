@@ -1,5 +1,7 @@
 from argparse import Action
+from datetime import date
 
+from api.models.conge.soldeConge import SoldeConge
 from api.models.diplome.diplome import Diplome
 from api.models.diplome.experience import Experience
 from api.models.diplome.typeDiplome import DiplomeType
@@ -177,6 +179,13 @@ class PersonnelFullController(APIView):
                     "dateFin": data.get("dateSortie") or None,
                     "financement": financement
                 })
+                solde = SoldeConge.objects.filter(
+                    personnel=personnelles,
+                    annee=date.today().year
+                ).first()
+                if solde:
+                    solde.is_manual = False
+                    solde.save()
 
                 # 7. Contacts d'urgence
                 if data.get("personne1"):
