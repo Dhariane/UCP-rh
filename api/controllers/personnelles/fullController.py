@@ -1,6 +1,7 @@
 from argparse import Action
 from datetime import date
 
+from api.models.banque.banques import Banques
 from api.models.conge.soldeConge import SoldeConge
 from api.models.diplome.diplome import Diplome
 from api.models.diplome.experience import Experience
@@ -110,7 +111,8 @@ class PersonnelFullController(APIView):
                 fonction_obj = FonctionsModel.objects.get(id=data.get("fonction"))
 
                 # 2. Banque et Agence
-                banque = BanqueService.create({"nom": data.get("banque")})
+                banque_nom = data.get("banque")
+                banque, created = Banques.objects.get_or_create(nom=banque_nom)
                 agence = AgenceService.create({
                     "nom": data.get("agence"),
                     "ville": data.get("villeAgence")
