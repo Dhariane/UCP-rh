@@ -6,6 +6,12 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
+import ssl
+import certifi
+ssl.create_default_context = lambda *args, **kwargs: ssl.create_default_context(
+    cafile=certifi.where()
+)
+
 # 1. Définition de la racine du projet (BASE_DIR)
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -163,13 +169,20 @@ DUREE_VALIDATION_INSCRIPTION = 300
 
 # Configuration Email (Gmail)
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'misarabesa@gmail.com'
+# ✅ Utiliser le backend personnalisé
+EMAIL_BACKEND    = 'api.email_backend.SSLEmailBackend'
+EMAIL_HOST       = 'smtp.gmail.com'
+EMAIL_PORT       = 465
+EMAIL_USE_SSL    = True
+EMAIL_USE_TLS    = False
+EMAIL_HOST_USER     = 'misarabesa@gmail.com'
 EMAIL_HOST_PASSWORD = 'diwi clxv fsky llfp'
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+DEFAULT_FROM_EMAIL  = EMAIL_HOST_USER
+
+EMAIL_SSL_CERTFILE = None
+EMAIL_SSL_KEYFILE  = None
+
+
 
 # Remplace tout ton ancien bloc email par celui-ci (les codes sont dans ton Mailtrap)
 #EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
