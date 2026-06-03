@@ -110,7 +110,7 @@ class PersonnelFullController(APIView):
 
                 # 2. Banque et Agence
                 banque_nom = data.get("banque")
-                banque, created = Banques.objects.get_or_create(nom=banque_nom
+                banque, created = Banques.objects.get_or_create(nom=banque_nom)
                 agence = AgenceService.create({
                     "nom": data.get("agence"),
                     "ville": data.get("villeAgence")
