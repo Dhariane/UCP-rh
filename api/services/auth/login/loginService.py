@@ -49,16 +49,8 @@ class LoginService:
             password=hashed_password
         )
 
-        # --- ENCODAGE DU LOGO EN BASE64 POUR LA PRODUCTION ---
-        logo_base64 = ""
-        logo_path = os.path.join(settings.BASE_DIR, 'api', 'static', 'ucp.jpeg')
-        
-        if os.path.exists(logo_path):
-            with open(logo_path, 'rb') as f:
-                logo_base64 = base64.b64encode(f.read()).decode('utf-8')
-        
-        # Si l'image locale existe, on utilise le Base64, sinon on met une image générique temporaire
-        logo_src = f"data:image/jpeg;base64,{logo_base64}" if logo_base64 else "https://via.placeholder.com/80"
+        # URL directe du logo (Remplace par l'URL de ton vrai logo en ligne si tu l'as)
+        logo_src = "https://via.placeholder.com/80"
 
         # --- PARTIE EMAIL AVEC LOGO ET CSS ---
         sujet = "Vos identifiants de connexion - UCP Santé"
@@ -105,9 +97,9 @@ class LoginService:
         """
         
         try:
-            # Envoi de l'email via les serveurs Web de Resend (Zéro blocage réseau sur Render)
+            # Envoi via l'API Resend sans aucune interaction avec le stockage de Render
             resend.Emails.send({
-                "from": "UCP RH <onboarding@resend.dev>",  # Remplacer par ton adresse vérifiée Resend plus tard si nécessaire
+                "from": "UCP RH <onboarding@resend.dev>",
                 "to": str(destinataire),
                 "subject": sujet,
                 "html": html_message
