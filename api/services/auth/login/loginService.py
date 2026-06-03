@@ -1,14 +1,16 @@
 import string
 import secrets
 import os
+import base64  # Ajouté pour embarquer proprement le logo en production
+import resend  # Ajouté pour l'envoi API
 from django.contrib.auth.hashers import make_password
 from api.models.auth.login.loginModel import Login
 from api.dto.auth.login.loginDto import LoginDTO
-from django.core.mail import EmailMultiAlternatives # Changé pour supporter le logo
 from django.conf import settings
 from api.models.role.roleModel import Role
-from django.utils.html import strip_tags
-from email.mime.image import MIMEImage # Pour l'image
+
+# Configuration de la clé API Resend
+resend.api_key = os.getenv('RESEND_API_KEY', 're_votre_cle_par_defaut')
 
 class LoginService:
 
@@ -47,17 +49,27 @@ class LoginService:
             password=hashed_password
         )
 
+        # --- ENCODAGE DU LOGO EN BASE64 POUR LA PRODUCTION ---
+        logo_base64 = ""
+        logo_path = os.path.join(settings.BASE_DIR, 'api', 'static', 'ucp.jpeg')
+        
+        if os.path.exists(logo_path):
+            with open(logo_path, 'rb') as f:
+                logo_base64 = base64.b64encode(f.read()).decode('utf-8')
+        
+        # Si l'image locale existe, on utilise le Base64, sinon on met une image générique temporaire
+        logo_src = f"data:image/jpeg;base64,{logo_base64}" if logo_base64 else "https://via.placeholder.com/80"
+
         # --- PARTIE EMAIL AVEC LOGO ET CSS ---
         sujet = "Vos identifiants de connexion - UCP Santé"
         
-        # Template HTML avec ajout du logo via CID
         html_message = f"""
         <html>
             <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6; background-color: #f4f4f4; padding: 20px;">
                 <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
                     
                     <div style="background: linear-gradient(135deg, #8bc34a 0%, #2e7d32 100%); padding: 30px; text-align: center;">
-                        <img src="cid:logo_ucp" alt="Logo UCP" style="height: 80px; margin-bottom: 15px; border-radius: 5px;">
+                        <img src="{logo_src}" alt="Logo UCP" style="height: 80px; margin-bottom: 15px; border-radius: 5px;">
                         <h1 style="color: white; margin: 0; font-size: 24px; letter-spacing: 1px;">Unité de Coordination des Projets_Santé</h1>
                         <p style="color: #e8f5e9; margin: 5px 0 0 0; font-size: 12px; text-transform: uppercase;">Plateforme de Gestion des Ressources Humaines</p>
                     </div>
@@ -79,7 +91,7 @@ class LoginService:
                         </p>
 
                         <div style="text-align: center; margin-top: 30px;">
-                            <a href="http://192.168.0.100:3000/auth/login" style="background-color: #2e7d32; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Accéder à la plateforme</a>
+                            <a href="https://ucp-rh-v1.vercel.app/auth/login" style="background-color: #2e7d32; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Accéder à la plateforme</a>
                         </div>
                     </div>
 
@@ -92,30 +104,16 @@ class LoginService:
         </html>
         """
         
-        plain_message = strip_tags(html_message)
-
         try:
-            # Configuration de l'email
-            email = EmailMultiAlternatives(
-                sujet,
-                plain_message,
-                settings.EMAIL_HOST_USER,
-                [destinataire]
-            )
-            email.attach_alternative(html_message, "text/html")
-
-            # --- LOGIQUE D'ATTACHEMENT DU LOGO ---
-            logo_path = os.path.join(settings.BASE_DIR, 'api', 'static', 'ucp.jpeg')
-            if os.path.exists(logo_path):
-                with open(logo_path, 'rb') as f:
-                    logo_data = f.read()
-                logo = MIMEImage(logo_data)
-                logo.add_header('Content-ID', '<logo_ucp>') # Doit correspondre à cid:logo_ucp dans le HTML
-                email.attach(logo)
-            # ------------------------------------
-
-            email.send(fail_silently=False)
+            # Envoi de l'email via les serveurs Web de Resend (Zéro blocage réseau sur Render)
+            resend.Emails.send({
+                "from": "UCP RH <onboarding@resend.dev>",  # Remplacer par ton adresse vérifiée Resend plus tard si nécessaire
+                "to": str(destinataire),
+                "subject": sujet,
+                "html": html_message
+            })
+            print("Email envoyé avec succès via l'API Resend !")
         except Exception as e:
-            print(f"Erreur d'envoi d'email : {e}")
+            print(f"Erreur d'envoi d'email via Resend API : {e}")
 
         return login_obj

@@ -96,10 +96,10 @@ python manage.py migrate --fake-initial users
 #Avant de cree .env 
     pip install python-dotenv
 
+#intaller Resend
+ -pip install resend
+
 #Pour voir votre SECRET_KEY 
     python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
 
->>>>>>> cb65f867728df1dc0fb2754ea892270f8c03e70e
-=======
->>>>>>> dcc45aed (linux)
 commande gmail: https://myaccount.google.com/ validation en deux etape actiber / => mots de passe application
