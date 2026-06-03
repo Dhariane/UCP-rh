@@ -159,8 +159,11 @@ DUREE_VALIDATION_INSCRIPTION = 300
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+EMAIL_PORT = 465                # On passe du port 587 au port 465
+EMAIL_USE_TLS = False           # On désactive le TLS
+EMAIL_USE_SSL = True
 EMAIL_HOST_USER = 'misarabesa@gmail.com'
 EMAIL_HOST_PASSWORD = 'diwi clxv fsky llfp'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
