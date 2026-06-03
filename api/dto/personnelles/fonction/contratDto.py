@@ -16,5 +16,6 @@ class ContratDto(serializers.ModelSerializer):
             "dateDebut",  
             "service",   
             "dateFin",       
-            "financement",   
+            "financement", 
+            "is_actif"  
         ]

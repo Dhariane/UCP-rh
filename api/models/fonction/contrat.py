@@ -70,6 +70,11 @@ class Contrat(models.Model):
         on_delete=models.CASCADE,
         related_name="contrats"
     )
+    
+    is_actif = models.BooleanField(
+        default=True,
+        verbose_name="Contrat Actif"
+    )
 
     class Meta:
         verbose_name = "Contrat"
