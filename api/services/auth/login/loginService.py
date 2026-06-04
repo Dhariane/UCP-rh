@@ -10,7 +10,7 @@ from django.conf import settings
 from api.models.role.roleModel import Role
 
 # Configuration de la clé API Resend
-resend.api_key = os.getenv('RESEND_API_KEY', 're_votre_cle_par_defaut')
+resend.api_key = os.getenv('RESEND_API_KEY', 're_7DeKNVf8_DPZhx5b6UMuFTUmntMHK2izy')
 
 class LoginService:
 
