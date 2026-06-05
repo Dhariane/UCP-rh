@@ -48,7 +48,6 @@ class Personnelles(BaseNom):
         max_length=100,
         null=True,
         blank=True,
-        unique=True
     )
     cinphoto=models.FileField(
         upload_to='photocin/'
@@ -64,7 +63,14 @@ class Personnelles(BaseNom):
 
     is_active=models.BooleanField(default=True)
 
-
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['emailPerso'],
+                condition=models.Q(emailPerso__isnull=False),
+                name='unique_emailPerso_not_null'
+            )
+        ]
     def __str__(self):
         return f"{self.prenom} {self.nom}"
     

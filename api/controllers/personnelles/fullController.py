@@ -295,16 +295,21 @@ class PersonnelFullController(APIView):
                         donnees_enfant["certificatVie"] = fichier_certificat
                     EnfantService.create(donnees_enfant)
 
-                LoginService.create(propos)
+            propos_final = propos  
+            if propos_final:
+                try:
+                    LoginService.create(propos_final)
+                except Exception as email_error:
+                    print(f"⚠️ Email échoué : {email_error}")
 
-                return Response({"status": "success", 
-                                 "message": "Personnel et accès créés avec succès Son Compte est creer et un email de notification a été envoyé"},
-                                 status=201)
-
+            return Response({
+                "status": "success",
+                "message": "Personnel créé avec succès. Un email a été envoyé."
+            }, status=201)
         except Exception as e:
             print("ERREUR CRITIQUE :", str(e))
-            return Response({"error": str(e)}, status=400)
-
+            return Response({"error": str(e)}, status=400)                    
+       
     from django.db.models import Prefetch
 
     def get(self, request, pk=None):
