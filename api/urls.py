@@ -3,6 +3,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from api.controllers import *
+from api.controllers.conge.notificationController import NotificationController, NotificationMarquerLuController, NotificationNonLuesCountController, NotificationToutLireController
 from api.controllers.conge.validationController import ValidationCongeController
 from api.controllers.personnelles.diplome.typeDiplomeController import DiplomeTypeController
 from api.controllers.personnelles.fonction.listFonctionController import FonctionListController
@@ -44,6 +45,7 @@ urlpatterns = [
     path("photos", PhotosController.as_view(), name="photos"),
     path("photos/<int:id>/", PhotosController.as_view(), name="photo-detail"),
     path("fullpersonnelles",PersonnelFullController.as_view(),name='fullpersonnelles'),
+    path('personnel/<int:pk>/', PersonnelFullController.as_view(), name='personnel-detail'),
     path("familles",FamilleController.as_view(),name="familles"),
     path("familles/<int:id>/",FamilleController.as_view(),name="famille-detail"),
     # path('fullpersonnelles/<int:id>/', PersonnelFullController.as_view(), name='full-personnel-detail'),
@@ -98,6 +100,11 @@ urlpatterns = [
     path('rh/fonctions/<int:id>/', FonctionCRUDController.as_view()),
     path('rh/services/',           ServiceCRUDController.as_view()),
     path('rh/services/<int:id>/',  ServiceCRUDController.as_view()),
+    path('notifications/',          NotificationController.as_view()),
+    path('notifications/<int:id>/', NotificationController.as_view()),
+    path('notifications/non-lues/count/', NotificationNonLuesCountController.as_view()),
+    path('notifications/<int:id>/lire/',  NotificationMarquerLuController.as_view()),
+    path('notifications/tout-lire/',      NotificationToutLireController.as_view()),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

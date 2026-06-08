@@ -26,18 +26,24 @@ class CongeServices:
 
     @staticmethod
     def create(data) -> Conge:
-        statut_attente = Statut.objects.get(id=1)  # ← attente_chef
+        try:
+            statut_attente = Statut.objects.get(id=1)
+        except Statut.DoesNotExist:
+            raise ValueError("Le statut initial (ID: 1) n'existe pas en base de données.")
 
+        # On extrait proprement chaque champ validé par le DTO
         conge = Conge.objects.create(
-            personnel         = data.get('personnel'),
-            type_conge        = data.get('type_conge'),
-            solde_conge       = data.get('solde_conge'),
-            date_debut        = data.get('date_debut'),
-            date_fin          = data.get('date_fin'),
-            description       = data.get('description'),
-            passation_service = data.get('passation_service'),
-            statut            = statut_attente,
+            personnel=data.get('personnel'),
+            type_conge=data.get('type_conge'),
+            solde_conge=data.get('solde_conge'),
+            date_debut=data.get('date_debut'),
+            date_fin=data.get('date_fin'),
+            description=data.get('description'),
+            passation_service=data.get('passation_service'),  # L'instance ou None
+            statut=statut_attente,
+            validated_by=data.get('validated_by')
         )
+        
         return conge
 
     @staticmethod
@@ -89,4 +95,23 @@ class CongeServices:
         
         conge.statut = statut_annule
         conge.save()
+        return conge
+    
+    @staticmethod
+    def accepterPassation(conge_id: int) -> Conge:
+        """
+        Appelé quand le remplaçant accepte la passation de service.
+        Fait passer directement le congé à l'étape du chef direct.
+        """
+        conge = Conge.objects.get(id=conge_id)
+        
+        # On fait passer l'étape au chef direct
+        conge.etape_validation = 'chef'
+        conge.save()
+        
+        # 🚨 On déclenche manuellement la notification vers le chef 
+        # en important la fonction depuis ton fichier de signaux
+        from api.signal.conge_signal import envoi_notification_suivante
+        envoi_notification_suivante(conge)
+        
         return conge

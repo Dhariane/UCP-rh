@@ -60,26 +60,34 @@ from django.utils import timezone
 class SoldeCongeRHController(APIView):
 
     def get(self, request):
-        """Liste tous les soldes avec infos personnel"""
-        annee  = request.query_params.get('annee', timezone.now().year)
-        soldes = SoldeConge.objects.filter(
-            annee=annee
-        ).select_related('personnel')
+        """Liste TOUS les employés avec leur solde (généré à la volée si manquant)"""
+        annee = request.query_params.get('annee', timezone.now().year)
+        
+        # 1. On récupère tous les employés actifs
+        personnels = Personnelles.objects.filter(is_active=True)
+        
+        data = []
+        for p in personnels:
+            # 2. Pour chaque employé, on récupère son solde ou on le crée s'il n'existe pas encore
+            # (get_or_create va automatiquement exécuter ton calcul_total() grâce au .save() interne)
+            solde, created = SoldeConge.objects.get_or_create(
+                personnel=p,
+                annee=annee
+            )
+            
+            # 3. On ajoute les infos au tableau final
+            data.append({
+                "id":         solde.id,
+                "personnel_id": p.id,
+                "nom":          p.nom,
+                "prenom":       p.prenom,
+                "annee":        solde.annee,
+                "total":        solde.total,
+                "utilise":      solde.utilise,
+                "reste":        solde.reste,
+                "is_manual":    solde.is_manual,
+            })
 
-        data = [
-            {
-                "id":           s.id,
-                "personnel_id": s.personnel.id,
-                "nom":          s.personnel.nom,
-                "prenom":       s.personnel.prenom,
-                "annee":        s.annee,
-                "total":        s.total,
-                "utilise":      s.utilise,
-                "reste":        s.reste,
-                "is_manual":    s.is_manual,
-            }
-            for s in soldes
-        ]
         return Response({"status": "success", "data": data})
 
     def patch(self, request, solde_id):
@@ -96,15 +104,11 @@ class SoldeCongeRHController(APIView):
                 }, status=status.HTTP_400_BAD_REQUEST)
 
             if action == 'modifier':
-                # ✅ Remplacer le total
                 solde.total     = min(jours, 72)
                 solde.is_manual = True
-
             elif action == 'ajouter':
-                # ✅ Ajouter au total existant
                 solde.total     = min(solde.total + jours, 72)
                 solde.is_manual = True
-
             else:
                 return Response({
                     "status":  "error",
@@ -135,14 +139,6 @@ class SoldeCongeRHController(APIView):
                 "status":  "error",
                 "message": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-
-from api.dto.conge import soldeCongeDto
-from api.models.conge.soldeConge import SoldeConge
-from api.services.conge.soldeCongeService import SoldeCongeServices
-from api.dto.conge.soldeCongeDto import SoldeCongeDTO
 
 
 class SoldeCongeController(APIView):

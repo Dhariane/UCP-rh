@@ -37,9 +37,11 @@ from api.services.personnelles.fonction.modefinancementService import ModeFinanc
 from api.models import EtatCivil,Sexes,Relations,Postes,Personnelles,Services,ModeFinancement,Cins, fonction
 from api.services.auth.login.loginService import  LoginService
 from django.db.models import Prefetch
+from rest_framework.permissions import AllowAny
 
 class PersonnelFullController(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+    permission_classes = [AllowAny]
     def post(self, request):
         data = request.data
         # CAPI DES FICHIERS IMMÉDIATEMENT (Sécurité pour éviter les None)
@@ -304,7 +306,8 @@ class PersonnelFullController(APIView):
 
             return Response({
                 "status": "success",
-                "message": "Personnel créé avec succès. Un email a été envoyé."
+                "message": "Personnel créé avec succès. Un email a été envoyé.",
+                "matricule": personnelles.matricule 
             }, status=201)
         except Exception as e:
             print("ERREUR CRITIQUE :", str(e))
@@ -479,15 +482,14 @@ class PersonnelFullController(APIView):
             return Response({"error": "Personnel non trouvé"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": f"Erreur critique: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
     def delete(self, request, pk):
         try:
             personne = Personnelles.objects.get(pk=pk)
-            # Pas besoin de supprimer le CIN ou le RIB à la main, 
-            # le CASCADE s'en charge automatiquement !
             personne.delete() 
             return Response(
                 {"message": f"Le personnel ID {pk} et toutes ses données liées ont été supprimés."}, 
-                status=status.HTTP_204_NO_CONTENT
+                status=status.HTTP_200_OK # Remplacer 204 par 200 si tu veux que le JSON de message soit lu par le front
             )
         except Personnelles.DoesNotExist:
             return Response({"error": "Personnel non trouvé"}, status=status.HTTP_404_NOT_FOUND)
