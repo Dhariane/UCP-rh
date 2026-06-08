@@ -3,7 +3,13 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from api.controllers import *
+<<<<<<< HEAD
 from api.controllers.conge.validationController import CongeValidationHistoriqueController
+=======
+from api.controllers.conge.congeController import CongesEnAttenteController
+from api.controllers.conge.notificationController import NotificationController, NotificationMarquerLuController, NotificationNonLuesCountController, NotificationToutLireController
+from api.controllers.conge.validationController import ValidationCongeController
+>>>>>>> e90d3e6c (nouvel branche)
 from api.controllers.personnelles.diplome.typeDiplomeController import DiplomeTypeController
 from api.controllers.personnelles.fonction.superieurController import SuperieurController
 from api.controllers.conge.soldeCongeController import SoldeCongeRHController
@@ -108,7 +114,7 @@ urlpatterns = [
     path('notifications/non-lues/count/', NotificationNonLuesCountController.as_view()),
     path('notifications/<int:id>/lire/',  NotificationMarquerLuController.as_view()),
     path('notifications/tout-lire/',      NotificationToutLireController.as_view()),
-    path('conge/<int:id>/validations/', CongeValidationHistoriqueController.as_view(), name='conge-historique')
+    path('conge/en-attente/<int:login_id>/', CongesEnAttenteController.as_view(), name='conges-en-attente'),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
