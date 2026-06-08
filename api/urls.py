@@ -97,6 +97,7 @@ urlpatterns = [
     path('rh/fonctions/<int:id>/', FonctionCRUDController.as_view()),
     path('rh/services/',           ServiceCRUDController.as_view()),
     path('rh/services/<int:id>/',  ServiceCRUDController.as_view()),
+    path('/conge/en-attente/', CongeController.as_view(), name='conge-en-attente'),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
