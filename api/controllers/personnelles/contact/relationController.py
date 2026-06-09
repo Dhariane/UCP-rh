@@ -1,3 +1,4 @@
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -68,7 +69,7 @@ class RelationController(APIView):
         
         try:
             etat = RelationService.update(id, valiny.validated_data["nom"], valiny.validated_data["grade"])
-            return Response(RelationDTO(etat).data, status=status.HTTP_200_OK)
+            return Response(RelationDto(etat).data, status=status.HTTP_200_OK)
         except Relations.DoesNotExist:
             response = {
                 "status": "error",

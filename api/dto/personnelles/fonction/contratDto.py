@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from api.models.fonction.contrat import Contrat
-
+#
 class ContratDto(serializers.ModelSerializer):
     class Meta:
         model = Contrat
@@ -12,4 +12,10 @@ class ContratDto(serializers.ModelSerializer):
             "typeContrat",
             "salaire",
             "personnelle",
+            "fonction",      
+            "dateDebut",  
+            "service",   
+            "dateFin",       
+            "financement", 
+            "is_actif"  
         ]

@@ -14,6 +14,13 @@ class Personnelles(BaseNom):
     lieuNaissance = models.CharField(
         max_length=200
     )
+
+    matricule = models.CharField(
+        max_length=20, 
+        unique=True, 
+        null=True, 
+        blank=True
+    )
     sexe = models.ForeignKey(
         Sexes, 
         on_delete=models.PROTECT,
@@ -48,7 +55,6 @@ class Personnelles(BaseNom):
         max_length=100,
         null=True,
         blank=True,
-        unique=True
     )
     cinphoto=models.FileField(
         upload_to='photocin/'
@@ -62,7 +68,16 @@ class Personnelles(BaseNom):
         upload_to='Casierjudiciaire/'
     )
 
+    is_active=models.BooleanField(default=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['emailPerso'],
+                condition=models.Q(emailPerso__isnull=False),
+                name='unique_emailPerso_not_null'
+            )
+        ]
     def __str__(self):
         return f"{self.prenom} {self.nom}"
     

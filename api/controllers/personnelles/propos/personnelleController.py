@@ -79,3 +79,16 @@ class PersonnelleController(APIView):
     def patch(self, request, id):
         """Autorise explicitement la méthode PATCH en utilisant la logique du PUT"""
         return self.put(request, id)
+
+    def patch(self, request, id=None):
+        try:
+            from api.models import Personnelles
+            personnel = Personnelles.objects.get(id=id)
+            personnel.is_active = not personnel.is_active
+            personnel.save()
+            return Response({
+                "status": "success",
+                "is_active": personnel.is_active
+            }, status=status.HTTP_200_OK)
+        except Personnelles.DoesNotExist:
+            return Response({"status": "error", "message": "Introuvable"}, status=status.HTTP_404_NOT_FOUND)    

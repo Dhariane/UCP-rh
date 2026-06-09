@@ -7,7 +7,15 @@ from .soldeConge import SoldeConge
 from .passationservice import PassationService
 
 class Conge(models.Model):
-
+    ETAPES = [
+                ('passation', 'En attente remplaçant'),
+                ('chef',    'En attente chef'),
+                ('gp_rf',   'En attente GP/RF'),
+                ('cn',      'En attente CN'),
+                ('rh',      'En attente RH'),
+                ('termine', 'Terminé'),
+        ]
+    
     personnel = models.ForeignKey(
         Personnelles,
         on_delete=models.CASCADE,
@@ -55,6 +63,14 @@ class Conge(models.Model):
         blank=True,
         related_name='conges_passation'
     )
+    # ✅ AJOUTER JUSTE CE CHAMP
+    etape_validation = models.CharField(
+        max_length=20,
+        choices=ETAPES,
+        default='passation',
+        null=True,
+        blank=True
+    )
 
     class Meta:
         ordering = ['-created_at']
@@ -80,11 +96,17 @@ class Conge(models.Model):
 
     # 🔥 LOGIQUE MÉTIER COMPLETE
     def save(self, *args, **kwargs):
-
+        # On exécute la validation clean() qui calcule le 'nombre_jours'
         self.clean()
 
-        old_statut_id = None
+        # ── NOUVELLE RÈGLE : Choix de l'étape de départ à la création ──
+        if not self.pk:  # Si c'est une nouvelle demande (pas encore d'ID)
+            if self.nombre_jours == 1:
+                self.etape_validation = 'chef'  # Directement chez le chef !
+            else:
+                self.etape_validation = 'passation'  # Circuit normal avec remplaçant
 
+        old_statut_id = None
         if self.pk:
             old = Conge.objects.get(pk=self.pk)
             old_statut_id = old.statut_id

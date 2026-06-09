@@ -1,3 +1,4 @@
+
 from .personnelles.propos.personnelleController import PersonnelleController
 from .auth.login.loginController import LoginController
 from .personnelles.propos.etatCivilController import EtatCivilController
@@ -30,7 +31,11 @@ from .conge.soldeCongeController import SoldeCongeController
 from .conge.statutController import StatutController
 from .conge.typeCongeController import TypeCongeController
 from .conge.passationServiceController import PassationServiceController
+from .conge.ConfigPlanningController import ConfigPlanningController
 from .usermanage.usermanageController import UserManagementController
+from .personnelles.fonction.listFonctionController import FonctionListController
+from .history.PersonnelContratHistoryController import PersonnelContratHistoryController
+
 __all__ = [
     "EtatCivilController",
     "ProposController",
@@ -65,5 +70,9 @@ __all__ = [
     "StatutController",
     "TypeCongeController",
     "PassationServiceController",
-    "UserManagementController"
+    "UserManagementController",
+    "ConfigPlanningController",
+    "UserManagementController",
+    "FonctionListController",
+    "PersonnelContratHistoryController"
 ]

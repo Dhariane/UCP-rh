@@ -3,225 +3,177 @@ from api.models.conge.conge import Conge
 from api.models.conge.validationConge import ValidationConge
 from api.models.conge.statut import Statut
 from api.models.conge.passationservice import PassationService
-from api.models.fonction.fonctions import Fonctions
+from api.models.fonction.contrat import Contrat
 from api.models.auth.login.loginModel import Login
 
 
 class ValidationService:
 
     # ─────────────────────────────────────────────
-    # HELPERS
+    # 1. HELPERS DE VÉRIFICATION & DISPONIBILITÉ
     # ─────────────────────────────────────────────
 
     @staticmethod
-    def est_en_conge(personnelle) -> bool:
-        """Vérifie si un personnel est en congé approuvé aujourd'hui"""
+    def est_en_conge(personnel_obj) -> bool:
+        """Vérifie si un employé est actuellement en congé validé"""
         today = timezone.now().date()
         return Conge.objects.filter(
-            personnel=personnelle,
-            statut__statut='approuve',
+            personnel=personnel_obj,
+            statut_id=2,
             date_debut__lte=today,
             date_fin__gte=today
         ).exists()
 
     @staticmethod
-    def get_remplacant(personnelle):
-        """Retourne le remplaçant d'un personnel depuis sa passation"""
+    def get_remplacant(personnel_obj):
+        """Récupère le compte Login du remplaçant d'un personnel absent"""
         passation = PassationService.objects.filter(
-            titulaire=personnelle
+            titulaire=personnel_obj
         ).order_by('-date_absence').first()
-
         if passation and passation.remplacant:
-            login = Login.objects.filter(
+            return Login.objects.filter(
                 personnelle=passation.remplacant
             ).first()
-            return login
         return None
 
     @staticmethod
     def get_login_disponible(login):
-        """Retourne le login ou son remplaçant s'il est en congé"""
+        """Si le valideur est en congé, retourne le compte de son remplaçant"""
         if not login:
             return None
-        if ValidationService.est_en_conge(login.personnelle):
-            return ValidationService.get_remplacant(login.personnelle)
+        if login.personnelle and ValidationService.est_en_conge(login.personnelle):
+            remplacant_login = ValidationService.get_remplacant(login.personnelle)
+            return remplacant_login if remplacant_login else login
         return login
+
+    # ─────────────────────────────────────────────
+    # 2. HELPERS D'AIGUILLAGE DU WORKFLOW
+    # ─────────────────────────────────────────────
+
+    @staticmethod
+    def get_chefs(conge):
+        """Trouve le login du chef direct du demandeur via son contrat actif"""
+        # On cherche le contrat actif du demandeur
+        contrat = Contrat.objects.filter(
+            personnelle=conge.personnel,  # Vérifie si ton modèle Contrat utilise 'personnel' ou 'personnelle' ici
+            is_actif=True
+        ).first()
+
+        if not contrat or not contrat.fonction or not contrat.fonction.chef_direct:
+            return []
+
+        chef_fonction = contrat.fonction.chef_direct
+
+        # Trouver le contrat actif de la personne qui occupe cette fonction de chef
+        contrat_chef = Contrat.objects.filter(
+            fonction=chef_fonction,
+            is_actif=True
+        ).first()
+
+        if not contrat_chef:
+            return []
+
+        login_chef = Login.objects.filter(
+            personnelle=contrat_chef.personnelle
+        ).first()
+
+        return [login_chef] if login_chef else []
 
     @staticmethod
     def get_valideur_gp_rf(conge):
-        """Retourne GP ou RF selon le financement du personnel"""
-        fonction = Fonctions.objects.filter(
-            personnelle=conge.personnel
-        ).last()
-
-        if not fonction:
+        """Détermine si le valideur budgétaire est un GP ou un Point Focal (RF)"""
+        contrat = Contrat.objects.filter(
+            personnelle=conge.personnel,
+            is_actif=True
+        ).first()
+        
+        if not contrat or not contrat.financement:
             return None
-
-        financement = fonction.financement.nom if fonction.financement else ""
-
-        if financement == "Fonds Mondial":
-            role_code = 'GP'
-        else:
-            role_code = 'RF'
-
+            
+        financement = contrat.financement.nom.upper()
+        
+        # Choix du rôle selon le financement rattaché au contrat
+        role_code = 'GP' if "FONDS MONDIAL" in financement or "FOND MONDIAL" in financement else 'RF'
+        
         login = Login.objects.filter(role__name=role_code).first()
         return ValidationService.get_login_disponible(login)
 
     @staticmethod
-    def get_chefs(conge):
-        """Retourne tous les chefs directs du personnel"""
-        fonction = Fonctions.objects.filter(
-            personnelle=conge.personnel
-        ).last()
-
-        if not fonction:
-            return []
-
-        return list(fonction.superieurs.all())
-
-    @staticmethod
     def cn_est_chef_direct(conge) -> bool:
-        """Vérifie si le CN est un chef direct du personnel"""
+        """Vérifie si le demandeur dépend directement du Coordinateur National (Superadmin)"""
         chefs = ValidationService.get_chefs(conge)
-        return any(chef.role.name == 'CN' for chef in chefs)
-
-    @staticmethod
-    def determiner_prochaine_etape(conge):
-        """
-        Détermine le prochain statut après validation de tous les chefs.
-        Si CN est chef direct → saute GP/RF et CN → va direct RH
-        Sinon → flux normal GP/RF → CN → RH
-        """
-        if ValidationService.cn_est_chef_direct(conge):
-            return 'attente_rh'
-        return 'attente_gp_rf'
+        return any(chef.role.name == 'Superadmin' for chef in chefs)
 
     # ─────────────────────────────────────────────
-    # VALIDATION PRINCIPALE
+    # 3. MÉTHODE PRINCIPALE DE VALIDATION
     # ─────────────────────────────────────────────
 
     @staticmethod
     def valider(conge_id: int, login_id: int, decision: str, motif: str = None):
-        """Valider ou refuser une étape du congé"""
-        conge   = Conge.objects.get(id=conge_id)
-        login   = Login.objects.get(id=login_id)
-        statut_code = conge.statut.statut
+        conge = Conge.objects.get(id=conge_id)
+        login = Login.objects.get(id=login_id)
+        etape = conge.etape_validation
 
-        # ── Étape CHEFS ──────────────────────────
-        if statut_code == 'attente_chef':
-
+        # ── ÉTAPE CHEF DIRECT ─────────────────
+        if etape == 'chef':
             chefs = ValidationService.get_chefs(conge)
-            chefs_ids = [c.id for c in chefs]
+            if not chefs:
+                raise ValueError("Aucun chef direct assigné à votre fonction.")
+                
+            chef_attendu = ValidationService.get_login_disponible(chefs[0])
+            if login.id != chef_attendu.id:
+                raise ValueError("Vous n'êtes pas autorisé à valider cette étape hiérarchique.")
 
-            # Vérifier que ce login est bien un chef de ce personnel
-            if login.id not in chefs_ids:
-                raise ValueError("Vous n'êtes pas chef de ce personnel")
-
-            # Enregistrer la validation de ce chef
             ValidationConge.objects.create(
-                conge    = conge,
-                etape    = 'chef',
-                decision = decision,
-                valideur = login,
-                motif    = motif,
+                conge=conge, etape='chef',
+                decision=decision, valideur=login, motif=motif
             )
-
-            if decision == 'refuse':
-                conge.statut = Statut.objects.get(statut='refuse')
-                conge.save()
-                return conge
-
-            # Vérifier si tous les chefs ont validé
-            chefs_qui_ont_valide = ValidationConge.objects.filter(
-                conge    = conge,
-                etape    = 'chef',
-                decision = 'approuve'
-            ).values_list('valideur_id', flat=True)
-
-            chefs_restants = [
-                c for c in chefs_ids
-                if c not in chefs_qui_ont_valide
-            ]
-
-            if chefs_restants:
-                # Pas encore tous validé → on reste à attente_chef
-                return conge
-
-            # Tous les chefs ont validé → étape suivante
-            prochain_statut = ValidationService.determiner_prochaine_etape(conge)
-            conge.statut = Statut.objects.get(statut=prochain_statut)
-            conge.save()
+            conge.refresh_from_db()
             return conge
 
-        # ── Étape GP/RF ──────────────────────────
-        if statut_code == 'attente_gp_rf':
+        # ── ÉTAPE GP / RF (FINANCEMENT) ───────
+        elif etape == 'gp_rf':
             valideur_attendu = ValidationService.get_valideur_gp_rf(conge)
-
             if not valideur_attendu or login.id != valideur_attendu.id:
-                raise ValueError("Vous n'êtes pas autorisé à valider cette étape")
+                raise ValueError("Vous n'êtes pas autorisé à valider le financement de cette étape.")
+
+            label_etape = 'gp' if valideur_attendu.role.name == 'GP' else 'rf'
 
             ValidationConge.objects.create(
-                conge    = conge,
-                etape    = 'gp_rf',
-                decision = decision,
-                valideur = login,
-                motif    = motif,
+                conge=conge, etape=label_etape,
+                decision=decision, valideur=login, motif=motif
             )
-
-            if decision == 'refuse':
-                conge.statut = Statut.objects.get(statut='refuse')
-            else:
-                conge.statut = Statut.objects.get(statut='attente_cn')
-
-            conge.save()
+            conge.refresh_from_db()
             return conge
 
-        # ── Étape CN ─────────────────────────────
-        if statut_code == 'attente_cn':
-            cn_login = Login.objects.filter(role__name='CN').first()
+        # ── ÉTAPE CN (COORDINATEUR NATIONAL) ──
+        elif etape == 'cn':
+            cn_login = Login.objects.filter(role__name='Superadmin').first()
             cn_login = ValidationService.get_login_disponible(cn_login)
 
             if not cn_login or login.id != cn_login.id:
-                raise ValueError("Vous n'êtes pas autorisé à valider cette étape")
+                raise ValueError("Seul le Coordinateur National (Superadmin) peut valider cette étape.")
 
             ValidationConge.objects.create(
-                conge    = conge,
-                etape    = 'cn',
-                decision = decision,
-                valideur = login,
-                motif    = motif,
+                conge=conge, etape='cn',
+                decision=decision, valideur=login, motif=motif
             )
-
-            if decision == 'refuse':
-                conge.statut = Statut.objects.get(statut='refuse')
-            else:
-                conge.statut = Statut.objects.get(statut='attente_rh')
-
-            conge.save()
+            conge.refresh_from_db()
             return conge
 
-        # ── Étape RH ─────────────────────────────
-        if statut_code == 'attente_rh':
-            rh_login = Login.objects.filter(role__name='RH').first()
+        # ── ÉTAPE RH (RESSOURCES HUMAINES) ────
+        elif etape == 'rh':
+            rh_login = Login.objects.filter(role__name='admin').first()
             rh_login = ValidationService.get_login_disponible(rh_login)
 
             if not rh_login or login.id != rh_login.id:
-                raise ValueError("Vous n'êtes pas autorisé à valider cette étape")
+                raise ValueError("Seul un administrateur des Ressources Humaines peut clore cette étape.")
 
             ValidationConge.objects.create(
-                conge    = conge,
-                etape    = 'rh',
-                decision = decision,
-                valideur = login,
-                motif    = motif,
+                conge=conge, etape='rh',
+                decision=decision, valideur=login, motif=motif
             )
-
-            if decision == 'refuse':
-                conge.statut = Statut.objects.get(statut='refuse')
-            else:
-                conge.statut = Statut.objects.get(statut='approuve')
-
-            conge.save()
+            conge.refresh_from_db()
             return conge
 
-        raise ValueError(f"Statut inconnu : {statut_code}")
+        raise ValueError(f"Étape de validation invalide ou inconnue : {etape}")

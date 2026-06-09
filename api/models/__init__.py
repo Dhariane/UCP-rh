@@ -29,3 +29,5 @@ from .conge.typeConges import TypeConge
 from .conge.passationservice import PassationService
 from .conge.validationConge import ValidationConge
 from .permission.permissionModel import Permissions
+from .diplome.typeDiplome import DiplomeType
+from .conge.notification import Notification
