@@ -14,6 +14,10 @@ from api.controllers.personnelles.fonction.ServiceController import ServiceCRUDC
 from api.controllers.conge.congePlanifieController import CongePlanifieController, CongePlanifieDetailController
 from api.controllers.conge.congeController import CongesEnAttenteController,CongeController
 from .controllers import ConfigPlanningController
+
+# ✅ 1. IMPORTER LE NOUVEAU CONTRÔLEUR D'HISTORIQUE (s'il est dans le même fichier views/controllers)
+from api.controllers import PersonnelContratHistoryController
+
 urlpatterns = [
     path('login', LoginController.as_view(), name='login'),
     path('personnelle', PersonnelleController.as_view(), name='personnelle'),
@@ -46,11 +50,13 @@ urlpatterns = [
     path("photos", PhotosController.as_view(), name="photos"),
     path("photos/<int:id>/", PhotosController.as_view(), name="photo-detail"),
     path("fullpersonnelles",PersonnelFullController.as_view(),name='fullpersonnelles'),
-    path('personnel/<int:pk>/', PersonnelFullController.as_view(), name='personnel-detail'),
+    path('fullpersonnelles/<int:pk>/', PersonnelFullController.as_view(),name='fullpersonnelles-detail'),
+    
+    # ✅ 2. LA NOUVELLE ROUTE POUR L'HISTORIQUE ATTENDUE PAR LE FRONT
+    path('fullpersonnelles/<int:personnel_id>/archive/', PersonnelContratHistoryController.as_view(), name='fullpersonnelles-archive'),
+
     path("familles",FamilleController.as_view(),name="familles"),
     path("familles/<int:id>/",FamilleController.as_view(),name="famille-detail"),
-    # path('fullpersonnelles/<int:id>/', PersonnelFullController.as_view(), name='full-personnel-detail'),
-    path('fullpersonnelles/<int:pk>/', PersonnelFullController.as_view()),
     path('experiences', ExperienceController.as_view(), name='experience'),
     path('experiences/<int:id>/', ExperienceController.as_view(), name='experience-detail'),
     path('diplomes', DiplomeController.as_view(), name='diplome'),
@@ -118,7 +124,6 @@ urlpatterns = [
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

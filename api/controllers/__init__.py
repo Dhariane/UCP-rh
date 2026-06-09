@@ -34,6 +34,7 @@ from .conge.passationServiceController import PassationServiceController
 from .conge.ConfigPlanningController import ConfigPlanningController
 from .usermanage.usermanageController import UserManagementController
 from .personnelles.fonction.listFonctionController import FonctionListController
+from .history.PersonnelContratHistoryController import PersonnelContratHistoryController
 
 __all__ = [
     "EtatCivilController",
@@ -73,4 +74,5 @@ __all__ = [
     "ConfigPlanningController",
     "UserManagementController",
     "FonctionListController",
+    "PersonnelContratHistoryController"
 ]
