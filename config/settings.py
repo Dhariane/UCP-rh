@@ -6,11 +6,6 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-import ssl
-import certifi
-ssl.create_default_context = lambda *args, **kwargs: ssl.create_default_context(
-    cafile=certifi.where()
-)
 
 # 1. Définition de la racine du projet (BASE_DIR)
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -115,7 +110,9 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT'),
         'OPTIONS': {
             'client_encoding': 'UTF8',
+            'options': '-c statement_timeout=60000',
         },
+    'CONN_MAX_AGE': 0,
     }
 }
 
@@ -163,20 +160,24 @@ DUREE_VALIDATION_INSCRIPTION = 300
 
 # Configuration Email (Gmail)
 
-# ✅ Utiliser le backend personnalisé
-EMAIL_BACKEND    = 'api.email_backend.SSLEmailBackend'
-EMAIL_HOST       = 'smtp.gmail.com'
-EMAIL_PORT       = 465
-EMAIL_USE_SSL    = True
-EMAIL_USE_TLS    = False
-EMAIL_HOST_USER     = 'misarabesa@gmail.com'
+EMAIL_BACKEND = 'api.services.utils.emailbackend.SSLEmailBackend'  # marche partout
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+EMAIL_HOST_USER = 'misarabesa@gmail.com'
 EMAIL_HOST_PASSWORD = 'diwi clxv fsky llfp'
-DEFAULT_FROM_EMAIL  = EMAIL_HOST_USER
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+EMAIL_TIMEOUT = 30
 
-EMAIL_SSL_CERTFILE = None
-EMAIL_SSL_KEYFILE  = None
-
-
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_USE_SSL = False
+# EMAIL_HOST_USER = 'misarabesa@gmail.com'
+# EMAIL_HOST_PASSWORD = 'diwi clxv fsky llfp'
+# DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Alternative de test (Mailtrap - Actuellement désactivée)
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

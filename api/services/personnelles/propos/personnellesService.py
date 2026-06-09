@@ -12,13 +12,27 @@ class PersonnelleServices:
         return Personnelles.objects.get(id=id)
 
     @staticmethod
+    def generate_matricule() -> str:
+        """Génère un matricule au format séquentiel : 001/UCP"""
+        # 1. Compter combien de personnels existent déjà en base
+        total_personnels = Personnelles.objects.count()
+        
+        # 2. Le nouveau numéro sera le total + 1
+        nouveau_numero = total_personnels + 1
+        
+        # 3. Formater sur 3 chiffres avec le suffixe /UCP (ex: 1 -> "001/UCP")
+        return f"{nouveau_numero:03d}/UCP"
+
+    @staticmethod
     def create(data) -> Personnelles:
 
         file_photo = data.get("photoResidence")
         file_casier = data.get("casierjudiciaire")
         file_acte = data.get("acteNaissance")
         file_cin = data.get("cinphoto")
+        matricule_genere = data.get("matricule") or PersonnelleServices.generate_matricule()
         return Personnelles.objects.create(
+            matricule=matricule_genere,
             nom=data.get('nom'),
             prenom=data.get('prenom'),
             dateNaissance=data.get('dateNaissance'),

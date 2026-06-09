@@ -39,9 +39,11 @@ from api.services.personnelles.fonction.modefinancementService import ModeFinanc
 from api.models import EtatCivil,Sexes,Relations,Postes,Personnelles,Services,ModeFinancement,Cins, fonction
 from api.services.auth.login.loginService import  LoginService
 from django.db.models import Prefetch
+from rest_framework.permissions import AllowAny
 
 class PersonnelFullController(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+    permission_classes = [AllowAny]
     def post(self, request):
         data = request.data
         # CAPI DES FICHIERS IMMÉDIATEMENT (Sécurité pour éviter les None)
@@ -304,15 +306,23 @@ class PersonnelFullController(APIView):
                         donnees_enfant["certificatVie"] = fichier_certificat
                     EnfantService.create(donnees_enfant)
 
-                LoginService.create(propos)
+            propos_final = propos  
+            if propos_final:
+                try:
+                    LoginService.create(propos_final, personnelles)
+                except Exception as email_error:
+                    print(f"⚠️ Email échoué : {email_error}")
 
-                return Response({"status": "success", 
-                                 "message": "Personnel et accès créés avec succès Son Compte est creer et un email de notification a été envoyé"},
-                                 status=201)
-
+            return Response({
+                "status": "success",
+                "message": "Personnel créé avec succès. Un email a été envoyé.",
+                "matricule": personnelles.matricule 
+            }, status=201)
         except Exception as e:
             print("ERREUR CRITIQUE :", str(e))
-            return Response({"error": str(e)}, status=400)
+            return Response({"error": str(e)}, status=400)                    
+       
+    from django.db.models import Prefetch
 
     from django.db.models import Prefetch
 
@@ -483,15 +493,14 @@ class PersonnelFullController(APIView):
             return Response({"error": "Personnel non trouvé"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": f"Erreur critique: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
     def delete(self, request, pk):
         try:
             personne = Personnelles.objects.get(pk=pk)
-            # Pas besoin de supprimer le CIN ou le RIB à la main, 
-            # le CASCADE s'en charge automatiquement !
             personne.delete() 
             return Response(
                 {"message": f"Le personnel ID {pk} et toutes ses données liées ont été supprimés."}, 
-                status=status.HTTP_204_NO_CONTENT
+                status=status.HTTP_200_OK # Remplacer 204 par 200 si tu veux que le JSON de message soit lu par le front
             )
         except Personnelles.DoesNotExist:
             return Response({"error": "Personnel non trouvé"}, status=status.HTTP_404_NOT_FOUND)

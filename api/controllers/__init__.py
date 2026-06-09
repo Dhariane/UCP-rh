@@ -1,3 +1,4 @@
+
 from .personnelles.propos.personnelleController import PersonnelleController
 from .auth.login.loginController import LoginController
 from .personnelles.propos.etatCivilController import EtatCivilController
@@ -30,10 +31,10 @@ from .conge.soldeCongeController import SoldeCongeController
 from .conge.statutController import StatutController
 from .conge.typeCongeController import TypeCongeController
 from .conge.passationServiceController import PassationServiceController
-from .usermanage.usermanageController import UserManagementController
 from .conge.ConfigPlanningController import ConfigPlanningController
+from .usermanage.usermanageController import UserManagementController
 from .personnelles.fonction.listFonctionController import FonctionListController
-from .conge.validationController import ValidationController
+
 __all__ = [
     "EtatCivilController",
     "ProposController",
@@ -70,7 +71,6 @@ __all__ = [
     "PassationServiceController",
     "UserManagementController",
     "ConfigPlanningController",
+    "UserManagementController",
     "FonctionListController",
-    "ValidationController"
-
 ]

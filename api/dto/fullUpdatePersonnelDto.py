@@ -117,9 +117,40 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
     supprimer_formations           = serializers.ListField(required=False)
     nombreAnneeExperience          = serializers.CharField(required=False, allow_blank=True)
 
-    class Meta:
-        model  = Personnelles
-        fields = '__all__'
+    # ✅ APRÈS — liste explicite, DRF ne touche plus api_fonctions
+class Meta:
+    model  = Personnelles
+    fields = [
+        'id', 'nom', 'prenom', 'sexe', 'dateNaissance', 'lieuNaissance',
+        'adresse', 'quartier', 'ville',
+        # champs mappés via source=
+        'emailPersonnel', 'telephonePersonnel',
+        # champs CIN
+        'num_cin_input', 'dateDelivranceCin', 'lieuDelivranceCin',
+        'dateDuplicataCin', 'lieuDuplicataCin', 'photoCin', 'cin',
+        # propos
+        'nif', 'stat', 'cnaps', 'emailProfessionnel', 'contactProfessionnel',
+        'etatCivil', 'nombreEnfants',
+        # contrat/fonction
+        'date_embauche', 'date_sortie', 'fonction', 'poste_superieur',
+        'service_actuel', 'financement_actuel',
+        'num_contrat', 'type_contrat', 'salaire', 'periodeEssai',
+        'dateFinEssai', 'photoContrat', 'photoUrl', 'contrat',
+        # famille
+        'nomPere', 'nomMere', 'nomConjoint', 'prenomConjoint',
+        'telConjoint', 'emailConjoint', 'adresseConjoint', 'acteMariage',
+        # banque
+        'banque', 'agence', 'villeAgence', 'rib', 'photoRib',
+        # documents
+        'photoResidence', 'acteNaissance', 'casierjudiciaire',
+        # listes
+        'ajouter_enfants', 'mettre_a_jour_enfants', 'supprimer_enfants',
+        'ajouter_contacts_urgence', 'mettre_a_jour_contacts_urgence', 'supprimer_contacts_urgence',
+        'ajouter_experiences', 'mettre_a_jour_experiences', 'supprimer_experiences',
+        'ajouter_diplomes', 'mettre_a_jour_diplomes', 'supprimer_diplomes',
+        'ajouter_formations', 'mettre_a_jour_formations', 'supprimer_formations',
+        'nombreAnneeExperience',
+    ]
 
     # ── Helpers ──────────────────────────────────────────────
     def _safe_int(self, val):

@@ -1,10 +1,11 @@
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
+from api.models.conge.conge import Conge
 from api.models.conge.passationservice import PassationService
+from api.services.conge.congeService import CongeServices
 from api.services.conge.passationServiceService import PassationServices
 from api.dto.conge.passationServiceDto import PassationServiceDTO
 
@@ -80,7 +81,55 @@ class PassationServiceController(APIView):
             }, status=status.HTTP_404_NOT_FOUND)
 
     def patch(self, request, id):
-        return self.put(request, id)
+        """
+        Appelé par Next.js quand le remplaçant accepte ou refuse la passation (ID de la passation)
+        """
+        try:
+            passation = PassationServices.getById(id)
+            decision = request.data.get('decision') # 'approuve' ou 'refuse'
+            motif = request.data.get('motif', '')
+
+            # Trouver le congé lié à cette passation de service
+            conge = Conge.objects.filter(passation_service=passation).first()
+            if not conge:
+                return Response({
+                    "status": "error",
+                    "message": "Aucun congé associé à cette passation."
+                }, status=status.HTTP_404_NOT_FOUND)
+
+            if decision == 'approuve':
+                # 🚀 On utilise notre service pour basculer chez le chef et notifier !
+                CongeServices.accepterPassation(conge.id)
+                
+                return Response({
+                    "status": "success",
+                    "message": "Passation acceptée. Le circuit est transmis au chef direct."
+                }, status=status.HTTP_200_OK)
+
+            elif decision == 'refuse':
+                # Si le remplaçant refuse, le congé est annulé/rejeté directement
+                conge.statut_id = 3 # Code ID 3 = Refusé
+                conge.etape_validation = 'termine'
+                conge.save()
+                
+                # Mettre à jour le statut de la passation si tu as un champ pour ça
+                PassationServices.update(id, {"statut": "refuse"}) 
+                
+                return Response({
+                    "status": "success",
+                    "message": "Passation refusée. La demande de congé a été clôturée."
+                }, status=status.HTTP_200_OK)
+
+            return Response({
+                "status": "error",
+                "message": "La décision doit être 'approuve' ou 'refuse'."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({
+                "status": "error",
+                "message": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def delete(self, request, id):
         try:

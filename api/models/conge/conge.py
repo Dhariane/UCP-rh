@@ -8,6 +8,7 @@ from .passationservice import PassationService
 
 class Conge(models.Model):
     ETAPES = [
+                ('passation', 'En attente remplaçant'),
                 ('chef',    'En attente chef'),
                 ('gp_rf',   'En attente GP/RF'),
                 ('cn',      'En attente CN'),
@@ -49,7 +50,7 @@ class Conge(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     validated_by = models.ForeignKey(
-        'auth.User',
+        'api.Login',  # ton modèle custom
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -66,7 +67,7 @@ class Conge(models.Model):
     etape_validation = models.CharField(
         max_length=20,
         choices=ETAPES,
-        default='chef',
+        default='passation',
         null=True,
         blank=True
     )
@@ -76,30 +77,33 @@ class Conge(models.Model):
 
     # 🔥 VALIDATION
     def clean(self):
-
         if self.date_debut and self.date_fin:
-
             if self.date_fin < self.date_debut:
                 raise ValidationError("Date de fin invalide")
 
             self.nombre_jours = (self.date_fin - self.date_debut).days + 1
 
-            # 🔥 règle : garder minimum 10 jours
-            if self.solde_conge.reste - self.nombre_jours < 10:
-                raise ValidationError(
-                    "Vous devez garder au moins 10 jours de solde après ce congé"
-                )
+            # ✅ Vérifier le solde UNIQUEMENT à la création
+            if not self.pk:
+                if self.solde_conge.reste - self.nombre_jours < 10:
+                    raise ValidationError(
+                        "Vous devez garder au moins 10 jours de solde après ce congé"
+                    )
+                if self.nombre_jours > self.solde_conge.reste:
+                    raise ValidationError("Solde insuffisant")
 
-            if self.nombre_jours > self.solde_conge.reste:
-                raise ValidationError("Solde insuffisant")
-
-    # 🔥 LOGIQUE MÉTIER COMPLETE
     def save(self, *args, **kwargs):
+        # ✅ Recalculer nombre_jours sans bloquer si c'est une mise à jour
+        if self.date_debut and self.date_fin:
+            self.nombre_jours = (self.date_fin - self.date_debut).days + 1
 
-        self.clean()
+        if not self.pk:
+            if self.nombre_jours == 1:
+                self.etape_validation = 'chef'
+            else:
+                self.etape_validation = 'passation'
 
         old_statut_id = None
-
         if self.pk:
             old = Conge.objects.get(pk=self.pk)
             old_statut_id = old.statut_id
@@ -108,21 +112,15 @@ class Conge(models.Model):
 
         solde = self.solde_conge
 
-        # 🔥 ID 2 = APPROUVÉ
         if self.statut_id == 2:
             if old_statut_id != 2:
                 solde.utilise += self.nombre_jours
 
-        # 🔥 ID 3 = REFUSÉ
         if self.statut_id == 3:
             if old_statut_id == 2:
                 solde.utilise -= self.nombre_jours
 
-        # 🔥 sécurité anti négatif
         if solde.utilise < 0:
             solde.utilise = 0
 
         solde.save()
-
-    def __str__(self):
-        return f"{self.personnel} - {self.type_conge}"
