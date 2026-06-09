@@ -119,7 +119,7 @@ class CongeController(APIView):
     from rest_framework.response import Response
     from rest_framework import status
     from django.shortcuts import get_object_or_404
-    class CongesEnAttenteController(APIView):
+class CongesEnAttenteController(APIView):
         def get(self, request, login_id=None):
             try:
                 if not login_id:

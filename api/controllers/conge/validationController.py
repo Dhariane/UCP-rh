@@ -70,7 +70,7 @@ class CongeValidationController(APIView):
 
             # ── REFUS ────────────────────────────────────────────────────────
             if decision == 'refuse':
-                statut_refuse        = Statut.objects.get(code='refuse')
+                statut_refuse   = Statut.objects.get(id=3)
                 conge.statut         = statut_refuse
                 conge.etape_validation = 'termine'
                 conge.validated_by   = login_obj
@@ -96,7 +96,7 @@ class CongeValidationController(APIView):
 
             # Approuvé définitivement quand on arrive à 'termine'
             if prochaine_etape == 'termine':
-                statut_approuve = Statut.objects.get(code='approuve')
+                statut_approuve = Statut.objects.get(id=2)
                 conge.statut    = statut_approuve
 
             conge.save()

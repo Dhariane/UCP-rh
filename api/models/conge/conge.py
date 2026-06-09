@@ -50,7 +50,7 @@ class Conge(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     validated_by = models.ForeignKey(
-        'auth.User',
+        'api.Login',  # ton modèle custom
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
