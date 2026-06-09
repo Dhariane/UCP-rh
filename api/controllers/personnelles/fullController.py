@@ -1,6 +1,11 @@
 from argparse import Action
+from datetime import date
 
 from api.models.banque.banques import Banques
+<<<<<<< HEAD
+=======
+from api.models.conge.soldeConge import SoldeConge
+>>>>>>> Naly_back
 from api.models.diplome.diplome import Diplome
 from api.models.diplome.experience import Experience
 from api.models.diplome.typeDiplome import DiplomeType
@@ -37,9 +42,11 @@ from api.services.personnelles.fonction.modefinancementService import ModeFinanc
 from api.models import EtatCivil,Sexes,Relations,Postes,Personnelles,Services,ModeFinancement,Cins, fonction
 from api.services.auth.login.loginService import  LoginService
 from django.db.models import Prefetch
+from rest_framework.permissions import AllowAny
 
 class PersonnelFullController(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+    permission_classes = [AllowAny]
     def post(self, request):
         data = request.data
         # CAPI DES FICHIERS IMMÉDIATEMENT (Sécurité pour éviter les None)
@@ -179,6 +186,13 @@ class PersonnelFullController(APIView):
                     "dateFin": data.get("dateSortie") or None,
                     "financement": financement
                 })
+                solde = SoldeConge.objects.filter(
+                    personnel=personnelles,
+                    annee=date.today().year
+                ).first()
+                if solde:
+                    solde.is_manual = False
+                    solde.save()
 
                 # 7. Contacts d'urgence
                 if data.get("personne1"):
@@ -295,15 +309,23 @@ class PersonnelFullController(APIView):
                         donnees_enfant["certificatVie"] = fichier_certificat
                     EnfantService.create(donnees_enfant)
 
-                LoginService.create(propos)
+            propos_final = propos  
+            if propos_final:
+                try:
+                    LoginService.create(propos_final, personnelles)
+                except Exception as email_error:
+                    print(f"⚠️ Email échoué : {email_error}")
 
-                return Response({"status": "success", 
-                                 "message": "Personnel et accès créés avec succès Son Compte est creer et un email de notification a été envoyé"},
-                                 status=201)
-
+            return Response({
+                "status": "success",
+                "message": "Personnel créé avec succès. Un email a été envoyé.",
+                "matricule": personnelles.matricule 
+            }, status=201)
         except Exception as e:
             print("ERREUR CRITIQUE :", str(e))
-            return Response({"error": str(e)}, status=400)
+            return Response({"error": str(e)}, status=400)                    
+       
+    from django.db.models import Prefetch
 
     from django.db.models import Prefetch
 
@@ -474,15 +496,65 @@ class PersonnelFullController(APIView):
             return Response({"error": "Personnel non trouvé"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": f"Erreur critique: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
     def delete(self, request, pk):
         try:
             personne = Personnelles.objects.get(pk=pk)
-            # Pas besoin de supprimer le CIN ou le RIB à la main, 
-            # le CASCADE s'en charge automatiquement !
             personne.delete() 
             return Response(
                 {"message": f"Le personnel ID {pk} et toutes ses données liées ont été supprimés."}, 
-                status=status.HTTP_204_NO_CONTENT
+                status=status.HTTP_200_OK # Remplacer 204 par 200 si tu veux que le JSON de message soit lu par le front
             )
         except Personnelles.DoesNotExist:
             return Response({"error": "Personnel non trouvé"}, status=status.HTTP_404_NOT_FOUND)
+
+    def get(self, request, pk=None):
+        # On force les imports nécessaires au cas où ils manquent en haut du fichier
+        from django.db.models import Prefetch
+        from api.models.fonction.contrat import Contrat
+
+        # 1. CAS OÙ ON DEMANDE L'ARCHIVE D'UN EMPLOYÉ PRÉCIS
+        if pk and request.query_params.get('archive') == 'true':
+            try:
+                from api.dto.contratHistoryDto import ContratHistorySerializer
+                historique = Contrat.history.filter(personnelle_id=pk).order_by('-history_date')
+                serializer = ContratHistorySerializer(historique, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except Exception as archive_error:
+                return Response({"error": f"Erreur archive: {str(archive_error)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. CAS OÙ ON RECHERCHE UN SEUL PERSONNEL (C'est ici que ça plantait avec l'ID 92)
+        elif pk:
+            try:
+                personne = Personnelles.objects.prefetch_related(
+                    'sexe', 'cins', 'propos_list', 'propos_list__etatCivil',
+                    'diplomes', 'Experience', 'Enfant', 'contactUrgence', 'photos',
+                    Prefetch(
+                        'contrats',  # Le related_name de ton modèle
+                        queryset=Contrat.objects.select_related('fonction', 'typeContrat', 'service', 'financement')
+                    )
+                ).get(pk=pk)
+                
+                serializer = PersonnelFullSerializer(personne, context={'request': request})
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except Personnelles.DoesNotExist:
+                return Response({"error": "Le personnel demandé n'existe pas."}, status=status.HTTP_404_NOT_FOUND)
+            except Exception as e:
+                # Ce print va afficher l'erreur exacte dans ton terminal Django pour qu'on sache ce qui cloche !
+                print(f"❌ ERREUR GET UNIQUE (ID {pk}): {str(e)}")
+                return Response({"error": f"Erreur serveur personnel unique: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 3. CAS DE LA LISTE GÉNÉRALE
+        else:
+            try:
+                personnes = Personnelles.objects.all().prefetch_related(
+                    'sexe',
+                    Prefetch(
+                        'contrats', 
+                        queryset=Contrat.objects.select_related('fonction', 'typeContrat', 'service', 'financement')
+                    )
+                )
+                serializer = PersonnelFullSerializer(personnes, many=True, context={'request': request})
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response({"error": f"Erreur serveur liste générale: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)

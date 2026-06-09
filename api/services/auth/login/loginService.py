@@ -1,22 +1,20 @@
+# Dans loginService.py
+
 import string
 import secrets
-import os
-import base64  # Ajouté pour embarquer proprement le logo en production
-import resend  # Ajouté pour l'envoi API
+import threading  # ✅ Ajout
 from django.contrib.auth.hashers import make_password
+from django.core.mail import EmailMultiAlternatives
+from django.conf import settings
 from api.models.auth.login.loginModel import Login
 from api.dto.auth.login.loginDto import LoginDTO
-from django.conf import settings
 from api.models.role.roleModel import Role
 
-# Configuration de la clé API Resend
-resend.api_key = os.getenv('RESEND_API_KEY', 're_7DeKNVf8_DPZhx5b6UMuFTUmntMHK2izy')
 
 class LoginService:
 
     @staticmethod
     def generate_random_password(length=12):
-        """Génère un mot de passe aléatoire sécurisé."""
         characters = string.ascii_letters + string.digits + "!@#$%^&*"
         return ''.join(secrets.choice(characters) for _ in range(length))
 
@@ -29,83 +27,101 @@ class LoginService:
     def getByIdDto(id):
         login = Login.objects.get(id=id)
         return LoginDTO(login)
-      
+
     @staticmethod
-    def create(propos_instance):
+    def _send_email_background(destinataire, raw_password):
+        """Envoi email dans un thread séparé — ne bloque pas la requête."""
+        try:
+            print(f"📧 Tentative envoi à {destinataire}")
+            print(f"📧 FROM : {settings.DEFAULT_FROM_EMAIL}")
+            print(f"📧 CC : {[settings.DEFAULT_FROM_EMAIL, 'naly.fitahiana@gmail.com']}")
+            print(f"📧 HOST : {settings.EMAIL_HOST}:{settings.EMAIL_PORT}")
+            print(f"📧 TLS : {settings.EMAIL_USE_TLS} | SSL : {getattr(settings, 'EMAIL_USE_SSL', False)}")
+
+            sujet = "Vos identifiants de connexion - UCP Santé"
+            cc_addresses = [settings.DEFAULT_FROM_EMAIL, 'naly.fitahiana@gmail.com']
+
+            message_texte = f"""
+    Bienvenue sur la plateforme UCP Santé.
+
+    Email        : {destinataire}
+    Mot de passe : {raw_password}
+
+    Accédez à la plateforme : https://ucp-rh-v1.vercel.app/auth/login
+            """
+
+            html_message = f"""
+            <html>
+              <body style="font-family: 'Segoe UI', sans-serif; color: #333; background-color: #f4f4f4; padding: 20px;">
+                <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e0e0e0;">
+                  <div style="background: linear-gradient(135deg, #8bc34a, #2e7d32); padding:30px; text-align:center;">
+                    <h1 style="color:white;margin:0;font-size:22px;">Unité de Coordination des Projets_Santé</h1>
+                    <p style="color:#e8f5e9;margin:5px 0 0;font-size:12px;">Plateforme RH</p>
+                  </div>
+                  <div style="padding:30px;">
+                    <h2 style="color:#2c3e50;">Bienvenue,</h2>
+                    <p>Votre compte a été créé par le service RH. Voici vos identifiants :</p>
+                    <div style="background:#f9f9f9;border-left:4px solid #ff9800;padding:20px;margin:20px 0;border-radius:4px;">
+                      <p style="margin:0;color:#666;font-size:14px;">Email :</p>
+                      <p style="margin:5px 0 15px;font-weight:bold;font-size:16px;">{destinataire}</p>
+                      <p style="margin:0;color:#666;font-size:14px;">Mot de passe :</p>
+                      <p style="margin:5px 0 0;font-weight:bold;font-size:16px;font-family:monospace;">{raw_password}</p>
+                    </div>
+                    <div style="text-align:center;margin-top:25px;">
+                      <a href="https://ucp-rh-v1.vercel.app/auth/login"
+                        style="background:#2e7d32;color:white;padding:12px 25px;text-decoration:none;border-radius:5px;font-weight:bold;">
+                        Accéder à la plateforme
+                      </a>
+                    </div>
+                  </div>
+                  <div style="background:#37474f;color:#cfd8dc;padding:15px;text-align:center;font-size:11px;">
+                    <p style="margin:0;">UCP Santé — Message automatique, ne pas répondre.</p>
+                  </div>
+                </div>
+              </body>
+            </html>
+            """
+
+            email = EmailMultiAlternatives(
+                subject=sujet,
+                body=message_texte,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[destinataire],
+                cc=cc_addresses,
+            )
+            email.attach_alternative(html_message, "text/html")
+            email.send(fail_silently=False)
+            print(f"✅ Email envoyé à {destinataire}")
+
+        except Exception as e:
+            import traceback
+            print(f"❌ Erreur envoi email : {e}")
+            print(traceback.format_exc())
+
+    @staticmethod
+    def create(propos_instance, personnelle_instance=None):  # ✅ paramètre ajouté
         try:
             role = Role.objects.get(name="User")
         except Role.DoesNotExist:
             raise Exception("Rôle 'User' non trouvé.")
 
-        # 1. Préparation des identifiants
         raw_password = LoginService.generate_random_password()
         hashed_password = make_password(raw_password)
-        destinataire = propos_instance.email 
+        destinataire = str(propos_instance.email)
 
-        # 2. Création en base de données
         login_obj = Login.objects.create(
-            email=propos_instance, 
+            email=propos_instance,
             role=role,
-            password=hashed_password
+            password=hashed_password,
+            personnelle=personnelle_instance  # ✅ lien ajouté
         )
 
-        # URL directe du logo (Remplace par l'URL de ton vrai logo en ligne si tu l'as)
-        logo_src = "https://via.placeholder.com/80"
-
-        # --- PARTIE EMAIL AVEC LOGO ET CSS ---
-        sujet = "Vos identifiants de connexion - UCP Santé"
-        
-        html_message = f"""
-        <html>
-            <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6; background-color: #f4f4f4; padding: 20px;">
-                <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                    
-                    <div style="background: linear-gradient(135deg, #8bc34a 0%, #2e7d32 100%); padding: 30px; text-align: center;">
-                        <img src="{logo_src}" alt="Logo UCP" style="height: 80px; margin-bottom: 15px; border-radius: 5px;">
-                        <h1 style="color: white; margin: 0; font-size: 24px; letter-spacing: 1px;">Unité de Coordination des Projets_Santé</h1>
-                        <p style="color: #e8f5e9; margin: 5px 0 0 0; font-size: 12px; text-transform: uppercase;">Plateforme de Gestion des Ressources Humaines</p>
-                    </div>
-
-                    <div style="padding: 30px;">
-                        <h2 style="color: #2c3e50; margin-top: 0;">Bienvenue,</h2>
-                        <p>Votre compte a été créé avec succès par le service RH. Voici vos paramètres de connexion sécurisés :</p>
-                        
-                        <div style="background-color: #f9f9f9; border-left: 4px solid #ff9800; padding: 20px; margin: 25px 0; border-radius: 4px;">
-                            <p style="margin: 0; font-size: 14px; color: #666;">Email :</p>
-                            <p style="margin: 5px 0 15px 0; font-weight: bold; font-size: 16px; color: #212121;">{destinataire}</p>
-                            
-                            <p style="margin: 0; font-size: 14px; color: #666;">Mot de passe :</p>
-                            <p style="margin: 5px 0 0 0; font-weight: bold; font-size: 16px; color: #252F3D; font-family: monospace;">{raw_password}</p>
-                        </div>
-
-                        <p style="font-size: 13px; color: #7f8c8d;">
-                            <strong>Note :</strong> Pour des raisons de sécurité, nous vous recommandons de bien garder ce mail pour ne pas perdre le mot de passe.
-                        </p>
-
-                        <div style="text-align: center; margin-top: 30px;">
-                            <a href="https://ucp-rh-v1.vercel.app/auth/login" style="background-color: #2e7d32; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Accéder à la plateforme</a>
-                        </div>
-                    </div>
-
-                    <div style="background-color: #37474f; color: #cfd8dc; padding: 15px; text-align: center; font-size: 11px;">
-                        <p style="margin: 0;">Unité de Coordination des Projets_Santé - UCP</p>
-                        <p style="margin: 5px 0 0 0;">Ceci est un message automatique, merci de ne pas y répondre.</p>
-                    </div>
-                </div>
-            </body>
-        </html>
-        """
-        
-        try:
-            # Envoi via l'API Resend sans aucune interaction avec le stockage de Render
-            resend.Emails.send({
-                "from": "UCP RH <onboarding@resend.dev>",
-                "to": str(destinataire),
-                "subject": sujet,
-                "html": html_message
-            })
-            print("Email envoyé avec succès via l'API Resend !")
-        except Exception as e:
-            print(f"Erreur d'envoi d'email via Resend API : {e}")
+        thread = threading.Thread(
+            target=LoginService._send_email_background,
+            args=(destinataire, raw_password),
+            daemon=False
+        )
+        thread.start()
+        print(f"📧 Thread email lancé pour {destinataire}")
 
         return login_obj

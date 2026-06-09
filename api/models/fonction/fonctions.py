@@ -1,15 +1,33 @@
+
 from django.db import models
+from api.models.fonction.modefinancement import ModeFinancement
+from api.models.fonction.poste import Postes
 from api.models.fonction.service import Services
 
 class Fonctions(models.Model):
     nom     = models.CharField()
     is_chef = models.BooleanField(default=False)
+
+    poste = models.ForeignKey(
+        Postes,
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+        related_name="fonctions"
+    )
+
     service = models.ForeignKey(
         Services,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='fonctions'
+    )
+
+    financement = models.ForeignKey(
+        ModeFinancement,
+        on_delete=models.CASCADE,null=True,
+        related_name="financement"
     )
 
     chef_direct = models.ForeignKey(

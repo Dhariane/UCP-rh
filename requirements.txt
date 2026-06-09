@@ -9,3 +9,4 @@ tzdata==2025.3
 python-dotenv
 gunicorn
 resend
+
