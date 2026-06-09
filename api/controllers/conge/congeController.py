@@ -8,6 +8,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from api.models.auth.login.loginModel import Login
 from api.models.conge.conge import Conge
 from api.models.fonction.contrat import Contrat
+from api.models.propos.personnelles import Personnelles
 from api.services.conge.congeService import CongeServices   # Ajuste le chemin selon ton architecture
 from api.dto.conge.congeDto import CongeDTO                # Ajuste le chemin
 
@@ -114,54 +115,88 @@ class CongeController(APIView):
                 "message": f"Demande de congé non trouvée (ID: {id})"
             }, status=status.HTTP_404_NOT_FOUND)
 
+    from rest_framework.views import APIView
+    from rest_framework.response import Response
+    from rest_framework import status
+    from django.shortcuts import get_object_or_404
 class CongesEnAttenteController(APIView):
-    def get(self, request, login_id):
-        try:
-            # 1. Trouver le personnel lié au compte connecté
-            user_login = Login.objects.get(id=login_id)
-            personnel_connecte = user_login.personnelle  # L'instance d'employé
+        def get(self, request, login_id=None):
+            try:
+                if not login_id:
+                    return Response({"status": "error", "message": "ID manquant"}, status=400)
 
-            # 2. Filtrer les congés selon l'étape et le rôle de l'utilisateur connecté
-            
-            # Cas A : Étape passation -> L'utilisateur connecté est le remplaçant
-            conges_passation = Conge.objects.filter(
-                etape_validation='passation',
-                passation_service__remplacant=personnel_connecte
-            )
+                login = None
 
-            # Cas B : Étape chef -> L'utilisateur connecté est le chef direct du demandeur
-            # On cherche les contrats actifs où le chef_direct correspond à la fonction actuelle de l'utilisateur
-            contrat_actif_user = Contrat.objects.filter(personnelle=personnel_connecte, is_actif=True).first()
-            conges_chef = Conge.objects.none()
-            
-            if contrat_actif_user and contrat_actif_user.fonction:
-                fonction_user = contrat_actif_user.fonction
-                # On récupère les congés des employés dont le chef direct est l'utilisateur connecté
-                conges_chef = Conge.objects.filter(
-                    etape_validation='chef',
-                    personnel__contrats__fonction__chef_direct=fonction_user,
-                    personnel__contrats__is_actif=True
-                ).distinct()
+                # ✅ Si c'est un email
+                if isinstance(login_id, str) and '@' in str(login_id):
+                    from api.models.propos.propos import Propos
+                    propos = Propos.objects.filter(email=login_id).first()
+                    if propos:
+                        login = Login.objects.filter(email=propos).first()
+                else:
+                    # Chercher par login_id puis par personnel_id
+                    login = Login.objects.filter(id=login_id).first()
+                    if not login:
+                        personnel = Personnelles.objects.filter(id=login_id).first()
+                        if personnel:
+                            login = Login.objects.filter(personnelle=personnel).first()
 
-            # 3. Fusionner les requêtes
-            conges_en_attente = conges_passation | conges_chef
-            
-            # Trier par date de création décroissante
-            conges_en_attente = conges_en_attente.order_by('-created_at')
+                if not login:
+                    return Response({"status": "success", "data": [], 
+                                "debug": f"Aucun login pour {login_id}"}, status=200)
 
-            serializer = CongeDTO(conges_en_attente, many=True)
-            return Response({
-                "status": "success",
-                "data": serializer.data
-            }, status=status.HTTP_200_OK)
+                # ... reste du code inchangé
 
-        except Login.DoesNotExist:
-            return Response({
-                "status": "error",
-                "message": "Utilisateur non trouvé"
-            }, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({
-                "status": "error",
-                "message": str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                role_name = login.role.name if login.role else ''
+                personnel_connecte = login.personnelle  # ✅ direct via le lien
+
+                # Initialiser toutes les variables
+                conges_passation = Conge.objects.none()
+                conges_chef      = Conge.objects.none()
+                conges_gp_rf     = Conge.objects.none()
+                conges_cn        = Conge.objects.none()
+                conges_rh        = Conge.objects.none()
+
+                if personnel_connecte:
+                    conges_passation = Conge.objects.filter(
+                        etape_validation='passation',
+                        passation_service__remplacant=personnel_connecte
+                    )
+
+                if role_name == 'Chef' and personnel_connecte:
+                    contrat_chef = Contrat.objects.filter(
+                        personnelle=personnel_connecte, is_actif=True
+                    ).first()
+                    if contrat_chef:
+                        subordonnes = Personnelles.objects.filter(
+                            contrats__fonction__chef_direct=contrat_chef.fonction,
+                            contrats__is_actif=True
+                        )
+                        conges_chef = Conge.objects.filter(
+                            etape_validation='chef',
+                            personnel__in=subordonnes
+                        )
+
+                if role_name in ('GP', 'RF'):
+                    conges_gp_rf = Conge.objects.filter(etape_validation='gp_rf')
+
+                if role_name == 'CN':
+                    conges_cn = Conge.objects.filter(etape_validation='cn')
+
+                if role_name in ('RH', 'admin', 'Superadmin'):
+                    conges_rh = Conge.objects.filter(etape_validation='rh')
+
+                ids = (
+                    list(conges_passation.values_list('id', flat=True)) +
+                    list(conges_chef.values_list('id', flat=True)) +
+                    list(conges_gp_rf.values_list('id', flat=True)) +
+                    list(conges_cn.values_list('id', flat=True)) +
+                    list(conges_rh.values_list('id', flat=True))
+                )
+
+                conges = Conge.objects.filter(id__in=ids).order_by('-created_at')
+                serializer = CongeDTO(conges, many=True)
+                return Response({"status": "success", "data": serializer.data}, status=200)
+
+            except Exception as e:
+                return Response({"status": "error", "message": str(e)}, status=500)

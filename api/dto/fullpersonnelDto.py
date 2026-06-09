@@ -138,15 +138,14 @@ class CongeSerializer(serializers.ModelSerializer):
         }
 
     def get_validated_by(self, obj):
-        try:
-            if obj.validated_by_id and obj.validated_by:
-                return {
-                    "id": obj.validated_by.id,
-                    "username": obj.validated_by.username,
-                    "full_name": f"{obj.validated_by.first_name or ''} {obj.validated_by.last_name or ''}".strip()
-                }
-        except Exception:
-            pass
+        if obj.validated_by:
+            login = obj.validated_by
+            personnelle = login.personnelle
+            return {
+                "id": login.id,
+                "email": str(login.email),  # ton Login a email comme FK vers Propos
+                "full_name": f"{personnelle.prenom} {personnelle.nom}".strip() if personnelle else str(login)
+            }
         return None
 
     class Meta:

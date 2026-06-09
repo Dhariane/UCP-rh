@@ -3,8 +3,11 @@ venv/
 env/
 .env
 
+<<<<<<< HEAD
+=======
 pyc
 
+>>>>>>> origin/back_test
 # Fichiers de cache Python
 __pycache__/
 *.pyc

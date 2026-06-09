@@ -1,6 +1,8 @@
 from argparse import Action
+from datetime import date
 
 from api.models.banque.banques import Banques
+from api.models.conge.soldeConge import SoldeConge
 from api.models.diplome.diplome import Diplome
 from api.models.diplome.experience import Experience
 from api.models.diplome.typeDiplome import DiplomeType
@@ -188,6 +190,13 @@ class PersonnelFullController(APIView):
                     "dateDebut": data.get("dateEmbauche"), "dateFin": data.get("dateSortie") or None,
                     "financement": financement
                 })
+                solde = SoldeConge.objects.filter(
+                    personnel=personnelles,
+                    annee=date.today().year
+                ).first()
+                if solde:
+                    solde.is_manual = False
+                    solde.save()
 
                 if data.get("personne1"):
                     rel1 = Relations.objects.get(id=data.get("relation1"))
@@ -267,7 +276,7 @@ class PersonnelFullController(APIView):
 
             if propos:
                 try:
-                    LoginService.create(propos)
+                    LoginService.create(propos_final, personnelles)
                 except Exception as email_error:
                     print(f"⚠️ Email échoué : {email_error}")
 
@@ -279,7 +288,52 @@ class PersonnelFullController(APIView):
 
         except Exception as e:
             print("ERREUR CRITIQUE :", str(e))
-            return Response({"error": str(e)}, status=400)
+            return Response({"error": str(e)}, status=400)                    
+       
+    from django.db.models import Prefetch
+
+    from django.db.models import Prefetch
+
+    def get(self, request, pk=None):
+        try:
+            if pk:
+                # Utilisez Prefetch pour le chemin complexe
+                personne = Personnelles.objects.prefetch_related(
+                    'sexe', 
+                    'cins', 
+                    'propos_list', 
+                    'propos_list__etatCivil',
+                    'diplomes', 
+                    'Experience', 
+                    'Enfant', 
+                    'contactUrgence', 
+                    'photos',
+                    # On précharge les contrats, et pour chaque contrat, on récupère la fonction liée
+                    Prefetch(
+                        'contrats', # Utilisation du related_name défini dans votre modèle
+                        queryset=Contrat.objects.select_related('fonction', 'typeContrat', 'service', 'financement')
+                    )
+                ).get(pk=pk)
+                
+                serializer = PersonnelFullSerializer(personne, context={'request': request})
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            else:
+            # CORRECTION ICI : Utilisez 'contrats' (le related_name) et non 'contrat__fonction'
+                personnes = Personnelles.objects.all().prefetch_related(
+                    'sexe',
+                    Prefetch(
+                        'contrats', # Utiliser le nom exact du related_name
+                        queryset=Contrat.objects.select_related('fonction', 'typeContrat', 'service', 'financement')
+                    )
+                )
+                serializer = PersonnelFullSerializer(personnes, many=True, context={'request': request})
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Personnelles.DoesNotExist:
+            return Response({"error": "Le personnel demandé n'existe pas."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": f"Erreur serveur: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
     # ══════════════════════════════════════════════════════
     # PUT
