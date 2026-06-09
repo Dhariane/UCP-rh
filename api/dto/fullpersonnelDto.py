@@ -138,12 +138,15 @@ class CongeSerializer(serializers.ModelSerializer):
         }
 
     def get_validated_by(self, obj):
-        if obj.validated_by:
-            return {
-                "id": obj.validated_by.id,
-                "username": obj.validated_by.username,
-                "full_name": f"{obj.validated_by.first_name or ''} {obj.validated_by.last_name or ''}".strip()
-            }
+        try:
+            if obj.validated_by_id and obj.validated_by:
+                return {
+                    "id": obj.validated_by.id,
+                    "username": obj.validated_by.username,
+                    "full_name": f"{obj.validated_by.first_name or ''} {obj.validated_by.last_name or ''}".strip()
+                }
+        except Exception:
+            pass
         return None
 
     class Meta:
@@ -223,7 +226,7 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
             'rib', 'banque', 'agence', 'villeAgence', 'photoRib',
             'enfants', 'contactsUrgence', 'diplomes', 'experiences', 'formations',
             'conges', 'soldes_conge',
-            'photoResidence', 'cinphoto', 'acteNaissance', 'casierjudiciaire',
+            'photoResidence', 'cinphoto', 'acteNaissance', 'casierjudiciaire','is_active'
         ]
 
     # ══════════════════════════════════════════════════════

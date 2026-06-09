@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from django.db import transaction
 from rest_framework.renderers import JSONRenderer
 from rest_framework import status
-from rest_framework.parsers import MultiPartParser, FormParser,JSONParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 import json
 from api.dto import PersonnellesDTO
 from api.dto.fullpersonnelDto import PersonnelFullSerializer
@@ -22,7 +22,7 @@ from api.models.propos.propos import Propos
 from api.models.fonction.fonctions import Fonctions as FonctionsModel
 from api.services.personnelles.propos import (
     CinsService, PersonnelleServices, EtatCivilService,
-    PhotosService, ProposService,SexeService,EnfantService,FamilleService)
+    PhotosService, ProposService, SexeService, EnfantService, FamilleService)
 from api.services.personnelles.fonction import FonctionService, PosteService, ServiceService
 from api.services.personnelles.fonction.contratService import ContratService
 from api.services.personnelles.fonction.typeContrantService import TypeContratService
@@ -31,75 +31,109 @@ from api.services.personnelles.banque import CoordonneesBancaireServices, Agence
 from api.services.personnelles.diplome.diplomeService import DiplomeService
 from api.services.personnelles.diplome.experienceService import ExperienceService
 from api.services.personnelles.diplome.formationService import FormationService
-from api.services.personnelles.fonction.contratService import ContratService
-from api.services.personnelles.fonction.typeContrantService import TypeContratService
 from api.services.personnelles.fonction.modefinancementService import ModeFinancementService
-from api.models import EtatCivil,Sexes,Relations,Postes,Personnelles,Services,ModeFinancement,Cins, fonction
-from api.services.auth.login.loginService import  LoginService
+from api.models import EtatCivil, Sexes, Relations, Postes, Personnelles, Services, ModeFinancement, Cins, fonction
+from api.services.auth.login.loginService import LoginService
 from django.db.models import Prefetch
 from rest_framework.permissions import AllowAny
+
 
 class PersonnelFullController(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     permission_classes = [AllowAny]
+
+    # ══════════════════════════════════════════════════════
+    # GET — un seul get qui gère archive / détail / liste
+    # ══════════════════════════════════════════════════════
+    def get(self, request, pk=None):
+        import traceback
+        from django.db.models import Prefetch
+        from api.models.fonction.contrat import Contrat
+        try:
+            # CAS 1 : ARCHIVE
+            if pk and request.query_params.get('archive') == 'true':
+                from api.dto.contratHistoryDto import ContratHistorySerializer
+                historique = Contrat.history.filter(personnelle_id=pk).order_by('-history_date')
+                serializer = ContratHistorySerializer(historique, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            # CAS 2 : DÉTAIL
+            elif pk:
+                personne = Personnelles.objects.prefetch_related(
+                    'sexe', 'cins', 'propos_list', 'propos_list__etatCivil',
+                    'diplomes', 'Experience', 'Enfant', 'contactUrgence', 'photos',
+                    Prefetch(
+                        'contrats',
+                        queryset=Contrat.objects.select_related('fonction', 'typeContrat', 'service', 'financement')
+                    )
+                ).get(pk=pk)
+                serializer = PersonnelFullSerializer(personne, context={'request': request})
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            # CAS 3 : LISTE
+            else:
+                personnes = Personnelles.objects.all().prefetch_related(
+                    'sexe', 'cins', 'photos',
+                    Prefetch(
+                        'contrats',
+                        queryset=Contrat.objects.select_related('fonction', 'typeContrat', 'service', 'financement')
+                    )
+                )
+                serializer = PersonnelFullSerializer(personnes, many=True, context={'request': request})
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Personnelles.DoesNotExist:
+            return Response({"error": "Personnel non trouvé"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            traceback.print_exc()
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    # ══════════════════════════════════════════════════════
+    # POST
+    # ══════════════════════════════════════════════════════
     def post(self, request):
         data = request.data
-        # CAPI DES FICHIERS IMMÉDIATEMENT (Sécurité pour éviter les None)
         files = {k: v for k, v in request.FILES.items()}
-        
-        # Réinitialisation des curseurs de fichiers
         for f in files.values():
             f.seek(0)
 
-        # Parsing JSON
         try:
-            import json as json_module  # ← renommer pour éviter le conflit
-            
+            import json as json_module
             raw_exp  = data.get("experiences", "[]")
             raw_dip  = data.get("diplomes", "[]")
             raw_form = data.get("formations", "[]")
             raw_enf  = data.get("enfants", "[]")
-
             experiences = raw_exp  if isinstance(raw_exp,  list) else json_module.loads(raw_exp  or "[]")
             diplomes    = raw_dip  if isinstance(raw_dip,  list) else json_module.loads(raw_dip  or "[]")
             formations  = raw_form if isinstance(raw_form, list) else json_module.loads(raw_form or "[]")
             enfants     = raw_enf  if isinstance(raw_enf,  list) else json_module.loads(raw_enf  or "[]")
-
         except Exception as e:
             return Response({"error": f"Format JSON invalide : {str(e)}"}, status=400)
 
         try:
             with transaction.atomic():
-                # 1. Récupération des IDs depuis les données
-                sexe_id = data.get("sexe")
+                sexe_id       = data.get("sexe")
                 etat_civil_id = data.get("etatCivil")
-                poste_id = data.get("poste")  # Peut être None ou une chaîne vide
+                poste_id      = data.get("poste")
 
-                # On retire poste_id de la vérification obligatoire
                 if not sexe_id or not etat_civil_id:
                     return Response({"error": "Sexe et Etat Civil sont obligatoires"}, status=400)
 
-                # Récupération sécurisée des objets obligatoires
                 try:
-                    sexe = Sexes.objects.get(id=sexe_id)
-                    etatcivil = EtatCivil.objects.get(id=etat_civil_id)
-                    
-                    # Récupération sécurisée des autres objets obligatoires
-                    service = Services.objects.get(id=data.get("service"))
+                    sexe        = Sexes.objects.get(id=sexe_id)
+                    etatcivil   = EtatCivil.objects.get(id=etat_civil_id)
+                    service     = Services.objects.get(id=data.get("service"))
                     financement = ModeFinancement.objects.get(id=data.get("financement"))
                 except (Sexes.DoesNotExist, Services.DoesNotExist, ModeFinancement.DoesNotExist) as e:
                     return Response({"error": f"Référence introuvable : {str(e)}"}, status=400)
 
-                # --- LOGIQUE POUR LE POSTE OPTIONNEL ---
                 poste = None
                 if poste_id and poste_id not in ["", "null", "undefined"]:
                     try:
                         poste = Postes.objects.get(id=poste_id)
                     except Postes.DoesNotExist:
-                        # Optionnel : décider si un mauvais ID de poste doit bloquer ou juste être ignoré
                         return Response({"error": "Le poste spécifié n'existe pas"}, status=400)
 
-                # --- LOGIQUE TYPE CONTRAT (Ton code existant) ---
                 type_contrat_id = data.get("typecontrat")
                 if type_contrat_id:
                     try:
@@ -108,117 +142,77 @@ class PersonnelFullController(APIView):
                         return Response({"error": "Type de contrat invalide"}, status=400)
                 else:
                     return Response({"error": "Type de contrat requis"}, status=400)
-                fonction_obj = FonctionsModel.objects.get(id=data.get("fonction"))
 
-                # 2. Banque et Agence
-                banque_nom = data.get("banque")
-                banque, created = Banques.objects.get_or_create(nom=banque_nom)
-                agence = AgenceService.create({
-                    "nom": data.get("agence"),
-                    "ville": data.get("villeAgence")
-                })
+                fonction_obj = FonctionsModel.objects.get(id=data.get("fonction"))
+                banque_nom   = data.get("banque")
+                banque, _    = Banques.objects.get_or_create(nom=banque_nom)
+                agence       = AgenceService.create({"nom": data.get("agence"), "ville": data.get("villeAgence")})
 
                 personnelles = PersonnelleServices.create({
-                    "nom": data.get("nom"),
-                    "prenom": data.get("prenom"),
-                    "dateNaissance": data.get("dateNaissance"),
-                    "lieuNaissance": data.get("lieuNaissance"),
-                    "adresse": data.get("adresse"),
-                    "emailPerso": data.get('emailPersonnel'),
-                    "telPerso": data.get("telephonePersonnel"),
-                    "quartier":data.get("quartier"),
-                    "ville":data.get("ville"),
-                    "sexe": sexe,
+                    "nom": data.get("nom"), "prenom": data.get("prenom"),
+                    "dateNaissance": data.get("dateNaissance"), "lieuNaissance": data.get("lieuNaissance"),
+                    "adresse": data.get("adresse"), "emailPerso": data.get('emailPersonnel'),
+                    "telPerso": data.get("telephonePersonnel"), "quartier": data.get("quartier"),
+                    "ville": data.get("ville"), "sexe": sexe,
                     "photoResidence": files.get('photoresidence'),
                     "casierjudiciaire": files.get('photoCasier'),
                     "acteNaissance": files.get('photoacteNaissance'),
                     "cinphoto": files.get("photoCin")
                 })
-                # 4. CIN
-                cin = CinsService.create({
-                    "numeroCin": data.get("cin"),
-                    "dateCin": data.get("dateDelivranceCin"),
-                    "lieuCin": data.get("lieuDelivranceCin"),
-                    "numeroDuplicata":data.get("numeroDuplicata"),
-                    "dateDuplicata":data.get("dateDuplicataCin"),
-                    "lieuDuplicata":data.get("lieuDuplicataCin"),
-                    "personnelle": personnelles
 
+                CinsService.create({
+                    "numeroCin": data.get("cin"), "dateCin": data.get("dateDelivranceCin"),
+                    "lieuCin": data.get("lieuDelivranceCin"), "numeroDuplicata": data.get("numeroDuplicata"),
+                    "dateDuplicata": data.get("dateDuplicataCin"), "lieuDuplicata": data.get("lieuDuplicataCin"),
+                    "personnelle": personnelles
                 })
 
-                # 5. Propos
                 propos = ProposService.create({
-                    "nif": data.get("nif"),
-                    "stat": data.get("stat"),
-                    "numeroCnaps": data.get("cnaps"),
-                    "tel": data.get("contactProfessionnel"),
+                    "nif": data.get("nif"), "stat": data.get("stat"),
+                    "numeroCnaps": data.get("cnaps"), "tel": data.get("contactProfessionnel"),
                     "email": data.get("emailProfessionnel"),
                     "nombreEnfant": data.get("nombreEnfants") or 0,
-                    "etatCivil": etatcivil,
-                    "personnelle": personnelles
+                    "etatCivil": etatcivil, "personnelle": personnelles
                 })
-                # 3. Coordonnées bancaires
-                coord = CoordonneesBancaireServices.create({
-                    "rib": data.get("rib"),
-                    "banque": banque,
-                    "agence": agence,
-                    "photo_rib": files.get('photoRibFile'),
-                    "personnelle": personnelles.id
+
+                CoordonneesBancaireServices.create({
+                    "rib": data.get("rib"), "banque": banque, "agence": agence,
+                    "photo_rib": files.get('photoRibFile'), "personnelle": personnelles.id
                 })
-                
-                # Création du Contrat
-                contrat = ContratService.create({
-                    "NumeroContrat": data.get("NumeroContrat"),
-                    "periodeEssai":data.get("periodeEssai"),
-                    "dateFinEssai":data.get("dateFinEssai"),
-                    "salaire":data.get("honoraire"),
-                    "photoContrat": files.get("photoContrat"),
-                    "typeContrat": type_contrat,
-                    "personnelle": personnelles,
-                    "fonction": fonction_obj,  
-                    "service": service,        
-                    "dateDebut": data.get("dateEmbauche"),
-                    "dateFin": data.get("dateSortie") or None,
+
+                ContratService.create({
+                    "NumeroContrat": data.get("NumeroContrat"), "periodeEssai": data.get("periodeEssai"),
+                    "dateFinEssai": data.get("dateFinEssai"), "salaire": data.get("honoraire"),
+                    "photoContrat": files.get("photoContrat"), "typeContrat": type_contrat,
+                    "personnelle": personnelles, "fonction": fonction_obj, "service": service,
+                    "dateDebut": data.get("dateEmbauche"), "dateFin": data.get("dateSortie") or None,
                     "financement": financement
                 })
 
-                # 7. Contacts d'urgence
                 if data.get("personne1"):
                     rel1 = Relations.objects.get(id=data.get("relation1"))
                     ContactUrgencesService.create({
-                        "nom": data.get("personne1"),
-                        "telephone": data.get("telephone1"),
-                        "adresse": data.get("adresse1"),
-                        "personnelle": personnelles,
-                        "relation": rel1
-                    })
-
-                # Photo principale
-                photo_file = files.get('photoFile')
-                if photo_file:
-                    PhotosService.create({
-                        "nom": data.get("nom") + "_photo",
-                        "data": photo_file,
-                        "personnelle": personnelles.id
+                        "nom": data.get("personne1"), "telephone": data.get("telephone1"),
+                        "adresse": data.get("adresse1"), "personnelle": personnelles, "relation": rel1
                     })
 
                 if data.get("personne2"):
                     rel2 = Relations.objects.get(id=data.get("relation2"))
                     ContactUrgencesService.create({
-                        "nom": data.get("personne2"),
-                        "telephone": data.get("telephone2"),
-                        "adresse": data.get("adresse2"),
-                        "personnelle": personnelles,
-                        "relation": rel2
+                        "nom": data.get("personne2"), "telephone": data.get("telephone2"),
+                        "adresse": data.get("adresse2"), "personnelle": personnelles, "relation": rel2
                     })
 
-                # 8. Fonction
-                
+                photo_file = files.get('photoFile')
+                if photo_file:
+                    PhotosService.create({
+                        "nom": data.get("nom") + "_photo", "data": photo_file,
+                        "personnelle": personnelles.id
+                    })
+
                 superieurs_ids = data.get("superieurs", "[]")
                 if isinstance(superieurs_ids, str):
-                    import json
                     superieurs_ids = json.loads(superieurs_ids)
-
                 if superieurs_ids:
                     from api.models.auth.login.loginModel import Login
                     for login_id in superieurs_ids:
@@ -228,165 +222,93 @@ class PersonnelFullController(APIView):
                         except Login.DoesNotExist:
                             pass
 
-                # 9. Famille
                 if data.get("nomPere") or data.get("nomMere"):
                     FamilleService.create({
-                        "nomPere": data.get("nomPere"),
-                        "nomMere": data.get("nomMere"),
-                        "nomConjoint": data.get("nomConjoint"),
-                        "prenomConjoint": data.get("prenomConjoint"),
+                        "nomPere": data.get("nomPere"), "nomMere": data.get("nomMere"),
+                        "nomConjoint": data.get("nomConjoint"), "prenomConjoint": data.get("prenomConjoint"),
                         "nombreEnfant": data.get("nombreEnfants") or 0,
-                        "acteMariage": files.get("acteMariage"),
-                        "telConjoint":data.get("telConjoint"),
-                        "adresseConjoint":data.get("adresseConjoint"),
-                        "emailConjoint":data.get("emailConjoint"),
+                        "acteMariage": files.get("acteMariage"), "telConjoint": data.get("telConjoint"),
+                        "adresseConjoint": data.get("adresseConjoint"), "emailConjoint": data.get("emailConjoint"),
                         "personnelle": personnelles
                     })
 
-                # Expériences
                 for exp in experiences:
                     ExperienceService.create({
-                        "entreprise": exp.get("entreprise"),
-                        "poste": exp.get("poste"),
-                        "datedebut": exp.get("dateDebut"),
-                        "datefin": exp.get("dateFin"),
-                        "description": exp.get("description"),
-                        "personnelle": personnelles.id
+                        "entreprise": exp.get("entreprise"), "poste": exp.get("poste"),
+                        "datedebut": exp.get("dateDebut"), "datefin": exp.get("dateFin"),
+                        "description": exp.get("description"), "personnelle": personnelles.id
                     })
 
-                # ── Diplômes ✅ ───────────────────────────────────────
                 for i, dip in enumerate(diplomes):
-                    key         = f"diplome_file_{i}"
-                    type_dip_id = dip.get("type_diplome")
-
                     DiplomeService.create({
-                        "type_diplome":  type_dip_id,        # ✅ ID directement, pas l'objet
-                        "filiere":       dip.get("filiere"),
-                        "lieu":          dip.get("lieu"),
-                        "etablissement": dip.get("etablissement"),
-                        "annneObtention": dip.get("annee"),   # ✅ attention au nom du champ
-                        "photo":         files.get(key),
-                        "personnelle":   personnelles.id
+                        "type_diplome": dip.get("type_diplome"), "filiere": dip.get("filiere"),
+                        "lieu": dip.get("lieu"), "etablissement": dip.get("etablissement"),
+                        "annneObtention": dip.get("annee"), "photo": files.get(f"diplome_file_{i}"),
+                        "personnelle": personnelles.id
                     })
 
-                # Formations
                 for i, form in enumerate(formations):
-                    key = f"formation_file_{i}"
                     FormationService.create({
-                        "titre": form.get("theme"),
-                        "organisme": form.get("organisme"),
-                        "lieu": form.get("lieu"),
-                        "annee": form.get("annee"),
-                        "attestation": files.get(key),
-                        "personnelle": personnelles.id
+                        "titre": form.get("theme"), "organisme": form.get("organisme"),
+                        "lieu": form.get("lieu"), "annee": form.get("annee"),
+                        "attestation": files.get(f"formation_file_{i}"), "personnelle": personnelles.id
                     })
 
                 for i, enf in enumerate(enfants):
-                    key = f"certificat_enfant_{i}" 
                     donnees_enfant = {
-                        "nom": enf.get("nom"),
-                        "prenom": enf.get("prenom"),
-                        "dateNaissance": enf.get("dateNaissance"),
-                        "lieuNaissance": enf.get("lieuNaissance"),
-                        "personnelle": personnelles.id,
-                        "sexe": sexe.id
-                        
+                        "nom": enf.get("nom"), "prenom": enf.get("prenom"),
+                        "dateNaissance": enf.get("dateNaissance"), "lieuNaissance": enf.get("lieuNaissance"),
+                        "personnelle": personnelles.id, "sexe": sexe.id
                     }
-                    fichier_certificat = request.FILES.get(key)
-                    if fichier_certificat:
-                        donnees_enfant["certificatVie"] = fichier_certificat
+                    fichier = request.FILES.get(f"certificat_enfant_{i}")
+                    if fichier:
+                        donnees_enfant["certificatVie"] = fichier
                     EnfantService.create(donnees_enfant)
 
-            propos_final = propos  
-            if propos_final:
+            if propos:
                 try:
-                    LoginService.create(propos_final)
+                    LoginService.create(propos)
                 except Exception as email_error:
                     print(f"⚠️ Email échoué : {email_error}")
 
             return Response({
                 "status": "success",
                 "message": "Personnel créé avec succès. Un email a été envoyé.",
-                "matricule": personnelles.matricule 
+                "matricule": personnelles.matricule
             }, status=201)
+
         except Exception as e:
             print("ERREUR CRITIQUE :", str(e))
-            return Response({"error": str(e)}, status=400)                    
-       
-    from django.db.models import Prefetch
+            return Response({"error": str(e)}, status=400)
 
-    def get(self, request, pk=None):
-        try:
-            if pk:
-                # Utilisez Prefetch pour le chemin complexe
-                personne = Personnelles.objects.prefetch_related(
-                    'sexe', 
-                    'cins', 
-                    'propos_list', 
-                    'propos_list__etatCivil',
-                    'diplomes', 
-                    'Experience', 
-                    'Enfant', 
-                    'contactUrgence', 
-                    'photos',
-                    # On précharge les contrats, et pour chaque contrat, on récupère la fonction liée
-                    Prefetch(
-                        'contrats', # Utilisation du related_name défini dans votre modèle
-                        queryset=Contrat.objects.select_related('fonction', 'typeContrat', 'service', 'financement')
-                    )
-                ).get(pk=pk)
-                
-                serializer = PersonnelFullSerializer(personne, context={'request': request})
-                return Response(serializer.data, status=status.HTTP_200_OK)
-
-            else:
-            # CORRECTION ICI : Utilisez 'contrats' (le related_name) et non 'contrat__fonction'
-                personnes = Personnelles.objects.all().prefetch_related(
-                    'sexe',
-                    Prefetch(
-                        'contrats', # Utiliser le nom exact du related_name
-                        queryset=Contrat.objects.select_related('fonction', 'typeContrat', 'service', 'financement')
-                    )
-                )
-                serializer = PersonnelFullSerializer(personnes, many=True, context={'request': request})
-                return Response(serializer.data, status=status.HTTP_200_OK)
-
-        except Personnelles.DoesNotExist:
-            return Response({"error": "Le personnel demandé n'existe pas."}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"error": f"Erreur serveur: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
-
+    # ══════════════════════════════════════════════════════
+    # PUT
+    # ══════════════════════════════════════════════════════
     @transaction.atomic
     def put(self, request, pk):
         try:
-            # 1. Récupération de l'instance principale
             personne = Personnelles.objects.select_for_update().get(pk=pk)
-            data = request.data
+            data  = request.data
             files = request.FILES
 
             from api.models.fonction.contrat import Contrat
             contrat_lie = Contrat.objects.filter(personnelle=personne).first()
             if contrat_lie:
-                # Mise à jour des champs du contrat
                 contrat_lie.NumeroContrat = data.get('NumeroContrat', contrat_lie.NumeroContrat)
-                contrat_lie.salaire = data.get('honoraire', contrat_lie.salaire)
-                contrat_lie.dateDebut = data.get('dateEmbauche', contrat_lie.dateDebut)
-                contrat_lie.dateFin = data.get('dateSortie', contrat_lie.dateFin)
-                
-                if data.get('service'): contrat_lie.service_id = data.get('service')
+                contrat_lie.salaire       = data.get('honoraire',     contrat_lie.salaire)
+                contrat_lie.dateDebut     = data.get('dateEmbauche',  contrat_lie.dateDebut)
+                contrat_lie.dateFin       = data.get('dateSortie',    contrat_lie.dateFin)
+                if data.get('service'):     contrat_lie.service_id     = data.get('service')
                 if data.get('typecontrat'): contrat_lie.typeContrat_id = data.get('typecontrat')
                 if data.get('financement'): contrat_lie.financement_id = data.get('financement')
-                if 'photoContrat' in files: contrat_lie.photoContrat = files['photoContrat']
-                
+                if 'photoContrat' in files: contrat_lie.photoContrat   = files['photoContrat']
                 contrat_lie.save()
 
-            # --- 2. Mise à jour CIN (Cins) ---
-            cin_lie = Cins.objects.filter(personnelle=personne).first()
-            # HARMONISATION : On utilise num_cin_input (ce qui vient du front)
+            cin_lie  = Cins.objects.filter(personnelle=personne).first()
             cin_vals = {
                 "numeroCin": data.get('num_cin_input') or data.get('cin'),
-                "dateCin": data.get('dateDelivranceCin'),
-                "lieuCin": data.get('lieuDelivranceCin')
+                "dateCin":   data.get('dateDelivranceCin'),
+                "lieuCin":   data.get('lieuDelivranceCin')
             }
             if cin_lie:
                 for key, val in cin_vals.items():
@@ -396,22 +318,17 @@ class PersonnelFullController(APIView):
             else:
                 Cins.objects.create(personnelle=personne, **cin_vals)
 
-            # --- 3. Mise à jour des Propos (Infos sociales & RH) ---
             propos_lie = Propos.objects.filter(personnelle=personne).first()
             if propos_lie:
-                propos_lie.numeroCnaps = data.get('cnaps') or propos_lie.numeroCnaps
-                propos_lie.nif = data.get('nif') or propos_lie.nif
-                propos_lie.stat = data.get('stat') or propos_lie.stat
-                # HARMONISATION : correspond au FormData.append('telephonePersonnel')
-                propos_lie.tel = data.get('telephonePersonnel') or propos_lie.tel
-                propos_lie.email = data.get('emailPersonnel') or propos_lie.email
-                propos_lie.nombreEnfant = data.get('nombreEnfants') or propos_lie.nombreEnfant
-                if data.get('etatCivil'):
-                    propos_lie.etatCivil_id = data.get('etatCivil')
+                propos_lie.numeroCnaps  = data.get('cnaps')              or propos_lie.numeroCnaps
+                propos_lie.nif          = data.get('nif')                or propos_lie.nif
+                propos_lie.stat         = data.get('stat')               or propos_lie.stat
+                propos_lie.tel          = data.get('telephonePersonnel') or propos_lie.tel
+                propos_lie.email        = data.get('emailPersonnel')     or propos_lie.email
+                propos_lie.nombreEnfant = data.get('nombreEnfants')      or propos_lie.nombreEnfant
+                if data.get('etatCivil'): propos_lie.etatCivil_id = data.get('etatCivil')
                 propos_lie.save()
 
-            # --- 4. Mise à jour Coordonnées Bancaires ---
-            # (Garde ton import ici s'il est nécessaire)
             from api.models.banque.coordonneesBancaires import CoordonneesBancaires
             coord = CoordonneesBancaires.objects.filter(personnelle=personne).first()
             if coord:
@@ -421,126 +338,62 @@ class PersonnelFullController(APIView):
                 if 'photoRibFile' in files: coord.photo_rib = files['photoRibFile']
                 coord.save()
 
-            # --- 5. Mise à jour de la Famille ---
             from api.models.propos.famille import Famille
             famille_lie = Famille.objects.filter(personnelle=personne).first()
             if famille_lie:
-                famille_fields = [
-                    "nomPere", "prenomPere", "nomMere", "prenomMere", 
-                    "nomConjoint", "prenomConjoint", "telConjoint", 
-                    "adresseConjoint", "emailConjoint"
-                ]
-                for field in famille_fields:
+                for field in ["nomPere", "prenomPere", "nomMere", "prenomMere",
+                              "nomConjoint", "prenomConjoint", "telConjoint",
+                              "adresseConjoint", "emailConjoint"]:
                     val = data.get(field)
                     if val is not None: setattr(famille_lie, field, val)
                 famille_lie.save()
 
-            # --- 6. Mise à jour du Personnel (Table principale) ---
-            personne.nom = data.get('nom', personne.nom)
-            personne.prenom = data.get('prenom', personne.prenom)
-            personne.adresse = data.get('adresse', personne.adresse)
-            personne.dateNaissance = data.get('dateNaissance', personne.dateNaissance)
-            personne.lieuNaissance = data.get('lieuNaissance', personne.lieuNaissance)
-            
-            # HARMONISATION : Utilise les noms envoyés par ton frontend
-            personne.emailPerso = data.get('emailPersonnel', personne.emailPerso)
-            personne.telPerso = data.get('telephonePersonnel', personne.telPerso)
-            
-            if data.get('sexe'): 
-                personne.sexe_id = data.get('sexe')
-            
-            if 'photoFile' in files: # Ton front envoie photoFile
-                personne.photos = files['photoFile']
-
+            personne.nom           = data.get('nom',                personne.nom)
+            personne.prenom        = data.get('prenom',             personne.prenom)
+            personne.adresse       = data.get('adresse',            personne.adresse)
+            personne.dateNaissance = data.get('dateNaissance',      personne.dateNaissance)
+            personne.lieuNaissance = data.get('lieuNaissance',      personne.lieuNaissance)
+            personne.emailPerso    = data.get('emailPersonnel',     personne.emailPerso)
+            personne.telPerso      = data.get('telephonePersonnel', personne.telPerso)
+            if data.get('sexe'): personne.sexe_id = data.get('sexe')
+            if 'photoFile' in files: personne.photos = files['photoFile']
             personne.save()
 
-            # --- 7. Fin et Retour ---
-            # On recharge pour renvoyer la donnée propre
             return Response({"status": "success", "message": "Mise à jour réussie"}, status=status.HTTP_200_OK)
 
         except Personnelles.DoesNotExist:
             return Response({"error": "Personnel non trouvé"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": f"Erreur critique: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
-        
+
+    # ══════════════════════════════════════════════════════
+    # PATCH
+    # ══════════════════════════════════════════════════════
     def patch(self, request, pk):
         try:
-            personne = Personnelles.objects.get(pk=pk)
+            personne   = Personnelles.objects.get(pk=pk)
             serializer = PersonnelUpdateSerializer(
-                personne,
-                data=request.data,
-                partial=True,
-                context={'request': request}  # ✅ AJOUTER CECI
+                personne, data=request.data, partial=True, context={'request': request}
             )
-            
             if serializer.is_valid():
                 serializer.save()
                 return Response({"status": "success", "message": "Mise à jour partielle réussie"}, status=status.HTTP_200_OK)
-            else:
-                return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         except Personnelles.DoesNotExist:
             return Response({"error": "Personnel non trouvé"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": f"Erreur critique: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
+    # ══════════════════════════════════════════════════════
+    # DELETE
+    # ══════════════════════════════════════════════════════
     def delete(self, request, pk):
         try:
             personne = Personnelles.objects.get(pk=pk)
-            personne.delete() 
+            personne.delete()
             return Response(
-                {"message": f"Le personnel ID {pk} et toutes ses données liées ont été supprimés."}, 
-                status=status.HTTP_200_OK # Remplacer 204 par 200 si tu veux que le JSON de message soit lu par le front
+                {"message": f"Le personnel ID {pk} et toutes ses données liées ont été supprimés."},
+                status=status.HTTP_200_OK
             )
         except Personnelles.DoesNotExist:
             return Response({"error": "Personnel non trouvé"}, status=status.HTTP_404_NOT_FOUND)
-
-    def get(self, request, pk=None):
-        # On force les imports nécessaires au cas où ils manquent en haut du fichier
-        from django.db.models import Prefetch
-        from api.models.fonction.contrat import Contrat
-
-        # 1. CAS OÙ ON DEMANDE L'ARCHIVE D'UN EMPLOYÉ PRÉCIS
-        if pk and request.query_params.get('archive') == 'true':
-            try:
-                from api.dto.contratHistoryDto import ContratHistorySerializer
-                historique = Contrat.history.filter(personnelle_id=pk).order_by('-history_date')
-                serializer = ContratHistorySerializer(historique, many=True)
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            except Exception as archive_error:
-                return Response({"error": f"Erreur archive: {str(archive_error)}"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # 2. CAS OÙ ON RECHERCHE UN SEUL PERSONNEL (C'est ici que ça plantait avec l'ID 92)
-        elif pk:
-            try:
-                personne = Personnelles.objects.prefetch_related(
-                    'sexe', 'cins', 'propos_list', 'propos_list__etatCivil',
-                    'diplomes', 'Experience', 'Enfant', 'contactUrgence', 'photos',
-                    Prefetch(
-                        'contrats',  # Le related_name de ton modèle
-                        queryset=Contrat.objects.select_related('fonction', 'typeContrat', 'service', 'financement')
-                    )
-                ).get(pk=pk)
-                
-                serializer = PersonnelFullSerializer(personne, context={'request': request})
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            except Personnelles.DoesNotExist:
-                return Response({"error": "Le personnel demandé n'existe pas."}, status=status.HTTP_404_NOT_FOUND)
-            except Exception as e:
-                # Ce print va afficher l'erreur exacte dans ton terminal Django pour qu'on sache ce qui cloche !
-                print(f"❌ ERREUR GET UNIQUE (ID {pk}): {str(e)}")
-                return Response({"error": f"Erreur serveur personnel unique: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # 3. CAS DE LA LISTE GÉNÉRALE
-        else:
-            try:
-                personnes = Personnelles.objects.all().prefetch_related(
-                    'sexe',
-                    Prefetch(
-                        'contrats', 
-                        queryset=Contrat.objects.select_related('fonction', 'typeContrat', 'service', 'financement')
-                    )
-                )
-                serializer = PersonnelFullSerializer(personnes, many=True, context={'request': request})
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            except Exception as e:
-                return Response({"error": f"Erreur serveur liste générale: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
