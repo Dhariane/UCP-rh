@@ -4,7 +4,7 @@ from django.conf.urls.static import static
 
 from api.controllers import *
 from api.controllers.conge.notificationController import NotificationController, NotificationMarquerLuController, NotificationNonLuesCountController, NotificationToutLireController
-from api.controllers.conge.validationController import ValidationCongeController
+from api.controllers.conge.validationController import CongeValidationController
 from api.controllers.personnelles.diplome.typeDiplomeController import DiplomeTypeController
 from api.controllers.personnelles.fonction.listFonctionController import FonctionListController
 from api.controllers.personnelles.fonction.superieurController import SuperieurController
@@ -12,6 +12,7 @@ from api.controllers.conge.soldeCongeController import SoldeCongeRHController
 from api.controllers.personnelles.fonction.fonctionController import FonctionCRUDController
 from api.controllers.personnelles.fonction.ServiceController import ServiceCRUDController
 from api.controllers.conge.congePlanifieController import CongePlanifieController, CongePlanifieDetailController
+from api.controllers.conge.congeController import CongesEnAttenteController,CongeController
 from .controllers import ConfigPlanningController
 urlpatterns = [
     path('login', LoginController.as_view(), name='login'),
@@ -84,7 +85,7 @@ urlpatterns = [
     path('passation_service/<int:id>/', PassationServiceController.as_view(), name='passation_service-detail'),
     path('user',UserManagementController.as_view(), name='user'),
     path('user/<int:id>/',UserManagementController.as_view(),name='usermanage'),
-    path('conge/<int:conge_id>/valider/', ValidationCongeController.as_view()),
+    path('conge/<int:conge_id>/valider/', CongeValidationController.as_view()),
     path('superieurs', SuperieurController.as_view()),
     path('superieurs/<int:fonction_id>/', SuperieurController.as_view()),
     path('personnelles/<int:id>/toggle-status/', PersonnelleController.as_view(), name='toggle-status'),
@@ -105,6 +106,12 @@ urlpatterns = [
     path('notifications/non-lues/count/', NotificationNonLuesCountController.as_view()),
     path('notifications/<int:id>/lire/',  NotificationMarquerLuController.as_view()),
     path('notifications/tout-lire/',      NotificationToutLireController.as_view()),
+    # ── Congés ───────────────────────────────────────────────────────────────────
+    path('conge',                                CongeController.as_view(),            name='conge'),
+    path('conge/<int:id>/',                      CongeController.as_view(),            name='conge-detail'),
+    path('conge/<int:id>/valider/',              CongeValidationController.as_view(),  name='conge-valider'),
+    path('conge/<int:id>/validations/',          CongeValidationController.as_view(),  name='conge-historique'),
+    path('conge/en-attente/<int:login_id>/',     CongesEnAttenteController.as_view(),  name='conges-en-attente'),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

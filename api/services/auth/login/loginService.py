@@ -99,30 +99,27 @@ class LoginService:
             print(traceback.format_exc())
 
     @staticmethod
-    def create(propos_instance):
+    def create(propos_instance, personnelle_instance=None):  # ✅ paramètre ajouté
         try:
             role = Role.objects.get(name="User")
         except Role.DoesNotExist:
-            raise Exception("Rôle 'User' non trouvé.")  
+            raise Exception("Rôle 'User' non trouvé.")
 
-        # 1. Génération du mot de passe
         raw_password = LoginService.generate_random_password()
         hashed_password = make_password(raw_password)
         destinataire = str(propos_instance.email)
 
-        # 2. Création en base — rapide, pas de blocage
         login_obj = Login.objects.create(
             email=propos_instance,
             role=role,
-            password=hashed_password
+            password=hashed_password,
+            personnelle=personnelle_instance  # ✅ lien ajouté
         )
 
-        # 3. ✅ Email envoyé dans un thread séparé
-        # La requête retourne immédiatement, l'email part en arrière-plan
         thread = threading.Thread(
             target=LoginService._send_email_background,
             args=(destinataire, raw_password),
-            daemon=False 
+            daemon=False
         )
         thread.start()
         print(f"📧 Thread email lancé pour {destinataire}")

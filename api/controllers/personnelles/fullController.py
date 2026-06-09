@@ -300,7 +300,7 @@ class PersonnelFullController(APIView):
             propos_final = propos  
             if propos_final:
                 try:
-                    LoginService.create(propos_final)
+                    LoginService.create(propos_final, personnelles)
                 except Exception as email_error:
                     print(f"⚠️ Email échoué : {email_error}")
 
