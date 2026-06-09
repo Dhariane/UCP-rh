@@ -3,6 +3,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from api.controllers import *
+from api.controllers.conge.congeController import CongesEnAttenteController
 from api.controllers.conge.notificationController import NotificationController, NotificationMarquerLuController, NotificationNonLuesCountController, NotificationToutLireController
 from api.controllers.conge.validationController import CongeValidationController
 from api.controllers.personnelles.diplome.typeDiplomeController import DiplomeTypeController
@@ -112,6 +113,7 @@ urlpatterns = [
     path('notifications/non-lues/count/', NotificationNonLuesCountController.as_view()),
     path('notifications/<int:id>/lire/',  NotificationMarquerLuController.as_view()),
     path('notifications/tout-lire/',      NotificationToutLireController.as_view()),
+<<<<<<< HEAD
     # ── Congés ───────────────────────────────────────────────────────────────────
     path('conge',                                CongeController.as_view(),            name='conge'),
     path('conge/<int:id>/',                      CongeController.as_view(),            name='conge-detail'),
@@ -121,6 +123,9 @@ urlpatterns = [
         # ✅ Ajoute cette route AVANT l'existante
     path('conge/en-attente/<str:login_id>/', CongesEnAttenteController.as_view()),
     path('conge/en-attente/<int:login_id>/', CongesEnAttenteController.as_view()),
+=======
+    path('conge/en-attente/<int:login_id>/', CongesEnAttenteController.as_view(), name='conges-en-attente'),
+>>>>>>> misapro
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
