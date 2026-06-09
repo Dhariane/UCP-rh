@@ -111,7 +111,10 @@ urlpatterns = [
     path('conge/<int:id>/',                      CongeController.as_view(),            name='conge-detail'),
     path('conge/<int:id>/valider/',              CongeValidationController.as_view(),  name='conge-valider'),
     path('conge/<int:id>/validations/',          CongeValidationController.as_view(),  name='conge-historique'),
-    path('conge/en-attente/<int:login_id>/',     CongesEnAttenteController.as_view(),  name='conges-en-attente'),
+    # path('conge/en-attente/<int:login_id>/',     CongesEnAttenteController.as_view(),  name='conges-en-attente'),
+        # ✅ Ajoute cette route AVANT l'existante
+    path('conge/en-attente/<str:login_id>/', CongesEnAttenteController.as_view()),
+    path('conge/en-attente/<int:login_id>/', CongesEnAttenteController.as_view()),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

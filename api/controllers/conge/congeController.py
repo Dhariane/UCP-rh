@@ -125,15 +125,27 @@ class CongesEnAttenteController(APIView):
                 if not login_id:
                     return Response({"status": "error", "message": "ID manquant"}, status=400)
 
-                # ✅ Chercher d'abord par login_id, sinon par personnel_id
-                login = Login.objects.filter(id=login_id).first()
-                if not login:
-                    personnel_par_id = Personnelles.objects.filter(id=login_id).first()
-                    if personnel_par_id:
-                        login = Login.objects.filter(personnelle=personnel_par_id).first()
+                login = None
+
+                # ✅ Si c'est un email
+                if isinstance(login_id, str) and '@' in str(login_id):
+                    from api.models.propos.propos import Propos
+                    propos = Propos.objects.filter(email=login_id).first()
+                    if propos:
+                        login = Login.objects.filter(email=propos).first()
+                else:
+                    # Chercher par login_id puis par personnel_id
+                    login = Login.objects.filter(id=login_id).first()
+                    if not login:
+                        personnel = Personnelles.objects.filter(id=login_id).first()
+                        if personnel:
+                            login = Login.objects.filter(personnelle=personnel).first()
 
                 if not login:
-                    return Response({"status": "success", "data": [], "debug": f"Aucun login pour id={login_id}"}, status=200)
+                    return Response({"status": "success", "data": [], 
+                                "debug": f"Aucun login pour {login_id}"}, status=200)
+
+                # ... reste du code inchangé
 
                 role_name = login.role.name if login.role else ''
                 personnel_connecte = login.personnelle  # ✅ direct via le lien
