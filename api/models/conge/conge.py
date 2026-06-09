@@ -77,34 +77,31 @@ class Conge(models.Model):
 
     # 🔥 VALIDATION
     def clean(self):
-
         if self.date_debut and self.date_fin:
-
             if self.date_fin < self.date_debut:
                 raise ValidationError("Date de fin invalide")
 
             self.nombre_jours = (self.date_fin - self.date_debut).days + 1
 
-            # 🔥 règle : garder minimum 10 jours
-            if self.solde_conge.reste - self.nombre_jours < 10:
-                raise ValidationError(
-                    "Vous devez garder au moins 10 jours de solde après ce congé"
-                )
+            # ✅ Vérifier le solde UNIQUEMENT à la création
+            if not self.pk:
+                if self.solde_conge.reste - self.nombre_jours < 10:
+                    raise ValidationError(
+                        "Vous devez garder au moins 10 jours de solde après ce congé"
+                    )
+                if self.nombre_jours > self.solde_conge.reste:
+                    raise ValidationError("Solde insuffisant")
 
-            if self.nombre_jours > self.solde_conge.reste:
-                raise ValidationError("Solde insuffisant")
-
-    # 🔥 LOGIQUE MÉTIER COMPLETE
     def save(self, *args, **kwargs):
-        # On exécute la validation clean() qui calcule le 'nombre_jours'
-        self.clean()
+        # ✅ Recalculer nombre_jours sans bloquer si c'est une mise à jour
+        if self.date_debut and self.date_fin:
+            self.nombre_jours = (self.date_fin - self.date_debut).days + 1
 
-        # ── NOUVELLE RÈGLE : Choix de l'étape de départ à la création ──
-        if not self.pk:  # Si c'est une nouvelle demande (pas encore d'ID)
+        if not self.pk:
             if self.nombre_jours == 1:
-                self.etape_validation = 'chef'  # Directement chez le chef !
+                self.etape_validation = 'chef'
             else:
-                self.etape_validation = 'passation'  # Circuit normal avec remplaçant
+                self.etape_validation = 'passation'
 
         old_statut_id = None
         if self.pk:
@@ -115,21 +112,15 @@ class Conge(models.Model):
 
         solde = self.solde_conge
 
-        # 🔥 ID 2 = APPROUVÉ
         if self.statut_id == 2:
             if old_statut_id != 2:
                 solde.utilise += self.nombre_jours
 
-        # 🔥 ID 3 = REFUSÉ
         if self.statut_id == 3:
             if old_statut_id == 2:
                 solde.utilise -= self.nombre_jours
 
-        # 🔥 sécurité anti négatif
         if solde.utilise < 0:
             solde.utilise = 0
 
         solde.save()
-
-    def __str__(self):
-        return f"{self.personnel} - {self.type_conge}"
