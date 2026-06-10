@@ -47,21 +47,46 @@ def envoi_notification_suivante(conge: Conge):
                         )
 
         # ── ÉTAPE GP/RF ──────────────────────────────────────────────────
-        elif etape == 'gp_rf':
-            # On notifie tous les utilisateurs ayant le rôle GP ou RF
-            logins_gp_rf = Login.objects.filter(role__name__in=['GP', 'RF'])
-            for login in logins_gp_rf:
+        elif etape == 'gp_pf':
+            from api.models.fonction.contrat import Contrat
+
+        # Financement du demandeur
+        contrat_demandeur = Contrat.objects.filter(
+            personnelle=conge.personnel, is_actif=True
+        ).first()
+        financement = contrat_demandeur.financement if contrat_demandeur else None
+
+        if financement:
+            # ✅ Chercher le GP ou PF qui a le même financement
+            logins_gp_pf = Login.objects.filter(
+                role__name__in=['GP', 'PF'],
+                personnelle__contrats__financement=financement,
+                personnelle__contrats__is_actif=True
+            ).distinct()
+
+            for login in logins_gp_pf:
                 Notification.objects.create(
                     destinataire=login,
                     conge=conge,
                     type_notif='validation_requise',
-                    titre="Demande de congé — étape GP/RF",
+                    titre=f"Demande de congé — {financement.nom}",
                     message=(
                         f"La demande de congé de {conge.personnel} "
-                        f"attend votre validation (GP/RF)."
+                        f"({financement.nom}) attend votre validation."
                     ),
-                    metadata={"etape": "gp_rf"}
+                    metadata={"etape": "gp_pf", "financement": financement.nom}
                 )
+            else:
+                # Pas de financement → notifier tous les GP/PF
+                for login in Login.objects.filter(role__name__in=['GP', 'PF']):
+                    Notification.objects.create(
+                        destinataire=login,
+                        conge=conge,
+                        type_notif='validation_requise',
+                        titre="Demande de congé — GP/PF",
+                        message=f"La demande de {conge.personnel} attend votre validation.",
+                        metadata={"etape": "gp_pf"}
+                    )
 
         # ── ÉTAPE CN ────────────────────────────────────────────────────
         elif etape == 'cn':
