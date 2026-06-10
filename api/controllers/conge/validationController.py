@@ -13,19 +13,23 @@ from api.signal.conge_signal import envoi_notification_suivante, envoi_notificat
 
 def get_etape_suivante(conge: Conge) -> str:
     from api.models.fonction.contrat import Contrat
-    ordre = ['passation', 'chef', 'gp_rf', 'cn', 'rh', 'termine']
+    from api.models.auth.login.loginModel import Login
+    
+    ordre = ['passation', 'chef', 'gp_pf', 'cn', 'rh', 'termine']
 
     try:
         contrat = Contrat.objects.filter(
             personnelle=conge.personnel, is_actif=True
         ).first()
         if contrat and contrat.fonction and contrat.fonction.chef_direct:
-            cn_est_chef = Login.objects.filter(
+            # ✅ Si le CHEF DIRECT est CN, on saute gp_pf (pas cn !)
+            chef_direct_est_cn = Login.objects.filter(
                 personnelle__contrats__fonction=contrat.fonction.chef_direct,
+                personnelle__contrats__is_actif=True,
                 role__name='CN'
             ).exists()
-            if cn_est_chef:
-                ordre.remove('gp_rf')
+            if chef_direct_est_cn and 'gp_pf' in ordre:
+                ordre.remove('gp_pf')  # ✅ saute gp_pf, garde cn
     except Exception:
         pass
 

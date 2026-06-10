@@ -10,7 +10,7 @@ class Conge(models.Model):
     ETAPES = [
                 ('passation', 'En attente remplaçant'),
                 ('chef',    'En attente chef'),
-                ('gp_rf',   'En attente GP/RF'),
+                ('gp_pf',   'En attente GP/PF'),
                 ('cn',      'En attente CN'),
                 ('rh',      'En attente RH'),
                 ('termine', 'Terminé'),
