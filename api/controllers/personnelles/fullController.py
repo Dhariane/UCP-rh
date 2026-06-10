@@ -2,10 +2,7 @@ from argparse import Action
 from datetime import date
 
 from api.models.banque.banques import Banques
-<<<<<<< HEAD
-=======
 from api.models.conge.soldeConge import SoldeConge
->>>>>>> Naly_back
 from api.models.diplome.diplome import Diplome
 from api.models.diplome.experience import Experience
 from api.models.diplome.typeDiplome import DiplomeType
