@@ -1,12 +1,8 @@
 from argparse import Action
 
-from api.models.banque.banques import Banques
 from api.models.diplome.diplome import Diplome
 from api.models.diplome.experience import Experience
-from api.models.diplome.typeDiplome import DiplomeType
-from api.models.fonction.contrat import Contrat
 from api.models.fonction.typeContrat import TypeContrats
-from api.models.fonction.fonctions import Fonctions
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import transaction
@@ -19,7 +15,6 @@ from api.dto.fullpersonnelDto import PersonnelFullSerializer
 from api.dto.fullUpdatePersonnelDto import PersonnelUpdateSerializer
 from api.models.propos.enfant import Enfant
 from api.models.propos.propos import Propos
-from api.models.fonction.fonctions import Fonctions as FonctionsModel
 from api.services.personnelles.propos import (
     CinsService, PersonnelleServices, EtatCivilService,
     PhotosService, ProposService,SexeService,EnfantService,FamilleService)
@@ -34,14 +29,11 @@ from api.services.personnelles.diplome.formationService import FormationService
 from api.services.personnelles.fonction.contratService import ContratService
 from api.services.personnelles.fonction.typeContrantService import TypeContratService
 from api.services.personnelles.fonction.modefinancementService import ModeFinancementService
-from api.models import EtatCivil,Sexes,Relations,Postes,Personnelles,Services,ModeFinancement,Cins, fonction
+from api.models import EtatCivil,Sexes,Relations,Postes,Personnelles,Services,ModeFinancement,Cins
 from api.services.auth.login.loginService import  LoginService
-from django.db.models import Prefetch
-from rest_framework.permissions import AllowAny
 
 class PersonnelFullController(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
-    permission_classes = [AllowAny]
     def post(self, request):
         data = request.data
         # CAPI DES FICHIERS IMMÉDIATEMENT (Sécurité pour éviter les None)
@@ -53,20 +45,12 @@ class PersonnelFullController(APIView):
 
         # Parsing JSON
         try:
-            import json as json_module  # ← renommer pour éviter le conflit
-            
-            raw_exp  = data.get("experiences", "[]")
-            raw_dip  = data.get("diplomes", "[]")
-            raw_form = data.get("formations", "[]")
-            raw_enf  = data.get("enfants", "[]")
-
-            experiences = raw_exp  if isinstance(raw_exp,  list) else json_module.loads(raw_exp  or "[]")
-            diplomes    = raw_dip  if isinstance(raw_dip,  list) else json_module.loads(raw_dip  or "[]")
-            formations  = raw_form if isinstance(raw_form, list) else json_module.loads(raw_form or "[]")
-            enfants     = raw_enf  if isinstance(raw_enf,  list) else json_module.loads(raw_enf  or "[]")
-
+            experiences = json.loads(data.get("experiences", "[]"))
+            diplomes = json.loads(data.get("diplomes", "[]"))
+            formations = json.loads(data.get("formations", "[]"))
+            enfants = json.loads(data.get("enfants", "[]"))
         except Exception as e:
-            return Response({"error": f"Format JSON invalide : {str(e)}"}, status=400)
+            return Response({"error": "Format JSON invalide"}, status=400)
 
         try:
             with transaction.atomic():
@@ -108,11 +92,9 @@ class PersonnelFullController(APIView):
                         return Response({"error": "Type de contrat invalide"}, status=400)
                 else:
                     return Response({"error": "Type de contrat requis"}, status=400)
-                fonction_obj = FonctionsModel.objects.get(id=data.get("fonction"))
 
                 # 2. Banque et Agence
-                banque_nom = data.get("banque")
-                banque, created = Banques.objects.get_or_create(nom=banque_nom)
+                banque = BanqueService.create({"nom": data.get("banque")})
                 agence = AgenceService.create({
                     "nom": data.get("agence"),
                     "ville": data.get("villeAgence")
@@ -165,7 +147,6 @@ class PersonnelFullController(APIView):
                     "photo_rib": files.get('photoRibFile'),
                     "personnelle": personnelles.id
                 })
-                
                 # Création du Contrat
                 contrat = ContratService.create({
                     "NumeroContrat": data.get("NumeroContrat"),
@@ -174,12 +155,7 @@ class PersonnelFullController(APIView):
                     "salaire":data.get("honoraire"),
                     "photoContrat": files.get("photoContrat"),
                     "typeContrat": type_contrat,
-                    "personnelle": personnelles,
-                    "fonction": fonction_obj,  
-                    "service": service,        
-                    "dateDebut": data.get("dateEmbauche"),
-                    "dateFin": data.get("dateSortie") or None,
-                    "financement": financement
+                    "personnelle": personnelles
                 })
 
                 # 7. Contacts d'urgence
@@ -213,20 +189,15 @@ class PersonnelFullController(APIView):
                     })
 
                 # 8. Fonction
-                
-                superieurs_ids = data.get("superieurs", "[]")
-                if isinstance(superieurs_ids, str):
-                    import json
-                    superieurs_ids = json.loads(superieurs_ids)
-
-                if superieurs_ids:
-                    from api.models.auth.login.loginModel import Login
-                    for login_id in superieurs_ids:
-                        try:
-                            login_superieur = Login.objects.get(id=login_id)
-                            fonction.superieurs.add(login_superieur)
-                        except Login.DoesNotExist:
-                            pass
+                FonctionService.create({
+                    "nom": data.get("fonction"),
+                    "dateDebut": data.get("dateEmbauche"),
+                    "dateFin": data.get("dateSortie") if data.get("dateSortie") else None,
+                    "financement": financement,
+                    "personnelle": personnelles,
+                    "poste": poste,
+                    "service": service,
+                })
 
                 # 9. Famille
                 if data.get("nomPere") or data.get("nomMere"):
@@ -254,19 +225,15 @@ class PersonnelFullController(APIView):
                         "personnelle": personnelles.id
                     })
 
-                # ── Diplômes ✅ ───────────────────────────────────────
+                # Diplômes
                 for i, dip in enumerate(diplomes):
-                    key         = f"diplome_file_{i}"
-                    type_dip_id = dip.get("type_diplome")
-
+                    key = f"diplome_file_{i}"
                     DiplomeService.create({
-                        "type_diplome":  type_dip_id,        # ✅ ID directement, pas l'objet
-                        "filiere":       dip.get("filiere"),
-                        "lieu":          dip.get("lieu"),
+                        "nom": dip.get("intitule"),
                         "etablissement": dip.get("etablissement"),
-                        "annneObtention": dip.get("annee"),   # ✅ attention au nom du champ
-                        "photo":         files.get(key),
-                        "personnelle":   personnelles.id
+                        "dateObtention": dip.get("annee"),
+                        "photo": files.get(key),
+                        "personnelle": personnelles.id
                     })
 
                 # Formations
@@ -297,56 +264,47 @@ class PersonnelFullController(APIView):
                         donnees_enfant["certificatVie"] = fichier_certificat
                     EnfantService.create(donnees_enfant)
 
-            propos_final = propos  
-            if propos_final:
-                try:
-                    LoginService.create(propos_final, personnelles)
-                except Exception as email_error:
-                    print(f"⚠️ Email échoué : {email_error}")
+                LoginService.create(propos)
 
-            return Response({
-                "status": "success",
-                "message": "Personnel créé avec succès. Un email a été envoyé.",
-                "matricule": personnelles.matricule 
-            }, status=201)
+                return Response({"status": "success", 
+                                 "message": "Personnel et accès créés avec succès Son Compte est creer et un email de notification a été envoyé"},
+                                 status=201)
+
         except Exception as e:
             print("ERREUR CRITIQUE :", str(e))
-            return Response({"error": str(e)}, status=400)                    
-       
-    from django.db.models import Prefetch
+            return Response({"error": str(e)}, status=400)
 
     def get(self, request, pk=None):
         try:
             if pk:
-                # Utilisez Prefetch pour le chemin complexe
+                # On récupère l'individu avec TOUTES ses relations pour éviter le "N+1 problem"
                 personne = Personnelles.objects.prefetch_related(
                     'sexe', 
                     'cins', 
                     'propos_list', 
                     'propos_list__etatCivil',
-                    'diplomes', 
+                    'Diplome', 
                     'Experience', 
                     'Enfant', 
+                    'contrat', 
+                    'contrat__typeContrat', 
+                    'fonctions',  # <--- Vérifie bien que le related_name est 'fonctions' dans ton modèle
+                    'fonctions__service', 
+                    'fonctions__poste', 
                     'contactUrgence', 
-                    'photos',
-                    # On précharge les contrats, et pour chaque contrat, on récupère la fonction liée
-                    Prefetch(
-                        'contrats', # Utilisation du related_name défini dans votre modèle
-                        queryset=Contrat.objects.select_related('fonction', 'typeContrat', 'service', 'financement')
-                    )
+                    'photos'
                 ).get(pk=pk)
                 
                 serializer = PersonnelFullSerializer(personne, context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
             else:
-            # CORRECTION ICI : Utilisez 'contrats' (le related_name) et non 'contrat__fonction'
+                # Pour la liste globale, on reste léger pour ne pas saturer la RAM
                 personnes = Personnelles.objects.all().prefetch_related(
-                    'sexe',
-                    Prefetch(
-                        'contrats', # Utiliser le nom exact du related_name
-                        queryset=Contrat.objects.select_related('fonction', 'typeContrat', 'service', 'financement')
-                    )
+                    'sexe', 
+                    'fonctions__poste', 
+                    'fonctions__service',
+                    'fonctions__financement' # Ajoute le financement ici aussi !
                 )
                 serializer = PersonnelFullSerializer(personnes, many=True, context={'request': request})
                 return Response(serializer.data, status=status.HTTP_200_OK)
@@ -363,22 +321,6 @@ class PersonnelFullController(APIView):
             personne = Personnelles.objects.select_for_update().get(pk=pk)
             data = request.data
             files = request.FILES
-
-            from api.models.fonction.contrat import Contrat
-            contrat_lie = Contrat.objects.filter(personnelle=personne).first()
-            if contrat_lie:
-                # Mise à jour des champs du contrat
-                contrat_lie.NumeroContrat = data.get('NumeroContrat', contrat_lie.NumeroContrat)
-                contrat_lie.salaire = data.get('honoraire', contrat_lie.salaire)
-                contrat_lie.dateDebut = data.get('dateEmbauche', contrat_lie.dateDebut)
-                contrat_lie.dateFin = data.get('dateSortie', contrat_lie.dateFin)
-                
-                if data.get('service'): contrat_lie.service_id = data.get('service')
-                if data.get('typecontrat'): contrat_lie.typeContrat_id = data.get('typecontrat')
-                if data.get('financement'): contrat_lie.financement_id = data.get('financement')
-                if 'photoContrat' in files: contrat_lie.photoContrat = files['photoContrat']
-                
-                contrat_lie.save()
 
             # --- 2. Mise à jour CIN (Cins) ---
             cin_lie = Cins.objects.filter(personnelle=personne).first()
@@ -482,14 +424,15 @@ class PersonnelFullController(APIView):
             return Response({"error": "Personnel non trouvé"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": f"Erreur critique: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
-
     def delete(self, request, pk):
         try:
             personne = Personnelles.objects.get(pk=pk)
+            # Pas besoin de supprimer le CIN ou le RIB à la main, 
+            # le CASCADE s'en charge automatiquement !
             personne.delete() 
             return Response(
                 {"message": f"Le personnel ID {pk} et toutes ses données liées ont été supprimés."}, 
-                status=status.HTTP_200_OK # Remplacer 204 par 200 si tu veux que le JSON de message soit lu par le front
+                status=status.HTTP_204_NO_CONTENT
             )
         except Personnelles.DoesNotExist:
             return Response({"error": "Personnel non trouvé"}, status=status.HTTP_404_NOT_FOUND)

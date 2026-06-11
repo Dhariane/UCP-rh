@@ -33,7 +33,6 @@ class CongeDTO(serializers.ModelSerializer):
             'nombre_jours',
             'description',
             'statut',
-            'etape_validation',
             'passation_service',
             'validated_by',
             'created_at',

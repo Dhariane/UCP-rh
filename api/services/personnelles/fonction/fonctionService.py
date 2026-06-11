@@ -13,6 +13,15 @@ class FonctionService:
 
         fonction = Fonctions.objects.create(
             nom=data['nom'],
+<<<<<<< HEAD
+=======
+            dateDebut=data['dateDebut'],
+            dateFin=data['dateFin'],
+            financement=data['financement'],
+            personnelle=data['personnelle'],
+            service=data['service'],
+            poste=data['poste'],
+>>>>>>> 23088e43 (mon enregistrement local)
         )
 
         # ✅ Créer automatiquement le solde congé pour ce personnel

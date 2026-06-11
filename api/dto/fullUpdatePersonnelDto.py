@@ -117,40 +117,9 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
     supprimer_formations           = serializers.ListField(required=False)
     nombreAnneeExperience          = serializers.CharField(required=False, allow_blank=True)
 
-    # ✅ APRÈS — liste explicite, DRF ne touche plus api_fonctions
-class Meta:
-    model  = Personnelles
-    fields = [
-        'id', 'nom', 'prenom', 'sexe', 'dateNaissance', 'lieuNaissance',
-        'adresse', 'quartier', 'ville',
-        # champs mappés via source=
-        'emailPersonnel', 'telephonePersonnel',
-        # champs CIN
-        'num_cin_input', 'dateDelivranceCin', 'lieuDelivranceCin',
-        'dateDuplicataCin', 'lieuDuplicataCin', 'photoCin', 'cin',
-        # propos
-        'nif', 'stat', 'cnaps', 'emailProfessionnel', 'contactProfessionnel',
-        'etatCivil', 'nombreEnfants',
-        # contrat/fonction
-        'date_embauche', 'date_sortie', 'fonction', 'poste_superieur',
-        'service_actuel', 'financement_actuel',
-        'num_contrat', 'type_contrat', 'salaire', 'periodeEssai',
-        'dateFinEssai', 'photoContrat', 'photoUrl', 'contrat',
-        # famille
-        'nomPere', 'nomMere', 'nomConjoint', 'prenomConjoint',
-        'telConjoint', 'emailConjoint', 'adresseConjoint', 'acteMariage',
-        # banque
-        'banque', 'agence', 'villeAgence', 'rib', 'photoRib',
-        # documents
-        'photoResidence', 'acteNaissance', 'casierjudiciaire',
-        # listes
-        'ajouter_enfants', 'mettre_a_jour_enfants', 'supprimer_enfants',
-        'ajouter_contacts_urgence', 'mettre_a_jour_contacts_urgence', 'supprimer_contacts_urgence',
-        'ajouter_experiences', 'mettre_a_jour_experiences', 'supprimer_experiences',
-        'ajouter_diplomes', 'mettre_a_jour_diplomes', 'supprimer_diplomes',
-        'ajouter_formations', 'mettre_a_jour_formations', 'supprimer_formations',
-        'nombreAnneeExperience',
-    ]
+    class Meta:
+        model  = Personnelles
+        fields = '__all__'
 
     # ── Helpers ──────────────────────────────────────────────
     def _safe_int(self, val):
@@ -498,49 +467,42 @@ class Meta:
         if a_naissance  and not isinstance(a_naissance,  str): instance.acteNaissance   = a_naissance
         if c_judiciaire and not isinstance(c_judiciaire, str): instance.casierjudiciaire= c_judiciaire
         instance.save()
-        # ── FONCTIONS & CONTRAT ───────────────────────────────────────
-        # ✅ Tout passe par Contrat maintenant
-        from api.models.fonction.contrat import Contrat as ContratModel
-        from api.models.fonction.fonctions import Fonctions as FonctionsModel
 
-        contrat_obj, _ = ContratModel.objects.get_or_create(personnelle=instance)
+        # ── FONCTIONS ───────────────────────────────────────
+        f = Fonctions.objects.filter(personnelle=instance).last()
+        if not f:
+            f = Fonctions.objects.create(personnelle=instance)
 
-        # Fonction
-        if fonction_nom:
-            fid = self._safe_int(fonction_nom)
-            if fid:
-                fonction_inst = FonctionsModel.objects.filter(id=fid).first()
-            else:
-                fonction_inst = FonctionsModel.objects.filter(
-                    nom__iexact=str(fonction_nom).strip()
-                ).first()
-            if fonction_inst:
-                contrat_obj.fonction = fonction_inst
+        if fonction_nom:  f.nom       = fonction_nom
+        if date_embauche: f.dateDebut = date_embauche
+        if date_sortie:   f.dateFin   = date_sortie
 
-        # Service
         if service_nom:
             sid = self._safe_int(service_nom)
             obj = Services.objects.filter(id=sid).first() if sid else \
-                Services.objects.filter(nom__iexact=str(service_nom).strip()).first()
-            if obj:
-                contrat_obj.service = obj
+                  Services.objects.filter(nom__iexact=str(service_nom).strip()).first()
+            if obj: f.service = obj
 
-        # Financement
+        if poste_nom:
+            pid = self._safe_int(poste_nom)
+            obj = Postes.objects.filter(id=pid).first() if pid else \
+                  Postes.objects.filter(nom__iexact=str(poste_nom).strip()).first()
+            if obj: f.poste = obj
+
         if financement_nom:
             fid = self._safe_int(financement_nom)
             obj = ModeFinancement.objects.filter(id=fid).first() if fid else \
-                ModeFinancement.objects.filter(nom__iexact=str(financement_nom).strip()).first()
-            if obj:
-                contrat_obj.financement = obj
+                  ModeFinancement.objects.filter(nom__iexact=str(financement_nom).strip()).first()
+            if obj: f.financement = obj
 
-        # Dates
-        if date_embauche: contrat_obj.dateDebut = date_embauche
-        if date_sortie:   contrat_obj.dateFin   = date_sortie
+        f.save()
 
-        # Autres champs contrat
-        if num_contrat:    contrat_obj.NumeroContrat = num_contrat
-        if periode_essai:  contrat_obj.periodeEssai  = periode_essai
-        if date_fin_essai: contrat_obj.dateFinEssai  = date_fin_essai
+        # ── CONTRAT ─────────────────────────────────────────
+        contrat_obj, _ = Contrat.objects.get_or_create(personnelle=instance)
+
+        if num_contrat:   contrat_obj.NumeroContrat = num_contrat
+        if periode_essai: contrat_obj.periodeEssai  = periode_essai
+        if date_fin_essai: contrat_obj.dateFinEssai = date_fin_essai
 
         if type_contrat_id:
             tc_id = self._safe_int(type_contrat_id)
@@ -549,9 +511,10 @@ class Meta:
             else:
                 tc = TypeContrats.objects.filter(
                     TypeContrat__iexact=str(type_contrat_id).strip()
+                ).first() or TypeContrats.objects.filter(
+                    nom__iexact=str(type_contrat_id).strip()
                 ).first()
-            if tc:
-                contrat_obj.typeContrat = tc
+            if tc: contrat_obj.typeContrat = tc
 
         if salaire not in [None, '', 'null', 'None']:
             try:
@@ -584,55 +547,29 @@ class Meta:
                 ).delete()
 
             # ── DIPLÔMES ─────────────────────────────────────────
-            from api.models.diplome.typeDiplome import DiplomeType
-
             request = self.context.get('request')
 
             for item in add_dip:
                 item = dict(item)
                 item.pop('id', None)
-                item.pop('fichier', None)
-
-                type_dip_id = item.pop('type_diplome', None)
-                type_dip = None
-                if type_dip_id:
-                    try:
-                        type_dip = DiplomeType.objects.get(id=int(type_dip_id))
-                    except (DiplomeType.DoesNotExist, ValueError, TypeError):
-                        pass
-
-                annee_raw = item.pop('annee', None) or item.pop('annebtention', None)
-                annee_int = None
-                if annee_raw:
-                    try:
-                        annee_int = int(str(annee_raw)[:4])
-                    except (ValueError, TypeError):
-                        pass
-
+                item.pop('fichier', None)  # "fichier" est le nom frontend, pas le champ modèle
                 try:
-                    Diplome.objects.create(
-                        personnelle    = instance,
-                        type_diplome   = type_dip,
-                        filiere        = item.get('filiere', ''),
-                        lieu           = item.get('lieu', ''),
-                        etablissement  = item.get('etablissement', ''),
-                        anneeObtention = annee_int,
-                    )
+                    Diplome.objects.create(personnelle=instance, **item)
                 except Exception as e:
                     print(f"Erreur création diplôme: {e}")
 
-            # ✅ Photos diplômes — EN DEHORS du for add_dip
+            # ✅ Après création, associer les photos envoyées en fichier
             if request:
                 for key, file in request.FILES.items():
                     if not key.startswith('diplome_photo_'):
                         continue
                     try:
-                        index          = int(key.replace('diplome_photo_', ''))
+                        index = int(key.replace('diplome_photo_', ''))
                         diplome_id_str = request.data.get(f'diplome_id_{index}', '')
-                        diplome_id     = int(diplome_id_str)
+                        diplome_id = int(diplome_id_str)
                         dip = Diplome.objects.filter(id=diplome_id, personnelle=instance).first()
                         if dip:
-                            dip.photo = file
+                            dip.photo = file  # ← "photo" est le vrai nom du champ
                             dip.save(update_fields=['photo'])
                     except (ValueError, TypeError):
                         pass
@@ -640,94 +577,58 @@ class Meta:
             for item in upd_dip:
                 item = dict(item)
                 did = self._safe_int(item.pop('id', None))
-                item.pop('fichier', None)
-
-                type_dip_id = item.pop('type_diplome', None)
-                if type_dip_id:
-                    try:
-                        item['type_diplome_id'] = int(type_dip_id)
-                    except (ValueError, TypeError):
-                        pass
-
-                annee_raw = item.pop('annee', None) or item.pop('dateObtention', None)
-                if annee_raw:
-                    try:
-                        item['anneeObtention'] = int(str(annee_raw)[:4])
-                    except (ValueError, TypeError):
-                        pass
-
+                item.pop('fichier', None)  # retirer le nom frontend
                 if did:
                     try:
                         Diplome.objects.filter(id=did, personnelle=instance).update(**item)
                     except Exception as e:
                         print(f"Erreur MAJ diplôme {did}: {e}")
 
-            if del_dip:
-                Diplome.objects.filter(
-                    id__in=[self._safe_int(i) for i in del_dip],
-                    personnelle=instance
-                ).delete()
-
-            # ── FORMATIONS ───────────────────────────────────────
             for item in add_for:
                 item = dict(item)
                 item.pop('id', None)
-                item.pop('certificat', None)
+                item.pop('certificat', None)  # "certificat" est le nom frontend, pas le champ modèle
                 try:
                     Formation.objects.create(personnelle=instance, **item)
                 except Exception as e:
                     print(f"Erreur création formation: {e}")
 
+            # ✅ Associer les attestations
             if request:
                 for key, file in request.FILES.items():
                     if not key.startswith('formation_attestation_'):
                         continue
                     try:
-                        index            = int(key.replace('formation_attestation_', ''))
+                        index = int(key.replace('formation_attestation_', ''))
                         formation_id_str = request.data.get(f'formation_id_{index}', '')
-                        formation_id     = int(formation_id_str)
+                        formation_id = int(formation_id_str)
                         form = Formation.objects.filter(id=formation_id, personnelle=instance).first()
                         if form:
-                            form.attestation = file
+                            form.attestation = file  # ← "attestation" est le vrai nom du champ
                             form.save(update_fields=['attestation'])
                     except (ValueError, TypeError):
                         pass
 
-            for i, item in enumerate(add_for):  # ✅ ajouter enumerate
+            for item in upd_for:
                 item = dict(item)
-                item.pop('id', None)
+                fid = self._safe_int(item.pop('id', None))
                 item.pop('certificat', None)
-                try:
-                    # ✅ Garder la référence à l'objet créé
-                    new_form = Formation.objects.create(personnelle=instance, **item)
+                if fid:
+                    try:
+                        Formation.objects.filter(id=fid, personnelle=instance).update(**item)
+                    except Exception as e:
+                        print(f"Erreur MAJ formation {fid}: {e}")
+                    # ── NIF / STAT / CNAPS — stockés dans Propos ────────────
+                        p_obj, _ = Propos.objects.get_or_create(personnelle=instance)
+                        nif_val  = validated_data.get('nif')
+                        stat_val = validated_data.get('stat')
+                        cnaps_val= validated_data.get('cnaps')
+                        if nif_val  is not None: p_obj.nif  = nif_val
+                        if stat_val is not None: p_obj.stat = stat_val
+                        if cnaps_val is not None: p_obj.cnaps = cnaps_val
+                        p_obj.save()
+        print(f"DEBUG validated_data restant: {list(validated_data.keys())}")
+        print(f"DEBUG nif: {validated_data.get('nif')}")
+        print(f"DEBUG stat: {validated_data.get('stat')}")
 
-                    # ✅ Associer le certificat immédiatement après création
-                    if request:
-                        cert_file = request.FILES.get(f'formation_file_{i}')
-                        if cert_file:
-                            new_form.attestation = cert_file
-                            new_form.save(update_fields=['attestation'])
-
-                except Exception as e:
-                    print(f"Erreur création formation: {e}")
-            if del_for:
-                Formation.objects.filter(
-                    id__in=[self._safe_int(i) for i in del_for],
-                    personnelle=instance
-                ).delete()
-
-            # ── NIF / STAT / CNAPS ────────────────────────────────
-            p_obj, _ = Propos.objects.get_or_create(personnelle=instance)
-            nif_val   = validated_data.get('nif')
-            stat_val  = validated_data.get('stat')
-            cnaps_val = validated_data.get('cnaps')
-            if nif_val   is not None: p_obj.nif         = nif_val
-            if stat_val  is not None: p_obj.stat        = stat_val
-            if cnaps_val is not None: p_obj.numeroCnaps = cnaps_val
-            p_obj.save()
-
-            print(f"DEBUG validated_data restant: {list(validated_data.keys())}")
-            print(f"DEBUG nif: {validated_data.get('nif')}")
-            print(f"DEBUG stat: {validated_data.get('stat')}")
-
-            return instance
+        return instance

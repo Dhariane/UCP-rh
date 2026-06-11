@@ -1,10 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-
 from api.services.personnelles.diplome.diplomeService import DiplomeService
-from api.dto.personnelles.diplome.diplomeDto import DiplomeDTO   # À adapter selon ton nom de fichier DTO
-
+from api.dto import DiplomeDTO
 
 class DiplomeController(APIView):
 
@@ -12,19 +10,16 @@ class DiplomeController(APIView):
         try:
             if id:
                 diplome = DiplomeService.getById(id)
-                if not diplome:
-                    return Response({"error": "Diplôme introuvable"}, status=status.HTTP_404_NOT_FOUND)
                 return Response(DiplomeDTO(diplome).data, status=status.HTTP_200_OK)
             
-            # Récupérer tous les diplômes (ou par personnelle si tu passes un paramètre)
             diplomes = DiplomeService.getAll()
             return Response(DiplomeDTO(diplomes, many=True).data, status=status.HTTP_200_OK)
-        
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response({"error": "Diplôme introuvable"}, status=status.HTTP_404_NOT_FOUND)
 
     def post(self, request):
         try:
+            # Important : request.data gère le JSON et le form-data (pour l'image)
             diplome = DiplomeService.create(request.data)
             return Response({
                 "status": "success",
@@ -48,9 +43,6 @@ class DiplomeController(APIView):
     def delete(self, request, id):
         try:
             DiplomeService.delete(id)
-            return Response({
-                "status": "success",
-                "message": "Diplôme supprimé avec succès"
-            }, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Diplôme supprimé avec succès"}, status=status.HTTP_200_OK)
+        except Exception:
+            return Response({"error": "Impossible de supprimer ce diplôme"}, status=status.HTTP_400_BAD_REQUEST)

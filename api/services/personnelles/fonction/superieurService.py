@@ -1,7 +1,10 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> dcc45aed (linux)
+=======
+>>>>>>> 23088e43 (mon enregistrement local)
 from api.models import Superieur
 from api.dto.personnelles.fonction.superieurDto import SuperieurDto
 
@@ -36,6 +39,7 @@ class SuperieurService:
         
         superieurs = SuperieurService.getAll()
 <<<<<<< HEAD
+<<<<<<< HEAD
         return SuperieurDto(superieurs, many=True) 
 =======
 from api.models.fonction.fonctions import Fonctions
@@ -68,3 +72,6 @@ class SuperieurService:
         return SuperieurDto(superieurs, many=True) 
 >>>>>>> dcc45aed (linux)
 >>>>>>> 2b8eb512 (deploie)
+=======
+        return SuperieurDto(superieurs, many=True) 
+>>>>>>> 23088e43 (mon enregistrement local)

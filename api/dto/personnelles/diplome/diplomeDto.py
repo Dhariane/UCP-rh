@@ -8,10 +8,7 @@ class DiplomeDTO(serializers.ModelSerializer):
             'id',
             'nom',
             'etablissement',
-            'anneeObtention',
+            'dateObtention',
             'photo',
-            'lieu',
-            'filiere',
-            'type_diplome',
             'personnelle'
         ]

@@ -1,5 +1,9 @@
 from django.db import models
+<<<<<<< HEAD
 from datetime import date, datetime
+=======
+from datetime import date
+>>>>>>> 23088e43 (mon enregistrement local)
 from api.models.propos.personnelles import Personnelles
 
 class SoldeConge(models.Model):
@@ -25,6 +29,7 @@ class SoldeConge(models.Model):
     def calcul_total(self):
         today = date.today()
 
+<<<<<<< HEAD
         # On ne calcule pas les soldes pour les années futures lointaines
         if self.annee > today.year:
             return 0
@@ -59,15 +64,61 @@ class SoldeConge(models.Model):
             mois_travailles = 12
 
         # Calcul final (ex: 12 mois * 2j = 24j cumulés dès le 1er Janvier)
+=======
+        if self.annee > today.year:
+            return 0
+
+        # Récupérer la date d'embauche depuis Fonctions
+        from api.models.fonction.fonctions import Fonctions
+        fonction = Fonctions.objects.filter(
+            personnelle=self.personnel
+        ).order_by('dateDebut').first()
+
+        # Si pas de fonction → 0
+        if not fonction or not fonction.dateDebut:
+            return 0
+
+        date_debut = fonction.dateDebut
+
+        # Avant l'embauche → 0
+        if self.annee < date_debut.year:
+            return 0
+
+        # Année courante
+        if self.annee == today.year:
+            if date_debut.year == today.year:
+                # Embauché cette année → compter depuis le mois d'embauche
+                mois_travailles = today.month - date_debut.month + 1
+            else:
+                # Embauché avant → tous les mois jusqu'à aujourd'hui
+                mois_travailles = today.month
+
+        # Année passée complète
+        else:
+            if self.annee == date_debut.year:
+                # Année d'embauche → mois partiels
+                mois_travailles = 12 - date_debut.month + 1
+            else:
+                mois_travailles = 12
+
+>>>>>>> 23088e43 (mon enregistrement local)
         return min(max(mois_travailles, 0) * 2, self.MAX_SOLDE)
 
     def save(self, *args, **kwargs):
         update_fields = kwargs.get('update_fields', None)
 
         if update_fields is None:
+<<<<<<< HEAD
             if not self.is_manual:
                 self.total = self.calcul_total()
 
+=======
+            # Recalcul automatique seulement si pas manuel
+            if not self.is_manual:
+                self.total = self.calcul_total()
+
+            # Plafond 72j
+>>>>>>> 23088e43 (mon enregistrement local)
             if self.total > self.MAX_SOLDE:
                 self.total = self.MAX_SOLDE
 
@@ -79,6 +130,7 @@ class SoldeConge(models.Model):
 
             self.reste = self.total - self.utilise
 
+<<<<<<< HEAD
         super().save(*args, **kwargs)
 
 
@@ -104,3 +156,6 @@ def generer_solde_nouveau_contrat(sender, instance, created, **kwargs):
             personnel=instance.personnelle,
             annee=annee_contrat
         )
+=======
+        super().save(*args, **kwargs)
+>>>>>>> 23088e43 (mon enregistrement local)

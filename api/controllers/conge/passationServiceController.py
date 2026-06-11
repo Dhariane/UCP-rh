@@ -3,9 +3,13 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
+<<<<<<< HEAD
 from api.models.conge.conge import Conge
 from api.models.conge.passationservice import PassationService
 from api.services.conge.congeService import CongeServices
+=======
+from api.models.conge.passationservice import PassationService
+>>>>>>> 23088e43 (mon enregistrement local)
 from api.services.conge.passationServiceService import PassationServices
 from api.dto.conge.passationServiceDto import PassationServiceDTO
 
@@ -81,6 +85,7 @@ class PassationServiceController(APIView):
             }, status=status.HTTP_404_NOT_FOUND)
 
     def patch(self, request, id):
+<<<<<<< HEAD
         """
         Appelé par Next.js quand le remplaçant accepte ou refuse la passation (ID de la passation)
         """
@@ -130,6 +135,9 @@ class PassationServiceController(APIView):
                 "status": "error",
                 "message": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+=======
+        return self.put(request, id)
+>>>>>>> 23088e43 (mon enregistrement local)
 
     def delete(self, request, id):
         try:

@@ -3,8 +3,11 @@ venv/
 env/
 .env
 
+<<<<<<< HEAD
 pyc
 
+=======
+>>>>>>> 23088e43 (mon enregistrement local)
 # Fichiers de cache Python
 __pycache__/
 *.pyc

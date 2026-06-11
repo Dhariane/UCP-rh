@@ -6,4 +6,13 @@ class FonctionDto(serializers.ModelSerializer):
         fields = [
             "id",
             "nom",
+<<<<<<< HEAD
+=======
+            "dateDebut",
+            "dateFin",
+            "personnelle",
+            "service",
+            "poste",
+            "financement"
+>>>>>>> 23088e43 (mon enregistrement local)
         ]

@@ -24,11 +24,6 @@ class LoginController(APIView):
                 
                 # 2. Vérification du mot de passe
                 if check_password(password_saisi, login_account.password):
-                    if login_account.personnelle and not login_account.personnelle.is_active:
-                        return Response({
-                            "status": "error",
-                            "message": "Votre compte est désactivé. Contactez l'administrateur."
-                        }, status=status.HTTP_403_FORBIDDEN)
                     # 3. Création du user système pour le token
                     user_system, _ = User.objects.get_or_create(
                         username=email_saisi, 
