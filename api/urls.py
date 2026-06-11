@@ -3,13 +3,9 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from api.controllers import *
-<<<<<<< HEAD
-from api.controllers.conge.validationController import CongeValidationHistoriqueController
-=======
 from api.controllers.conge.congeController import CongesEnAttenteController
 from api.controllers.conge.notificationController import NotificationController, NotificationMarquerLuController, NotificationNonLuesCountController, NotificationToutLireController
 from api.controllers.conge.validationController import ValidationCongeController
->>>>>>> e90d3e6c (nouvel branche)
 from api.controllers.personnelles.diplome.typeDiplomeController import DiplomeTypeController
 from api.controllers.personnelles.fonction.superieurController import SuperieurController
 from api.controllers.conge.soldeCongeController import SoldeCongeRHController
@@ -55,6 +51,11 @@ urlpatterns = [
     path("photos", PhotosController.as_view(), name="photos"),
     path("photos/<int:id>/", PhotosController.as_view(), name="photo-detail"),
     path("fullpersonnelles",PersonnelFullController.as_view(),name='fullpersonnelles'),
+<<<<<<< HEAD
+=======
+    path('fullpersonnelles/<int:pk>/', PersonnelFullController.as_view(),name='fullpersonnelles-detail'),
+    path('fullpersonnelles/<int:personnel_id>/archive/', PersonnelContratHistoryController.as_view(), name='fullpersonnelles-archive'),
+>>>>>>> 1106ff3c (pull back_test)
     path("familles",FamilleController.as_view(),name="familles"),
     path("familles/<int:id>/",FamilleController.as_view(),name="famille-detail"),
     # path('fullpersonnelles/<int:id>/', PersonnelFullController.as_view(), name='full-personnel-detail'),
