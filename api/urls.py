@@ -8,7 +8,10 @@ from api.controllers.conge.validationController import CongeValidationController
 from api.controllers.personnelles.diplome.typeDiplomeController import DiplomeTypeController
 from api.controllers.personnelles.fonction.listFonctionController import FonctionListController
 from api.controllers.personnelles.fonction.superieurController import SuperieurController
-from api.controllers.conge.soldeCongeController import SoldeCongeRHController
+from api.controllers.conge.soldeCongeController import (
+    SoldeCongeRHController,
+    SoldeCongeByPersonnelController,   # ← ajoute ceci
+)
 from api.controllers.personnelles.fonction.fonctionController import FonctionCRUDController
 from api.controllers.personnelles.fonction.ServiceController import ServiceCRUDController
 from api.controllers.conge.congePlanifieController import CongePlanifieController, CongePlanifieDetailController
@@ -95,11 +98,12 @@ urlpatterns = [
     path('superieurs', SuperieurController.as_view()),
     path('superieurs/<int:fonction_id>/', SuperieurController.as_view()),
     path('personnelles/<int:id>/toggle-status/', PersonnelleController.as_view(), name='toggle-status'),
-    path('conges-planifies/<int:personnel_id>/', CongePlanifieController.as_view(), name='conges-planifies-personnel'),
-    path('conges-planifies/detail/<int:id>/', CongePlanifieDetailController.as_view(), name='conge-planifie-detail'),
     path('conges-planifies/', ConfigPlanningController.as_view(), name='config-planification'),
+    path('conges-planifies/detail/<int:id>/', CongePlanifieDetailController.as_view(), name='conge-planifie-detail'),
+    path('conges-planifies/<int:personnel_id>/', CongePlanifieController.as_view(), name='conges-planifies-personnel'),
     path('rh/soldes/',              SoldeCongeRHController.as_view()),
     path('rh/soldes/<int:solde_id>/', SoldeCongeRHController.as_view()),
+    path('solde_conge/<int:personnel_id>/', SoldeCongeByPersonnelController.as_view(), name='solde_conge-personnel'),
     path('fonctions_list', FonctionCRUDController.as_view()),
     path('type_diplomes', DiplomeTypeController.as_view()),
     path('type_diplomes/<int:id>/', DiplomeTypeController.as_view()),

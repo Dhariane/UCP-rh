@@ -6,6 +6,7 @@ from api.dto.conge import soldeCongeDto
 from api.models.conge.soldeConge import SoldeConge
 from api.services.conge.soldeCongeService import SoldeCongeServices
 from api.dto.conge.soldeCongeDto import SoldeCongeDTO
+from datetime import date
 
 
 class SoldeCongeController(APIView):
@@ -222,7 +223,36 @@ class SoldeCongeController(APIView):
     def patch(self, request, id):
         return self.put(request, id)
     
+class SoldeCongeByPersonnelController(APIView):
+    """
+    GET /api/solde_conge/<personnel_id>/
+    Appelé par fetchSolde() dans AdminCongesPlanifiesModal
+    """
+    def get(self, request, personnel_id):
+        try:
+            annee_courante = date.today().year
+            solde = SoldeConge.objects.get(
+                personnel_id=personnel_id,
+                annee=annee_courante
+            )
+            return Response({
+                'id':       solde.id,
+                'annee':    solde.annee,
+                'total':    solde.total,
+                'utilise':  solde.utilise,
+                'reste':    solde.reste,
+            }, status=status.HTTP_200_OK)
 
+        except SoldeConge.DoesNotExist:
+            return Response(
+                {"error": f"Aucun solde initialisé pour l'année {date.today().year}"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 # api/controllers/conge/soldeController.py
 from rest_framework.views import APIView
 from rest_framework.response import Response
