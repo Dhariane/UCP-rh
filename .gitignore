@@ -4,10 +4,17 @@ env/
 .env
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 pyc
 
 =======
 >>>>>>> 23088e43 (mon enregistrement local)
+=======
+=======
+pyc
+
+>>>>>>> origin/back_test
+>>>>>>> origin/Naly_back
 # Fichiers de cache Python
 __pycache__/
 *.pyc

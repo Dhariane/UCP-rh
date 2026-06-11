@@ -51,4 +51,3 @@ class SuperieurService:
         fonction.superieurs.set(logins)
         return fonction
 
-

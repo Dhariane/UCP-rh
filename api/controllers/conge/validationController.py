@@ -1,116 +1,171 @@
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.shortcuts import get_object_or_404
 
 from api.models.conge.conge import Conge
+from api.models.conge.statut import Statut
 from api.models.auth.login.loginModel import Login
-from api.services.conge.validationService import ValidationService
-from api.dto.conge.congeDto import CongeDTO
+from api.models.propos.personnelles import Personnelles
+from api.models.admin.loginadModel import Loginadmin
+from api.signal.conge_signal import envoi_notification_suivante, envoi_notification_refus
 
 
-class ValidationController(APIView):
+def get_etape_suivante(conge: Conge) -> str:
+    from api.models.fonction.contrat import Contrat
+    from api.models.auth.login.loginModel import Login
+    
+    ordre = ['passation', 'chef', 'gp_pf', 'cn', 'rh', 'termine']
+
+    try:
+        contrat = Contrat.objects.filter(
+            personnelle=conge.personnel, is_actif=True
+        ).first()
+        if contrat and contrat.fonction and contrat.fonction.chef_direct:
+            # ✅ Si le CHEF DIRECT est CN, on saute gp_pf (pas cn !)
+            chef_direct_est_cn = Login.objects.filter(
+                personnelle__contrats__fonction=contrat.fonction.chef_direct,
+                personnelle__contrats__is_actif=True,
+                role__name='CN'
+            ).exists()
+            if chef_direct_est_cn and 'gp_pf' in ordre:
+                ordre.remove('gp_pf')  # ✅ saute gp_pf, garde cn
+    except Exception:
+        pass
+
+    try:
+        idx = ordre.index(conge.etape_validation)
+        return ordre[idx + 1] if idx + 1 < len(ordre) else 'termine'
+    except ValueError:
+        return 'termine'
+
+
+def get_login_from_id(login_id):
     """
-    POST /api/conge/<id>/valider/
-    Body : { "login_id": 2, "decision": "approuve" | "refuse", "motif": "..." }
+    Cherche le login dans Login (users normaux) 
+    ou Loginadmin (admin RH).
+    Retourne (login_obj, is_admin)
     """
+    if not login_id:
+        return None, False
 
-    def post(self, request, id):
-        login_id = request.data.get('login_id')
-        decision = request.data.get('decision')
-        motif    = request.data.get('motif', None)
+    # 1. Chercher par login_id direct
+    login = Login.objects.filter(id=login_id).first()
+    if login:
+        return login, False
 
-        # ── Validation des champs requis ──────────────────────────────────
-        if not login_id:
-            return Response({
-                "status": "error",
-                "message": "Le champ 'login_id' est requis."
-            }, status=status.HTTP_400_BAD_REQUEST)
+    # 2. Chercher par personnel_id
+    personnel = Personnelles.objects.filter(id=login_id).first()
+    if personnel:
+        login = Login.objects.filter(personnelle=personnel).first()
+        if login:
+            return login, False
 
-        if decision not in ('approuve', 'refuse'):
-            return Response({
-                "status": "error",
-                "message": "Le champ 'decision' doit être 'approuve' ou 'refuse'."
-            }, status=status.HTTP_400_BAD_REQUEST)
+    # 3. Chercher dans Loginadmin
+    admin = Loginadmin.objects.filter(id=login_id).first()
+    if admin:
+        return None, True  # C'est un admin, validated_by = None
 
-        if decision == 'refuse' and not motif:
-            return Response({
-                "status": "error",
-                "message": "Le champ 'motif' est obligatoire en cas de refus."
-            }, status=status.HTTP_400_BAD_REQUEST)
+    return None, False
 
-        # ── Appel du service ──────────────────────────────────────────────
+
+class CongeValidationController(APIView):
+
+    def post(self, request, id=None, conge_id=None):
+        """
+        Valider ou refuser un congé à l'étape courante.
+        Body : { "decision": "approuve"|"refuse", "login_id": 12, "motif": "..." }
+        """
+        pk = id or conge_id
         try:
-            conge = ValidationService.valider(
-                conge_id=id,
-                login_id=login_id,
-                decision=decision,
-                motif=motif,
-            )
-            return Response({
-                "status": "success",
-                "message": f"Congé {decision} avec succès.",
-                "data": CongeDTO(conge).data
-            }, status=status.HTTP_200_OK)
+            decision = request.data.get('decision')
+            motif    = request.data.get('motif', '')
+            login_id = request.data.get('login_id')
 
-        except Conge.DoesNotExist:
-            return Response({
-                "status": "error",
-                "message": f"Congé introuvable (ID: {id})."
-            }, status=status.HTTP_404_NOT_FOUND)
+            if decision not in ('approuve', 'refuse'):
+                return Response({
+                    "status": "error",
+                    "message": "decision doit être 'approuve' ou 'refuse'"
+                }, status=status.HTTP_400_BAD_REQUEST)
 
-        except Login.DoesNotExist:
-            return Response({
-                "status": "error",
-                "message": f"Login introuvable (ID: {login_id})."
-            }, status=status.HTTP_404_NOT_FOUND)
+            conge = get_object_or_404(Conge, id=pk)
+            login_obj, is_admin = get_login_from_id(login_id)
 
-        except ValueError as e:
-            return Response({
-                "status": "error",
-                "message": str(e)
-            }, status=status.HTTP_403_FORBIDDEN)
+            # ── REFUS ──────────────────────────────────────────────
+            if decision == 'refuse':
+                conge.statut           = Statut.objects.get(id=3)
+                conge.etape_validation = 'termine'
+                conge.validated_by     = login_obj  # None si admin
+                conge.save()
+                envoi_notification_refus(conge, login_obj)
+                return Response({
+                    "status":  "success",
+                    "message": "Demande refusée",
+                    "data":    {
+                        "etape_validation": "termine",
+                        "statut": "Refusé"
+                    }
+                })
 
+            # ── APPROBATION ────────────────────────────────────────
+            # Cas spécial passation
+            if conge.etape_validation == 'passation':
+                if conge.passation_service:
+                    conge.passation_service.statut = Statut.objects.get(id=2)
+                    conge.passation_service.save()
+
+            prochaine_etape        = get_etape_suivante(conge)
+            conge.etape_validation = prochaine_etape
+            conge.validated_by     = login_obj  # None si admin
+
+            if prochaine_etape == 'termine':
+                conge.statut = Statut.objects.get(id=2)
+
+            conge.save()
+            envoi_notification_suivante(conge)
+
+            return Response({
+                "status":  "success",
+                "message": f"Étape validée → {prochaine_etape}",
+                "data": {
+                    "etape_validation": prochaine_etape,
+                    "statut": conge.statut.statut
+                }
+            })
+
+        except Statut.DoesNotExist as e:
+            return Response({
+                "status":  "error",
+                "message": f"Statut introuvable : {e}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as e:
             return Response({
-                "status": "error",
-                "message": f"Erreur inattendue : {str(e)}"
+                "status":  "error",
+                "message": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
-class CongeValidationHistoriqueController(APIView):
-    """
-    GET /api/conge/<id>/validations/
-    Retourne l'historique des validations d'un congé.
-    """
-
-    def get(self, request, id):
+    def get(self, request, id=None, conge_id=None):
+        """Historique des validations d'un congé"""
+        pk = id or conge_id
         try:
-            conge = Conge.objects.get(pk=id)
+            conge = Conge.objects.get(id=pk)
+            validations = conge.validations.all()
+            data = [
+                {
+                    "etape":    v.etape,
+                    "decision": v.decision,
+                    "valideur": (
+                        f"{v.valideur.personnelle.prenom} {v.valideur.personnelle.nom}"
+                        if v.valideur and v.valideur.personnelle else "—"
+                    ),
+                    "motif": v.motif,
+                    "date":  v.date,
+                }
+                for v in validations
+            ]
+            return Response({"status": "success", "data": data})
         except Conge.DoesNotExist:
             return Response({
-                "status": "error",
-                "message": f"Congé introuvable (ID: {id})."
+                "status":  "error",
+                "message": f"Congé introuvable (ID: {pk})"
             }, status=status.HTTP_404_NOT_FOUND)
-
-        validations = conge.validationconge_set.select_related(
-            'valideur'
-        ).order_by('created_at')
-
-        data = [
-            {
-                "id":        v.id,
-                "etape":     v.etape,
-                "decision":  v.decision,
-                "motif":     v.motif,
-                "valideur":  str(v.valideur),
-                "date":      v.created_at.strftime('%d/%m/%Y %H:%M'),
-            }
-            for v in validations
-        ]
-
-        return Response({
-            "status": "success",
-            "data": data,
-            "etape_actuelle": conge.etape_validation,
-        }, status=status.HTTP_200_OK)

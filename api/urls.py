@@ -13,12 +13,19 @@ from api.controllers.personnelles.fonction.fonctionController import FonctionCRU
 from api.controllers.personnelles.fonction.ServiceController import ServiceCRUDController
 from api.controllers.conge.congePlanifieController import CongePlanifieController, CongePlanifieDetailController
 from .controllers import ConfigPlanningController
+<<<<<<< HEAD
 from api.controllers.conge.notificationController import (
     NotificationController,
     NotificationNonLuesCountController,
     NotificationMarquerLuController,
     NotificationToutLireController,
 )
+=======
+
+# ✅ 1. IMPORTER LE NOUVEAU CONTRÔLEUR D'HISTORIQUE (s'il est dans le même fichier views/controllers)
+from api.controllers import PersonnelContratHistoryController
+
+>>>>>>> origin/Naly_back
 urlpatterns = [
     path('login', LoginController.as_view(), name='login'),
     path('personnelle', PersonnelleController.as_view(), name='personnelle'),
@@ -52,14 +59,20 @@ urlpatterns = [
     path("photos/<int:id>/", PhotosController.as_view(), name="photo-detail"),
     path("fullpersonnelles",PersonnelFullController.as_view(),name='fullpersonnelles'),
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     path('fullpersonnelles/<int:pk>/', PersonnelFullController.as_view(),name='fullpersonnelles-detail'),
     path('fullpersonnelles/<int:personnel_id>/archive/', PersonnelContratHistoryController.as_view(), name='fullpersonnelles-archive'),
 >>>>>>> 1106ff3c (pull back_test)
+=======
+    path('fullpersonnelles/<int:pk>/', PersonnelFullController.as_view(),name='fullpersonnelles-detail'),
+    
+    # ✅ 2. LA NOUVELLE ROUTE POUR L'HISTORIQUE ATTENDUE PAR LE FRONT
+    path('fullpersonnelles/<int:personnel_id>/archive/', PersonnelContratHistoryController.as_view(), name='fullpersonnelles-archive'),
+
+>>>>>>> origin/Naly_back
     path("familles",FamilleController.as_view(),name="familles"),
     path("familles/<int:id>/",FamilleController.as_view(),name="famille-detail"),
-    # path('fullpersonnelles/<int:id>/', PersonnelFullController.as_view(), name='full-personnel-detail'),
-    path('fullpersonnelles/<int:pk>/', PersonnelFullController.as_view()),
     path('experiences', ExperienceController.as_view(), name='experience'),
     path('experiences/<int:id>/', ExperienceController.as_view(), name='experience-detail'),
     path('diplomes', DiplomeController.as_view(), name='diplome'),
@@ -116,10 +129,19 @@ urlpatterns = [
     path('notifications/<int:id>/lire/',  NotificationMarquerLuController.as_view()),
     path('notifications/tout-lire/',      NotificationToutLireController.as_view()),
     path('conge/en-attente/<int:login_id>/', CongesEnAttenteController.as_view(), name='conges-en-attente'),
+    # ── Congés ───────────────────────────────────────────────────────────────────
+    path('conge',                                CongeController.as_view(),            name='conge'),
+    path('conge/<int:id>/',                      CongeController.as_view(),            name='conge-detail'),
+    path('conge/<int:id>/valider/',              CongeValidationController.as_view(),  name='conge-valider'),
+    path('conge/<int:id>/validations/',          CongeValidationController.as_view(),  name='conge-historique'),
+    # path('conge/en-attente/<int:login_id>/',     CongesEnAttenteController.as_view(),  name='conges-en-attente'),
+        # ✅ Ajoute cette route AVANT l'existante
+    path('conge/en-attente/<str:login_id>/', CongesEnAttenteController.as_view()),
+    path('conge/en-attente/<int:login_id>/', CongesEnAttenteController.as_view()),
+    path('conge/en-attente/<int:login_id>/', CongesEnAttenteController.as_view(), name='conges-en-attente'),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

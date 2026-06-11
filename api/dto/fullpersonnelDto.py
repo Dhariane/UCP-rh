@@ -423,7 +423,12 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
         return str(c.dateCin) if c and c.dateCin else ""
 
     def get_lieuDelivranceCin(self, obj):
+<<<<<<< HEAD
         c = self._get_related_data(obj)['cin']
         return c.lieuCin if c else ""
     
     
+=======
+        c = self._get_cin(obj)
+        return c.lieuCin if c else ""
+>>>>>>> origin/Naly_back

@@ -316,6 +316,8 @@ class PersonnelFullController(APIView):
 
     from django.db.models import Prefetch
 
+    from django.db.models import Prefetch
+
     def get(self, request, pk=None):
         try:
             if pk:
@@ -495,3 +497,54 @@ class PersonnelFullController(APIView):
             )
         except Personnelles.DoesNotExist:
             return Response({"error": "Personnel non trouvé"}, status=status.HTTP_404_NOT_FOUND)
+
+    def get(self, request, pk=None):
+        # On force les imports nécessaires au cas où ils manquent en haut du fichier
+        from django.db.models import Prefetch
+        from api.models.fonction.contrat import Contrat
+
+        # 1. CAS OÙ ON DEMANDE L'ARCHIVE D'UN EMPLOYÉ PRÉCIS
+        if pk and request.query_params.get('archive') == 'true':
+            try:
+                from api.dto.contratHistory import contratHistoryDto
+                historique = Contrat.history.filter(personnelle_id=pk).order_by('-history_date')
+                serializer = contratHistoryDto(historique, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except Exception as archive_error:
+                return Response({"error": f"Erreur archive: {str(archive_error)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. CAS OÙ ON RECHERCHE UN SEUL PERSONNEL (C'est ici que ça plantait avec l'ID 92)
+        elif pk:
+            try:
+                personne = Personnelles.objects.prefetch_related(
+                    'sexe', 'cins', 'propos_list', 'propos_list__etatCivil',
+                    'diplomes', 'Experience', 'Enfant', 'contactUrgence', 'photos',
+                    Prefetch(
+                        'contrats',  # Le related_name de ton modèle
+                        queryset=Contrat.objects.select_related('fonction', 'typeContrat', 'service', 'financement')
+                    )
+                ).get(pk=pk)
+                
+                serializer = PersonnelFullSerializer(personne, context={'request': request})
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except Personnelles.DoesNotExist:
+                return Response({"error": "Le personnel demandé n'existe pas."}, status=status.HTTP_404_NOT_FOUND)
+            except Exception as e:
+                # Ce print va afficher l'erreur exacte dans ton terminal Django pour qu'on sache ce qui cloche !
+                print(f"❌ ERREUR GET UNIQUE (ID {pk}): {str(e)}")
+                return Response({"error": f"Erreur serveur personnel unique: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 3. CAS DE LA LISTE GÉNÉRALE
+        else:
+            try:
+                personnes = Personnelles.objects.all().prefetch_related(
+                    'sexe',
+                    Prefetch(
+                        'contrats', 
+                        queryset=Contrat.objects.select_related('fonction', 'typeContrat', 'service', 'financement')
+                    )
+                )
+                serializer = PersonnelFullSerializer(personnes, many=True, context={'request': request})
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response({"error": f"Erreur serveur liste générale: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)

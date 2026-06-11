@@ -152,3 +152,4 @@ class PersonnelFullController(APIView):
             import traceback
             traceback.print_exc()
             return Response({"error": str(e)}, status=400)
+

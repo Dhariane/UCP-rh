@@ -87,6 +87,27 @@ class ValidationService:
         return [login_chef] if login_chef else []
 
     @staticmethod
+    def get_chefs(conge):
+        contrat = Contrat.objects.filter(
+            personnelle=conge.personnel
+        ).order_by('-dateDebut').first()
+        if not contrat or not contrat.fonction:
+            return []
+        chef_fonction = contrat.fonction.chef_direct
+        if not chef_fonction:
+            return []
+        contrat_chef = Contrat.objects.filter(
+            fonction=chef_fonction,
+            dateFin__isnull=True
+        ).first()
+        if not contrat_chef:
+            return []
+        login_chef = Login.objects.filter(
+            personnelle=contrat_chef.personnelle
+        ).first()
+        return [login_chef] if login_chef else []
+
+    @staticmethod
     def get_valideur_gp_rf(conge):
         """Détermine si le valideur budgétaire est un GP ou un Point Focal (RF)"""
         contrat = Contrat.objects.filter(
@@ -190,7 +211,19 @@ class ValidationService:
                 conge=conge, etape='rh',
                 decision=decision, valideur=login, motif=motif
             )
-            conge.refresh_from_db()
+
+
+            if decision == 'refuse':
+                conge.statut = statut_refuse
+            else:
+                conge.statut = statut_approuve
+
+            conge.etape_validation = 'termine'
+            conge.save()
+            NotificationServices.notifier_apres_validation(   # [NOTIF]
+                conge, 'rh', decision, motif, login
+            )
             return conge
 
         raise ValueError(f"Étape inconnue : {etape}")
+
