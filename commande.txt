@@ -168,6 +168,12 @@ python manage.py migrate --fake-initial users
 #installer history
   pip install django-simple-history
 
+#installer crontab
+  pip install django-crontab
+
+#installer apscheduler  
+  pip install django-apscheduler
+
 #Pour voir votre SECRET_KEY 
     python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
 

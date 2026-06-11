@@ -153,7 +153,7 @@ class CongesEnAttenteController(APIView):
                 # Initialiser toutes les variables
                 conges_passation = Conge.objects.none()
                 conges_chef      = Conge.objects.none()
-                conges_gp_rf     = Conge.objects.none()
+                conges_gp_pf     = Conge.objects.none()
                 conges_cn        = Conge.objects.none()
                 conges_rh        = Conge.objects.none()
 
@@ -177,11 +177,38 @@ class CongesEnAttenteController(APIView):
                             personnel__in=subordonnes
                         )
 
-                if role_name in ('GP', 'RF'):
-                    conges_gp_rf = Conge.objects.filter(etape_validation='gp_rf')
+                if role_name in ('GP', 'PF') and personnel_connecte:
+                    contrat_gp = Contrat.objects.filter(
+                        personnelle=personnel_connecte, is_actif=True
+                    ).first()
+                    financement_gp = contrat_gp.financement if contrat_gp else None
 
-                if role_name == 'CN':
+                    if financement_gp:
+                        conges_gp_pf = Conge.objects.filter(
+                            etape_validation='gp_pf',  # ✅ nouveau nom
+                            personnel__contrats__financement=financement_gp,
+                            personnel__contrats__is_actif=True
+                        ).distinct()
+                    else:
+                        conges_gp_pf = Conge.objects.filter(etape_validation='gp_pf')  # ✅
+
+                if role_name == 'CN' and personnel_connecte:
+                    # ✅ CN voit les congés à son étape CN
                     conges_cn = Conge.objects.filter(etape_validation='cn')
+
+                    # ✅ CN voit aussi les congés chef de ses subordonnés directs
+                    contrat_cn = Contrat.objects.filter(
+                        personnelle=personnel_connecte, is_actif=True
+                    ).first()
+                    if contrat_cn:
+                        subordonnes = Personnelles.objects.filter(
+                            contrats__fonction__chef_direct=contrat_cn.fonction,
+                            contrats__is_actif=True
+                        )
+                        conges_chef = Conge.objects.filter(
+                            etape_validation='chef',
+                            personnel__in=subordonnes
+                        )
 
                 if role_name in ('RH', 'admin', 'Superadmin'):
                     conges_rh = Conge.objects.filter(etape_validation='rh')
@@ -189,7 +216,7 @@ class CongesEnAttenteController(APIView):
                 ids = (
                     list(conges_passation.values_list('id', flat=True)) +
                     list(conges_chef.values_list('id', flat=True)) +
-                    list(conges_gp_rf.values_list('id', flat=True)) +
+                    list(conges_gp_pf.values_list('id', flat=True)) +
                     list(conges_cn.values_list('id', flat=True)) +
                     list(conges_rh.values_list('id', flat=True))
                 )
