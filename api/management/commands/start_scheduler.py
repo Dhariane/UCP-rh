@@ -19,7 +19,7 @@ class Command(BaseCommand):
             replace_existing=True,
         )
 
-        self.stdout.write('✅ Scheduler démarré — rappel tous les lundis à 8h00')
+        self.stdout.write('Scheduler démarré — rappel tous les lundis à 8h00')
         scheduler.start()
 
         try:
