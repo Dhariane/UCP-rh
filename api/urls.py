@@ -3,6 +3,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from api.controllers import *
+from api.controllers.conge.congeController import CongesEnAttenteController
 from api.controllers.conge.notificationController import NotificationController, NotificationMarquerLuController, NotificationNonLuesCountController, NotificationToutLireController
 from api.controllers.conge.validationController import CongeValidationController
 from api.controllers.personnelles.diplome.typeDiplomeController import DiplomeTypeController
@@ -115,6 +116,7 @@ urlpatterns = [
         # ✅ Ajoute cette route AVANT l'existante
     path('conge/en-attente/<str:login_id>/', CongesEnAttenteController.as_view()),
     path('conge/en-attente/<int:login_id>/', CongesEnAttenteController.as_view()),
+    path('conge/en-attente/<int:login_id>/', CongesEnAttenteController.as_view(), name='conges-en-attente'),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
