@@ -1,6 +1,7 @@
 from django.db import models
 from api.models.utils.baseNom import BaseNom
 from api.models.propos.sexe import Sexes
+from django.conf import settings
 
 
 class Personnelles(BaseNom):
@@ -69,6 +70,9 @@ class Personnelles(BaseNom):
     )
 
     is_active=models.BooleanField(default=True)
+
+
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         constraints = [

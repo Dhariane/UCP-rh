@@ -139,10 +139,12 @@ class CongeSerializer(serializers.ModelSerializer):
 
     def get_validated_by(self, obj):
         if obj.validated_by:
+            login = obj.validated_by
+            personnelle = login.personnelle
             return {
-                "id": obj.validated_by.id,
-                "username": obj.validated_by.username,
-                "full_name": f"{obj.validated_by.first_name or ''} {obj.validated_by.last_name or ''}".strip()
+                "id": login.id,
+                "email": str(login.email),  # ton Login a email comme FK vers Propos
+                "full_name": f"{personnelle.prenom} {personnelle.nom}".strip() if personnelle else str(login)
             }
         return None
 
@@ -223,7 +225,7 @@ class PersonnelFullSerializer(serializers.ModelSerializer):
             'rib', 'banque', 'agence', 'villeAgence', 'photoRib',
             'enfants', 'contactsUrgence', 'diplomes', 'experiences', 'formations',
             'conges', 'soldes_conge',
-            'photoResidence', 'cinphoto', 'acteNaissance', 'casierjudiciaire',
+            'photoResidence', 'cinphoto', 'acteNaissance', 'casierjudiciaire','is_active'
         ]
 
     # ══════════════════════════════════════════════════════

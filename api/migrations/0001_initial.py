@@ -479,6 +479,16 @@ class Migration(migrations.Migration):
             name='statut',
             field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='conges', to='api.statut'),
         ),
+        migrations.AddField(
+            model_name='conge',
+            name='solde_conge',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='conges_utilises', to='api.soldeconge'),
+        ),
+        migrations.AddField(
+            model_name='conge',
+            name='statut',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='conges', to='api.statut'),
+        ),
         migrations.CreateModel(
             name='CongePlanifie',
             fields=[

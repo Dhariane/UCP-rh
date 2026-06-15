@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     
     # Tes applications
     'api',
+    'django_crontab',
+    'django_apscheduler',
 ]
 
 MIDDLEWARE = [
@@ -56,6 +58,9 @@ MIDDLEWARE = [
 # Configuration CORS pour Next.js / Frontend
 CORS_ALLOW_ALL_ORIGINS = True 
 CORS_ALLOW_CREDENTIALS = True
+CRONJOBS = [
+    ('0 8 * * 1', 'api.tasks.rappel_solde_conge', '>> /tmp/rappel_conge.log 2>&1')
+]
 
 ROOT_URLCONF = 'config.urls'
 

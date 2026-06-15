@@ -1,10 +1,8 @@
 
 from django.db import models
-from api.models.propos.personnelles import Personnelles
+from api.models.fonction.modefinancement import ModeFinancement
 from api.models.fonction.poste import Postes
 from api.models.fonction.service import Services
-from api.models.fonction.modefinancement import ModeFinancement
-
 
 class Fonctions(models.Model):
     nom     = models.CharField()
@@ -20,8 +18,10 @@ class Fonctions(models.Model):
 
     service = models.ForeignKey(
         Services,
-        on_delete=models.CASCADE,
-        related_name="fonctions"
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='fonctions'
     )
 
     financement = models.ForeignKey(
