@@ -6,7 +6,7 @@ from api.controllers import *
 from api.controllers.conge.congeController import CongesEnAttenteController
 from api.controllers.conge.notificationController import NotificationController, NotificationMarquerLuController, NotificationNonLuesCountController, NotificationToutLireController
 from api.controllers.conge.validationController import CongeValidationController
-from api.controllers.history import PersonnelContratHistoryController
+from api.controllers.history.PersonnelContratHistoryController import PersonnelContratHistoryController
 from api.controllers.personnelles.diplome.typeDiplomeController import DiplomeTypeController
 from api.controllers.personnelles.fonction.listFonctionController import FonctionListController
 from api.controllers.personnelles.fonction.superieurController import SuperieurController
