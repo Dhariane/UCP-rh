@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 from api.controllers import *
 from api.controllers.conge.notificationController import NotificationController, NotificationMarquerLuController, NotificationNonLuesCountController, NotificationToutLireController
 from api.controllers.conge.validationController import CongeValidationController
+from api.controllers.history import PersonnelContratHistoryController
 from api.controllers.personnelles.diplome.typeDiplomeController import DiplomeTypeController
 from api.controllers.personnelles.fonction.listFonctionController import FonctionListController
 from api.controllers.personnelles.fonction.superieurController import SuperieurController
@@ -50,6 +51,7 @@ urlpatterns = [
     path("familles",FamilleController.as_view(),name="familles"),
     path("familles/<int:id>/",FamilleController.as_view(),name="famille-detail"),
     # path('fullpersonnelles/<int:id>/', PersonnelFullController.as_view(), name='full-personnel-detail'),
+    path('fullpersonnelles/<int:personnel_id>/archive/', PersonnelContratHistoryController.as_view(), name='fullpersonnelles-archive'),
     path('fullpersonnelles/<int:pk>/', PersonnelFullController.as_view()),
     path('experiences', ExperienceController.as_view(), name='experience'),
     path('experiences/<int:id>/', ExperienceController.as_view(), name='experience-detail'),
