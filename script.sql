@@ -342,15 +342,16 @@ INSERT INTO api_typeconge (id, libelle, code, duree_max) VALUES
  (2, 'Permission', 'PE', 90),
  (3, 'Conge Annuel', 'CA', 30),
  (4, 'Recuperation', 'RE', 90);
-<<<<<<< HEAD
->>>>>>> cb65f867728df1dc0fb2754ea892270f8c03e70e
-=======
->>>>>>> dcc45aed (linux)
-=======
-<<<<<<< HEAD
-=======
->>>>>>> cb65f867728df1dc0fb2754ea892270f8c03e70e
-=======
->>>>>>> dcc45aed (linux)
->>>>>>> 2b8eb512 (deploie)
->>>>>>> origin/back_test
+
+ -- À exécuter après makemigrations + migrate
+-- Table cible : api_evenementpermission (préfixe Django = app_label + nom model en lowercase)
+-- Adapter le nom de table selon ton app_label réel
+
+INSERT INTO api_evenementpermission (code, libelle, duree_defaut, est_fractionnable, delai_prise) VALUES
+(1, 'Mariage du salarié et circoncision d''un enfant du salarié',        3.0,  FALSE, NULL),
+(2, 'Mariage d''un enfant, du père, de la mère, ou d''un enfant du conjoint de l''employé', 3.0, FALSE, NULL),
+(3, 'Naissance de l''enfant, adoption d''un enfant',                      3.0,  TRUE,  15),
+(4, 'Décès du conjoint, de l''enfant, du père, de la mère de l''agent, du père ou de la mère du conjoint, d''un des petits-enfants', 3.0, FALSE, NULL),
+(5, 'Décès d''un frère, d''une sœur de l''employé, d''un frère ou d''une sœur du conjoint, des grands-parents, d''un gendre de l''agent', 1.0, FALSE, NULL),
+(6, 'Obligations reliées à la garde, à la santé ou à l''éducation d''un enfant mineur', NULL, FALSE, NULL),
+(7, 'Obligations reliées à l''état de santé du conjoint, du père, de la mère de l''employé', NULL, FALSE, NULL);

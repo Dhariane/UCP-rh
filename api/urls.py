@@ -2,6 +2,15 @@ from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 
+from api.controllers.permission.permissionController import (
+    EvenementPermissionController,
+    PermissionController,
+    SoldePermissionController,
+    SoldePermissionReinitController,
+    SoldePermissionReinitTousController,
+)
+
+
 from api.controllers import *
 from api.controllers.conge.notificationController import NotificationController, NotificationMarquerLuController, NotificationNonLuesCountController, NotificationToutLireController
 from api.controllers.conge.validationController import CongeValidationController
@@ -55,6 +64,19 @@ urlpatterns = [
     path("fullpersonnelles",PersonnelFullController.as_view(),name='fullpersonnelles'),
     path('fullpersonnelles/<int:pk>/', PersonnelFullController.as_view(),name='fullpersonnelles-detail'),
     
+    # ✅ 3. LA NOUVELLE Permission
+    path('evenements-permission/',          EvenementPermissionController.as_view(), name='evenements-permission'),
+    path('evenements-permission/<int:id>/', EvenementPermissionController.as_view(), name='evenements-permission-detail'),
+ 
+    # Demandes de permission
+    path('permissions/',          PermissionController.as_view(), name='permissions'),
+    path('permissions/<int:id>/', PermissionController.as_view(), name='permissions-detail'),
+ 
+    # Solde par employé
+    path('solde-permission/',                                          SoldePermissionController.as_view(), name='solde-permission-all'),
+    path('solde-permission/<int:personnelle_id>/',                     SoldePermissionController.as_view(), name='solde-permission'),
+    path('solde-permission/<int:personnelle_id>/reinitialiser/',       SoldePermissionReinitController.as_view(), name='solde-permission-reinit'),
+
     # ✅ 2. LA NOUVELLE ROUTE POUR L'HISTORIQUE ATTENDUE PAR LE FRONT
     path('fullpersonnelles/<int:personnel_id>/archive/', PersonnelContratHistoryController.as_view(), name='fullpersonnelles-archive'),
 
@@ -78,8 +100,6 @@ urlpatterns = [
     path('logins/<int:id>/', LoginController.as_view(), name='login-detail'),
     path('roles', RoleController.as_view(), name='roles'),
     path('roles/<int:id>/', RoleController.as_view(), name='role-detail'),
-    path('permission', PermissionController.as_view(), name='permission'),
-    path('permission/<int:id>/', PermissionController.as_view(), name='permission-detail'),
     path('admin', LoginadminController.as_view(), name='admin'),
     path('admin/<int:id>/', LoginadminController.as_view(), name='admin-detail'),
     path('conge',CongeController.as_view(), name='conge'),
@@ -125,7 +145,7 @@ urlpatterns = [
         # ✅ Ajoute cette route AVANT l'existante
     path('conge/en-attente/<str:login_id>/', CongesEnAttenteController.as_view()),
     path('conge/en-attente/<int:login_id>/', CongesEnAttenteController.as_view()),
-
+    path('solde-permission/reinitialiser-tous/', SoldePermissionReinitTousController.as_view()),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
