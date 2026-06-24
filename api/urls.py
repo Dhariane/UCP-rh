@@ -137,7 +137,7 @@ urlpatterns = [
     path('notifications/<int:id>/lire/',  NotificationMarquerLuController.as_view()),
     path('notifications/tout-lire/',      NotificationToutLireController.as_view()),
     # ── Congés ───────────────────────────────────────────────────────────────────
-    path('conge',                                CongeController.as_view(),            name='conge'),
+    path('conge/',                                CongeController.as_view(),            name='conge'),
     path('conge/<int:id>/',                      CongeController.as_view(),            name='conge-detail'),
     path('conge/<int:id>/valider/',              CongeValidationController.as_view(),  name='conge-valider'),
     path('conge/<int:id>/validations/',          CongeValidationController.as_view(),  name='conge-historique'),
