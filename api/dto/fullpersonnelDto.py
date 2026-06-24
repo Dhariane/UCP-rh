@@ -152,7 +152,7 @@ class CongeSerializer(serializers.ModelSerializer):
         model = Conge
         fields = [
             'id', 'type_conge', 'solde_conge', 'date_debut', 'date_fin',
-            'nombre_jours', 'description', 'statut', 'validated_by',
+            'nombre_jours', 'description', 'statut', 'validated_by','etape_validation',
             'created_at', 'updated_at'
         ]
 
