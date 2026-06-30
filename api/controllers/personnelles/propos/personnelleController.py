@@ -80,15 +80,34 @@ class PersonnelleController(APIView):
         """Autorise explicitement la méthode PATCH en utilisant la logique du PUT"""
         return self.put(request, id)
 
-    def patch(self, request, id=None):
+    def patch(self, request, id):
         try:
-            from api.models import Personnelles
             personnel = Personnelles.objects.get(id=id)
             personnel.is_active = not personnel.is_active
             personnel.save()
+
+            # Couper l'accès immédiatement si désactivé
+            if not personnel.is_active:
+                try:
+                    login_account = personnel.login.first()
+                    if login_account:
+                        from django.contrib.auth.models import User
+                        from rest_framework.authtoken.models import Token
+                        # filter au lieu de get → pas d'exception si User absent
+                        user_system = User.objects.filter(username=login_account.email.email).first()
+                        if user_system:
+                            Token.objects.filter(user=user_system).delete()
+                except Exception as e:
+                    print(f"⚠️ Token suppression ignorée : {e}")
+                    pass  # Pas de login/token associé, c'est OK
+
             return Response({
                 "status": "success",
                 "is_active": personnel.is_active
             }, status=status.HTTP_200_OK)
+
         except Personnelles.DoesNotExist:
-            return Response({"status": "error", "message": "Introuvable"}, status=status.HTTP_404_NOT_FOUND)    
+            return Response({
+                "status": "error",
+                "message": "Introuvable"
+            }, status=status.HTTP_404_NOT_FOUND)    

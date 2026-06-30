@@ -1,36 +1,93 @@
-from django.db import transaction
-from django.core.exceptions import ValidationError
+from django.utils import timezone
+from api.models.permission.permissionModel import Permissions, SoldePermission
+
 
 class PermissionService:
+
+    # ------------------------------------------------------------------
+    # Calcul durée en jours ouvrables (simple soustraction pour l'instant)
+    # ------------------------------------------------------------------
     @staticmethod
     def calculer_duree(date_debut, date_fin):
-        diff = date_fin - date_debut
-        return max(0, diff.days + (diff.seconds / 86400))
+        delta = date_fin - date_debut
+        duree = delta.days + 1  # inclus le jour de début
+        return max(duree, 0)
 
+    # ------------------------------------------------------------------
+    # Récupère ou crée le SoldePermission de l'employé pour une année
+    # ------------------------------------------------------------------
     @staticmethod
-    @transaction.atomic
+    def get_or_create_solde(personnelle, annee=None):
+        if annee is None:
+            annee = timezone.now().year
+        solde, _ = SoldePermission.objects.get_or_create(
+            personnelle=personnelle,
+            annee=annee,
+            defaults={'solde_disponible': SoldePermission.SOLDE_MAX}
+        )
+        return solde
+
+    # ------------------------------------------------------------------
+    # Approbation : déduit la durée du solde
+    # ------------------------------------------------------------------
+    @staticmethod
     def approuver_permission(permission_id):
+        permission = Permissions.objects.select_related(
+            'personnelle', 'evenement'
+        ).get(id=permission_id)
+
+        if permission.statut != 'En attente':
+            raise Exception(f"Cette permission est déjà '{permission.statut}'.")
+
+        annee = permission.date_debut.year
+        solde = PermissionService.get_or_create_solde(permission.personnelle, annee)
+
+        if solde.solde_disponible < permission.duree:
+            raise Exception(
+                f"Solde insuffisant : {solde.solde_disponible}j disponible, "
+                f"{permission.duree}j demandé."
+            )
+
+        # Déduction
+        solde.solde_disponible -= permission.duree
+        solde.save()
+
+        permission.statut = 'Approuvé'
+        permission.solde_initial = solde.solde_disponible + permission.duree  # avant déduction
+        permission.solde_restant = solde.solde_disponible
+        permission.save()
+
+        return permission
+
+    # ------------------------------------------------------------------
+    # Refus : ne touche pas au solde
+    # ------------------------------------------------------------------
+    @staticmethod
+    def refuser_permission(permission_id):
         permission = Permissions.objects.get(id=permission_id)
-        
-        if permission.statut == 'Approuvé':
-            return permission
 
-        personne = permission.personnelle
-        duree_calculee = PermissionService.calculer_duree(permission.date_debut, permission.date_fin)
+        if permission.statut != 'En attente':
+            raise Exception(f"Cette permission est déjà '{permission.statut}'.")
 
-        if personne.solde_jours >= duree_calculee:
-            # 1. On enregistre la photo du solde au moment de l'approbation
-            permission.solde_initial = personne.solde_jours
-            permission.duree = duree_calculee
-            permission.solde_restant = personne.solde_jours - duree_calculee
-            
-            # 2. On met à jour le solde réel de l'employé
-            personne.solde_jours = permission.solde_restant
-            
-            permission.statut = 'Approuvé'
-            
-            personne.save()
-            permission.save()
-            return permission
-        else:
-            raise ValidationError(f"Solde insuffisant. Disponible: {personne.solde_jours}")
+        permission.statut = 'Refusé'
+        permission.save()
+        return permission
+
+    # ------------------------------------------------------------------
+    # Réinitialisation du solde à 10j (action RH)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def reinitialiser_solde(personnelle_id, annee=None):
+        if annee is None:
+            annee = timezone.now().year
+
+        solde = SoldePermission.objects.filter(
+            personnelle_id=personnelle_id,
+            annee=annee
+        ).first()
+
+        if not solde:
+            raise Exception(f"Aucun solde trouvé pour cette année ({annee}).")
+
+        solde.reinitialiser()
+        return solde

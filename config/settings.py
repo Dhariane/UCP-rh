@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
+
 # 1. Définition de la racine du projet (BASE_DIR)
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -39,6 +40,8 @@ INSTALLED_APPS = [
     
     # Tes applications
     'api',
+    'django_crontab',
+    'django_apscheduler',
 ]
 
 MIDDLEWARE = [
@@ -55,6 +58,9 @@ MIDDLEWARE = [
 # Configuration CORS pour Next.js / Frontend
 CORS_ALLOW_ALL_ORIGINS = True 
 CORS_ALLOW_CREDENTIALS = True
+CRONJOBS = [
+    ('0 8 * * 1', 'api.tasks.rappel_solde_conge', '>> /tmp/rappel_conge.log 2>&1')
+]
 
 ROOT_URLCONF = 'config.urls'
 
@@ -109,7 +115,9 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT'),
         'OPTIONS': {
             'client_encoding': 'UTF8',
+            'options': '-c statement_timeout=60000',
         },
+    'CONN_MAX_AGE': 0,
     }
 }
 
@@ -157,13 +165,24 @@ DUREE_VALIDATION_INSCRIPTION = 300
 
 # Configuration Email (Gmail)
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'api.services.utils.emailbackend.SSLEmailBackend'  # marche partout
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
 EMAIL_HOST_USER = 'misarabesa@gmail.com'
 EMAIL_HOST_PASSWORD = 'diwi clxv fsky llfp'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+EMAIL_TIMEOUT = 30
+
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_USE_SSL = False
+# EMAIL_HOST_USER = 'misarabesa@gmail.com'
+# EMAIL_HOST_PASSWORD = 'diwi clxv fsky llfp'
+# DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Alternative de test (Mailtrap - Actuellement désactivée)
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

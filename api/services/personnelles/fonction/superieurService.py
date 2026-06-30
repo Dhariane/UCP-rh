@@ -60,7 +60,17 @@ class SuperieurService:
         logins   = Login.objects.filter(id__in=superieurs_ids)
         fonction.superieurs.set(logins)
         return fonction
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 580fc430 (superieur 11/05/26 09:38)
+=======
+>>>>>>> origin/back_test
 >>>>>>> cb65f867728df1dc0fb2754ea892270f8c03e70e
 =======
         return SuperieurDto(superieurs, many=True) 
 >>>>>>> dcc45aed (linux)
+<<<<<<< HEAD
+=======
+>>>>>>> 2b8eb512 (deploie)
+>>>>>>> origin/back_test

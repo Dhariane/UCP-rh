@@ -117,9 +117,40 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
     supprimer_formations           = serializers.ListField(required=False)
     nombreAnneeExperience          = serializers.CharField(required=False, allow_blank=True)
 
+    # ✅ CORRECTION : La classe Meta est maintenant correctement indentée à l'intérieur du Serializer
     class Meta:
         model  = Personnelles
-        fields = '__all__'
+        fields = [
+            'id', 'nom', 'prenom', 'sexe', 'dateNaissance', 'lieuNaissance',
+            'adresse', 'quartier', 'ville',
+            # champs mappés via source=
+            'emailPersonnel', 'telephonePersonnel',
+            # champs CIN
+            'num_cin_input', 'dateDelivranceCin', 'lieuDelivranceCin',
+            'dateDuplicataCin', 'lieuDuplicataCin', 'photoCin', 'cin',
+            # propos
+            'nif', 'stat', 'cnaps', 'emailProfessionnel', 'contactProfessionnel',
+            'etatCivil', 'nombreEnfants',
+            # contrat/fonction
+            'date_embauche', 'date_sortie', 'fonction', 'poste_superieur',
+            'service_actuel', 'financement_actuel',
+            'num_contrat', 'type_contrat', 'salaire', 'periodeEssai',
+            'dateFinEssai', 'photoContrat', 'photoUrl', 'contrat',
+            # famille
+            'nomPere', 'nomMere', 'nomConjoint', 'prenomConjoint',
+            'telConjoint', 'emailConjoint', 'adresseConjoint', 'acteMariage',
+            # banque
+            'banque', 'agence', 'villeAgence', 'rib', 'photoRib',
+            # documents
+            'photoResidence', 'acteNaissance', 'casierjudiciaire',
+            # listes
+            'ajouter_enfants', 'mettre_a_jour_enfants', 'supprimer_enfants',
+            'ajouter_contacts_urgence', 'mettre_a_jour_contacts_urgence', 'supprimer_contacts_urgence',
+            'ajouter_experiences', 'mettre_a_jour_experiences', 'supprimer_experiences',
+            'ajouter_diplomes', 'mettre_a_jour_diplomes', 'supprimer_diplomes',
+            'ajouter_formations', 'mettre_a_jour_formations', 'supprimer_formations',
+            'nombreAnneeExperience',
+        ]
 
     # ── Helpers ──────────────────────────────────────────────
     def _safe_int(self, val):
@@ -140,7 +171,6 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
             if isinstance(data, list):
                 if len(data) == 0:
                     return []
-                # FormData → ["[{...}]"]
                 if isinstance(data[0], str):
                     parsed = json.loads(data[0])
                 else:
@@ -150,7 +180,6 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
             else:
                 parsed = data
 
-            # Déplie [[{...}]] → [{...}]
             if isinstance(parsed, list) and len(parsed) == 1 and isinstance(parsed[0], list):
                 parsed = parsed[0]
 
@@ -162,7 +191,6 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
         data = data.copy() if hasattr(data, 'copy') else dict(data)
 
-        # Désérialiser les listes JSON
         for field in LIST_FIELDS:
             if field not in data:
                 continue
@@ -177,12 +205,10 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
                 parsed = raw
             else:
                 parsed = []
-            # Déplie [[...]] → [...]
             if isinstance(parsed, list) and len(parsed) == 1 and isinstance(parsed[0], list):
                 parsed = parsed[0]
             data[field] = parsed
 
-        # Nettoyer les DateField vides
         for f in ['dateFinEssai', 'date_embauche', 'date_sortie', 'dateDelivranceCin', 'dateDuplicataCin']:
             if f in data:
                 v = data[f]
@@ -190,28 +216,24 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
                 if raw in ['', 'null', 'None', 'undefined']:
                     data[f] = None
 
-        # Nettoyer etatCivil vide
         if 'etatCivil' in data:
             v = data['etatCivil']
             raw = v[0] if isinstance(v, list) and v else v
             if raw in ['', 'null', 'None', 'undefined']:
                 data['etatCivil'] = None
 
-        # Nettoyer emailConjoint vide
         if 'emailConjoint' in data:
             v = data['emailConjoint']
             raw = v[0] if isinstance(v, list) and v else v
             if raw in ['', 'null', 'None', 'undefined', 'NaN']:
                 data['emailConjoint'] = None
 
-        # Nettoyer salaire vide
         if 'salaire' in data:
             v = data['salaire']
             raw = v[0] if isinstance(v, list) and v else v
             if raw in ['', 'null', 'None', 'undefined']:
                 data['salaire'] = None
 
-        # Parser cin si c'est une string JSON
         if 'cin' in data:
             v = data['cin']
             raw = v[0] if isinstance(v, list) and v else v
@@ -295,7 +317,6 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
         validated_data.pop('contrat', None)
         photo_url = validated_data.pop('photoUrl', None)
 
-        # etatCivil : lu avant la boucle setattr
         etat_civil_id = validated_data.get('etatCivil')
 
         # ── SEXE ────────────────────────────────────────────
@@ -375,22 +396,19 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
                 Enfant.objects.create(personnelle=instance, sexe_id=s_id, **item)
             except Exception as e:
                 print(f"Erreur création enfant: {e}")
-        # ── CERTIFICATS DE VIE ENFANTS ──────────────────────────
+
             request = self.context.get('request')
             if request:
                 for key, file in request.FILES.items():
-                    # Front envoie certificatVie_0, certificatVie_1, ...
                     if not key.startswith('certificatVie_'):
                         continue
                     suffix = key.replace('certificatVie_', '')
-                    # Ignorer certificatVie_index_X
                     if suffix.startswith('index_'):
                         continue
                     try:
                         index = int(suffix)
                     except ValueError:
                         continue
-                    # Récupérer l'ID enfant associé
                     enfant_id_str = request.data.get(f'certificatVie_index_{index}', '')
                     try:
                         enfant_id = int(enfant_id_str)
@@ -467,14 +485,13 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
         if a_naissance  and not isinstance(a_naissance,  str): instance.acteNaissance   = a_naissance
         if c_judiciaire and not isinstance(c_judiciaire, str): instance.casierjudiciaire= c_judiciaire
         instance.save()
+
         # ── FONCTIONS & CONTRAT ───────────────────────────────────────
-        # ✅ Tout passe par Contrat maintenant
         from api.models.fonction.contrat import Contrat as ContratModel
         from api.models.fonction.fonctions import Fonctions as FonctionsModel
 
         contrat_obj, _ = ContratModel.objects.get_or_create(personnelle=instance)
 
-        # Fonction
         if fonction_nom:
             fid = self._safe_int(fonction_nom)
             if fid:
@@ -486,7 +503,6 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
             if fonction_inst:
                 contrat_obj.fonction = fonction_inst
 
-        # Service
         if service_nom:
             sid = self._safe_int(service_nom)
             obj = Services.objects.filter(id=sid).first() if sid else \
@@ -494,7 +510,6 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
             if obj:
                 contrat_obj.service = obj
 
-        # Financement
         if financement_nom:
             fid = self._safe_int(financement_nom)
             obj = ModeFinancement.objects.filter(id=fid).first() if fid else \
@@ -502,11 +517,9 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
             if obj:
                 contrat_obj.financement = obj
 
-        # Dates
         if date_embauche: contrat_obj.dateDebut = date_embauche
         if date_sortie:   contrat_obj.dateFin   = date_sortie
 
-        # Autres champs contrat
         if num_contrat:    contrat_obj.NumeroContrat = num_contrat
         if periode_essai:  contrat_obj.periodeEssai  = periode_essai
         if date_fin_essai: contrat_obj.dateFinEssai  = date_fin_essai
@@ -590,7 +603,6 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
                 except Exception as e:
                     print(f"Erreur création diplôme: {e}")
 
-            # ✅ Photos diplômes — EN DEHORS du for add_dip
             if request:
                 for key, file in request.FILES.items():
                     if not key.startswith('diplome_photo_'):
@@ -662,15 +674,13 @@ class PersonnelUpdateSerializer(serializers.ModelSerializer):
                     except (ValueError, TypeError):
                         pass
 
-            for i, item in enumerate(add_for):  # ✅ ajouter enumerate
+            for i, item in enumerate(add_for):
                 item = dict(item)
                 item.pop('id', None)
                 item.pop('certificat', None)
                 try:
-                    # ✅ Garder la référence à l'objet créé
                     new_form = Formation.objects.create(personnelle=instance, **item)
 
-                    # ✅ Associer le certificat immédiatement après création
                     if request:
                         cert_file = request.FILES.get(f'formation_file_{i}')
                         if cert_file:

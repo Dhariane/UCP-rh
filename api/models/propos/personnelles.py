@@ -1,6 +1,7 @@
 from django.db import models
 from api.models.utils.baseNom import BaseNom
 from api.models.propos.sexe import Sexes
+from django.conf import settings
 
 
 class Personnelles(BaseNom):
@@ -13,6 +14,13 @@ class Personnelles(BaseNom):
 
     lieuNaissance = models.CharField(
         max_length=200
+    )
+
+    matricule = models.CharField(
+        max_length=20, 
+        unique=True, 
+        null=True, 
+        blank=True
     )
     sexe = models.ForeignKey(
         Sexes, 
@@ -48,7 +56,6 @@ class Personnelles(BaseNom):
         max_length=100,
         null=True,
         blank=True,
-        unique=True
     )
     cinphoto=models.FileField(
         upload_to='photocin/'
@@ -65,6 +72,16 @@ class Personnelles(BaseNom):
     is_active=models.BooleanField(default=True)
 
 
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['emailPerso'],
+                condition=models.Q(emailPerso__isnull=False),
+                name='unique_emailPerso_not_null'
+            )
+        ]
     def __str__(self):
         return f"{self.prenom} {self.nom}"
     
