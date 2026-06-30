@@ -6,7 +6,8 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0008_alter_diplome_type_diplome'),
+        # On le branche directement sur le 0007 que vous venez de me montrer
+        ('api', '0006_merge_20260622_0728'), 
     ]
 
     operations = [
