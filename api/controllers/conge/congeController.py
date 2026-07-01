@@ -227,3 +227,134 @@ class CongesEnAttenteController(APIView):
 
             except Exception as e:
                 return Response({"status": "error", "message": str(e)}, status=500)
+
+
+from django.utils import timezone
+from datetime import date
+
+class CongesAujourdhuiController(APIView):
+    """
+    Retourne les personnels actuellement en congé aujourd'hui.
+    GET /api/conge/aujourd-hui/
+    """
+    def get(self, request):
+        try:
+            aujourd_hui = date.today()
+
+            # Congés approuvés qui couvrent aujourd'hui
+            conges = Conge.objects.filter(
+                statut__id=2,  # Approuvé
+                date_debut__lte=aujourd_hui,
+                date_fin__gte=aujourd_hui,
+            ).select_related(
+                'personnel',
+                'type_conge',
+                'statut',
+            ).order_by('date_fin')
+
+            data = []
+            for conge in conges:
+                personnel = conge.personnel
+
+                # Récupérer le contrat actif
+                contrat = Contrat.objects.filter(
+                    personnelle=personnel,
+                    is_actif=True
+                ).first()
+
+                # Jours restants
+                jours_restants = (conge.date_fin - aujourd_hui).days + 1
+
+                data.append({
+                    "conge_id":        conge.id,
+                    "personnel_id":    personnel.id,
+                    "nom":             personnel.nom,
+                    "prenom":          personnel.prenom,
+                    "fonction":        contrat.fonction.nom if contrat and contrat.fonction else "—",
+                    "service":         contrat.service.nom if contrat and contrat.service else "—",
+                    "type_conge":      conge.type_conge.libelle if hasattr(conge.type_conge, 'libelle') else str(conge.type_conge),
+                    "date_debut":      str(conge.date_debut),
+                    "date_fin":        str(conge.date_fin),
+                    "nombre_jours":    conge.nombre_jours,
+                    "jours_restants":  jours_restants,
+                })
+
+            return Response({
+                "status":  "success",
+                "date":    str(aujourd_hui),
+                "total":   len(data),
+                "data":    data,
+            }, status=200)
+
+        except Exception as e:
+            return Response({
+                "status":  "error",
+                "message": str(e)
+            }, status=500)
+
+
+class CongesParPeriodeController(APIView):
+    """
+    Retourne les congés sur une période donnée.
+    GET /api/conge/periode/?date_debut=2026-06-01&date_fin=2026-06-30
+    """
+    def get(self, request):
+        try:
+            date_debut_str = request.query_params.get('date_debut')
+            date_fin_str   = request.query_params.get('date_fin')
+
+            if not date_debut_str or not date_fin_str:
+                return Response({
+                    "status":  "error",
+                    "message": "Paramètres date_debut et date_fin requis"
+                }, status=400)
+
+            from datetime import datetime
+            date_debut = datetime.strptime(date_debut_str, '%Y-%m-%d').date()
+            date_fin   = datetime.strptime(date_fin_str,   '%Y-%m-%d').date()
+
+            # Congés qui chevauchent la période
+            conges = Conge.objects.filter(
+                statut__id=2,
+                date_debut__lte=date_fin,
+                date_fin__gte=date_debut,
+            ).select_related('personnel', 'type_conge', 'statut').order_by('date_debut')
+
+            data = []
+            for conge in conges:
+                personnel = conge.personnel
+                contrat = Contrat.objects.filter(
+                    personnelle=personnel, is_actif=True
+                ).first()
+
+                data.append({
+                    "conge_id":     conge.id,
+                    "personnel_id": personnel.id,
+                    "nom":          personnel.nom,
+                    "prenom":       personnel.prenom,
+                    "fonction":     contrat.fonction.nom if contrat and contrat.fonction else "—",
+                    "service":      contrat.service.nom if contrat and contrat.service else "—",
+                    "type_conge":   conge.type_conge.libelle if hasattr(conge.type_conge, 'libelle') else str(conge.type_conge),
+                    "date_debut":   str(conge.date_debut),
+                    "date_fin":     str(conge.date_fin),
+                    "nombre_jours": conge.nombre_jours,
+                    "statut":       conge.statut.statut,
+                })
+
+            return Response({
+                "status":     "success",
+                "periode":    {"debut": date_debut_str, "fin": date_fin_str},
+                "total":      len(data),
+                "data":       data,
+            }, status=200)
+
+        except ValueError:
+            return Response({
+                "status":  "error",
+                "message": "Format de date invalide. Utilisez YYYY-MM-DD"
+            }, status=400)
+        except Exception as e:
+            return Response({
+                "status":  "error",
+                "message": str(e)
+            }, status=500)

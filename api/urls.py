@@ -17,7 +17,12 @@ from api.controllers.conge.soldeCongeController import (
 from api.controllers.personnelles.fonction.fonctionController import FonctionCRUDController
 from api.controllers.personnelles.fonction.ServiceController import ServiceCRUDController
 from api.controllers.conge.congePlanifieController import CongePlanifieController, CongePlanifieDetailController
-from api.controllers.conge.congeController import CongesEnAttenteController,CongeController
+from api.controllers.conge.congeController import (
+    CongeController,
+    CongesEnAttenteController,
+    CongesAujourdhuiController,
+    CongesParPeriodeController,
+)
 from .controllers import ConfigPlanningController
 
 # ✅ 1. IMPORTER LE NOUVEAU CONTRÔLEUR D'HISTORIQUE (s'il est dans le même fichier views/controllers)
@@ -130,6 +135,9 @@ urlpatterns = [
         # ✅ Ajoute cette route AVANT l'existante
     path('conge/en-attente/<str:login_id>/', CongesEnAttenteController.as_view()),
     path('conge/en-attente/<int:login_id>/', CongesEnAttenteController.as_view()),
+    path('conge/aujourd-hui/',  CongesAujourdhuiController.as_view(),  name='conges-aujourd-hui'),
+    path('conge/periode/',      CongesParPeriodeController.as_view(),  name='conges-periode'),
+
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
